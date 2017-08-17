@@ -9,6 +9,8 @@ module ResumableFunctions
 
   export @resumable
 
+
+  include("macrotoolutils.jl")
   include("utils.jl")
   include("transforms.jl")
   include("types.jl")
