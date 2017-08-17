@@ -1,5 +1,10 @@
 using ResumableFunctions
 using Base.Test
 
-# write your own tests here
-@test 1 == 2
+@resumable function test_for()
+  for i in 1:10
+    println(i)
+  end
+end
+
+test_for()

@@ -1,5 +1,16 @@
+isdefined(Base, :__precompile__) && __precompile__()
+
+"""
+Main module for ResumableFunctions.jl – C# style generators for Julia
+"""
 module ResumableFunctions
 
-# package code goes here
+  import Base.start, Base.next, Base.done
 
-end # module
+  export @resumable
+
+  include("utils.jl")
+  include("transforms.jl")
+  include("types.jl")
+  include("macro.jl")
+end
