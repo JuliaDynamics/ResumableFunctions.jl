@@ -1,13 +1,15 @@
-function getslots(expr::Expr, name::Symbol) :: Dict{Symbol, Type}
+function getslots(func_def::Dict) :: Dict{Symbol, Type}
   slots = Dict{Symbol, Type}()
-  eval(expr)
-  code_data_infos = @eval code_typed($name)
-  for (code_info, data_type) in code_data_infos
-    for i in 2:length(code_info.slotnames)
-      slots[code_info.slotnames[i]] = code_info.slottypes[i]
-    end
+  func_name = gensym()
+  func_def[:name] = func_name
+  eval(combinedef(func_def))
+  code_data_infos = @eval code_typed($func_name)
+  (code_info, data_type) = code_data_infos[1]
+  for (i, slotname) in enumerate(code_info.slotnames)
+    slots[slotname] = code_info.slottypes[i]
   end
   delete!(slots, Symbol("#temp#"))
   delete!(slots, Symbol("#unused#"))
+  delete!(slots, Symbol("#self#"))
   slots
 end

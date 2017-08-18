@@ -42,3 +42,14 @@ function splitdef(fdef)
   if params !== nothing; di[:params] = params end
   di
 end
+
+function combinedef(dict::Dict)
+    rtype = get(dict, :rtype, :Any)
+    # We have to combine params and whereparams because f{}() where {} = 0 is
+    # a syntax error unless as a constructor.
+    all_params = [get(dict, :params, [])..., get(dict, :whereparams, [])...]
+    :(function $(dict[:name]){$(all_params...)}($(dict[:args]...);
+                                                $(dict[:kwargs]...))::$rtype
+          $(dict[:body])
+      end)
+end
