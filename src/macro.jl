@@ -1,17 +1,48 @@
-using MacroTools: postwalk, striplines, flatten, unresolve, resyntax
+using MacroTools: postwalk, prewalk, striplines, flatten, unresolve, resyntax
+
+macro yield(expr)
+  esc(expr)
+end
 
 macro resumable(expr::Expr)
   expr.head != :function && error("Expression is not a function definition!")
   func_def = splitdef(expr)
-
-  new_expr = postwalk(transform_for, expr)
-  new_expr = new_expr |> striplines |> flatten |> unresolve |> resyntax
-  println(new_expr)
-  println(func_def[:body])
-  func_def[:body] = new_expr
-  println(func_def[:body])
+  println(func_def[:args])
+  args = [(begin (a, b, c, d) = splitarg(arg); :($a) end for arg in func_def[:args])..., 
+          (begin (a, b, c, d) = splitarg(arg); :($a) end for arg in func_def[:kwargs])...]
+  println(args)
+  func_def[:body] = postwalk(transform_for, func_def[:body])
   slots = getslots(copy(func_def))
   println(slots)
   type_name = gensym()
-  esc(new_expr)
+  type_expr = :(
+    mutable struct $type_name <: ResumableFunctions.FiniteStateMachineIterator
+      _state :: UInt8
+      $((:($slotname :: $(slottype == Union{} ? Any : :($slottype))) for (slotname, slottype) in slots)...)
+      function $type_name($(func_def[:args]...);$(func_def[:kwargs]...))
+        fsmi = new()
+        fsmi._state = 0x00
+        $((:(fsmi.$arg = $arg) for arg in args)...)
+        fsmi
+      end
+    end)
+  println(type_expr |> striplines |> flatten |> unresolve |> resyntax)
+  call_def = copy(func_def)
+  call_def[:name] = func_def[:name]
+  call_def[:rtype] = type_name
+  call_def[:body] = :($type_name($((:($arg) for arg in args)...)))
+  call_expr = combinedef(call_def) |> striplines |> flatten |> unresolve |> resyntax
+  println(call_expr)
+  func_def[:name] = :((_fsmi::$type_name))
+  func_def[:body] = postwalk(x->transform_slots(x, keys(slots)), func_def[:body])
+  func_def[:body] = postwalk(transform_arg, func_def[:body]) |> flatten
+  func_def[:body] = postwalk(transform_try, func_def[:body])
+  func_def[:args] = [:(_ret)]
+  func_expr = combinedef(func_def) 
+  println(func_expr)
+  esc(quote
+    $type_expr
+    $func_expr
+    $call_expr
+  end)
 end
