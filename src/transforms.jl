@@ -6,15 +6,16 @@ function transform_slots(expr, symbols::Base.KeyIterator{Dict{Symbol,Type}})
   inner == nothing ? :(_fsmi.$sym) : :(_fsmi.$sym.$inner)
 end
 
-function transform_for(expr)
+function transform_for(expr, ui8::BoxedUInt8)
   @capture(expr, for element_ in iterator_ body__ end) || return expr
-  iter = gensym()
-  state = gensym()
+  ui8.n += one(UInt8)
+  iter = Symbol("_iterator_", ui8.n)
+  state = Symbol("_iterstate_", ui8.n)
   quote 
     $iter = $iterator
     $state = start($iter)
     while !done($iter, $state)
-      $element, $state = next(_fsmi.$iter, $state)
+      $element, $state = next($iter, $state)
       $(body...)
     end
   end
@@ -24,8 +25,15 @@ function transform_arg(expr)
   @capture(expr, arg_ = @yield ret_) || return expr
   quote
     @yield $ret
-    _ret isa Exception && throw(_ret)
-    $arg = _ret
+    $arg = _arg
+  end
+end
+
+function transform_exc(expr)
+  @capture(expr, @yield ret_) || return expr
+  quote
+    @yield $ret
+    _arg isa Exception && throw(_arg)
   end
 end
 
@@ -60,6 +68,13 @@ function transform_try(expr)
   quote $(new_body...) end
 end
 
-function transform_yield(expr)
-
+function transform_yield(expr, ui8::BoxedUInt8)
+  @capture(expr, @yield ret_) || return expr
+  ui8.n += one(UInt8)
+  quote
+    _fsmi._state = $(ui8.n)
+    return $ret
+    @label $(Symbol("_STATE_",:($(ui8.n))))
+    _fsmi._state = 0xff
+  end
 end

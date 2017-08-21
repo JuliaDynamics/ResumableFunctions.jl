@@ -8,11 +8,10 @@ module ResumableFunctions
   import Base.start, Base.next, Base.done
 
   export @resumable, @yield
-
-
+  
   include("macrotoolutils.jl")
+  include("types.jl")
   include("utils.jl")
   include("transforms.jl")
-  include("types.jl")
   include("macro.jl")
 end

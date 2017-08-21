@@ -69,3 +69,9 @@ function splitarg(arg_expr)
       return (splitvar(arg_expr2)..., is_splat, nothing)
   end
 end
+
+function combinearg(arg_name, arg_type, is_splat, default)
+  a = arg_name===nothing ? :(::$arg_type) : :($arg_name::$arg_type)
+  a2 = is_splat ? Expr(:..., a) : a
+  return default === nothing ? a2 : Expr(:kw, a2, default)
+end
