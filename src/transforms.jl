@@ -22,7 +22,7 @@ function transform_for(expr, ui8::BoxedUInt8)
 end
 
 function transform_arg(expr)
-  @capture(expr, arg_ = @yield ret_) || return expr
+  @capture(expr, (arg_ = @yield ret_) | (arg_ = @yield)) || return expr
   quote
     @yield $ret
     $arg = _arg
@@ -42,7 +42,7 @@ function transform_try(expr)
   new_body = []
   segment = []
   for ex in body
-    if @capture(ex, (@yield ret_))
+    if @capture(ex, @yield ret_)
       push!(new_body, :(try $(segment...) catch $exc; $(handling...) end))
       push!(new_body, quote @yield $ret end)
       segment = []
@@ -57,12 +57,12 @@ function transform_try(expr)
 end
 
 function transform_yield(expr, ui8::BoxedUInt8)
-  @capture(expr, @yield ret_) || return expr
+  @capture(expr, (@yield ret_) | @yield) || return expr
   ui8.n += one(UInt8)
   quote
     _fsmi._state = $(ui8.n)
     return $ret
-    @label $(Symbol("_STATE_",:($(ui8.n))))
+    @label $(Symbol("_STATE_", :($(ui8.n))))
     _fsmi._state = 0xff
   end
 end

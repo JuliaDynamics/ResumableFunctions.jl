@@ -1,13 +1,13 @@
 using MacroTools: postwalk, striplines, flatten, unresolve, resyntax
 
-macro yield(expr)
+macro yield(expr=nothing)
   esc(expr)
 end
 
 macro resumable(expr::Expr)
   expr.head != :function && error("Expression is not a function definition!")
   func_def = splitdef(expr)
-  args = [(begin (a, b, c, d) = splitarg(arg); :($a) end for arg in func_def[:args])..., 
+  args = [(begin (a, b, c, d) = splitarg(arg); :($a) end for arg in func_def[:args])...,
           (begin (a, b, c, d) = splitarg(arg); :($a) end for arg in func_def[:kwargs])...]
   ui8 = BoxedUInt8(zero(UInt8))
   func_def[:body] = postwalk(x->transform_for(x, ui8), func_def[:body])
@@ -26,13 +26,13 @@ macro resumable(expr::Expr)
     end
   end
   type_expr = type_expr |> striplines |> flatten |> unresolve |> resyntax
-  println(type_expr)
+  #println(type_expr)
   call_def = copy(func_def)
   call_def[:name] = func_def[:name]
   call_def[:rtype] = type_name
   call_def[:body] = :($type_name($((:($arg) for arg in args)...)))
   call_expr = combinedef(call_def) |> striplines |> flatten |> unresolve |> resyntax
-  println(call_expr)
+  #println(call_expr)
   func_def[:name] = :((_fsmi::$type_name))
   func_def[:body] = postwalk(x->transform_slots(x, keys(slots)), func_def[:body])
   func_def[:body] = postwalk(transform_arg, func_def[:body]) |> flatten
