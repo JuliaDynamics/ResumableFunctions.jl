@@ -10,7 +10,7 @@ using Base.Test
   a
 end
 
-for a in test_for(1)
+for a in test_for(4)
   println(a)
 end
 

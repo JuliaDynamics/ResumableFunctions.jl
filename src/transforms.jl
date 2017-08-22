@@ -43,13 +43,7 @@ function transform_try(expr)
   segment = []
   for ex in body
     if @capture(ex, (@yield ret_))
-      push!(new_body, quote
-          try 
-            $(segment...) 
-          catch $exc
-            $(handling...) 
-          end
-        end)
+      push!(new_body, :(try $(segment...) catch $exc; $(handling...) end))
       push!(new_body, quote @yield $ret end)
       segment = []
     else
@@ -57,13 +51,7 @@ function transform_try(expr)
     end
   end
   if segment != []
-    push!(new_body, quote
-        try 
-          $(segment...) 
-        catch $exc
-          $(handling...) 
-        end
-      end)
+    push!(new_body, :(try $(segment...) catch $exc; $(handling...) end))
   end
   quote $(new_body...) end
 end

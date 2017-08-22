@@ -1,7 +1,7 @@
 # Copy of utility functions from MacroTools (master)
 # Can be removed once new version of MacroTools is released
 
-using MacroTools: striplines, @match, @capture, prewalk
+using MacroTools: striplines, @match, @capture
 
 macro q(ex)
   Expr(:quote, striplines(ex))

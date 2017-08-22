@@ -7,7 +7,7 @@ module ResumableFunctions
 
   import Base.start, Base.next, Base.done
 
-  export @resumable, @yield
+  export @resumable
   
   include("macrotoolutils.jl")
   include("types.jl")

@@ -1,4 +1,4 @@
-using MacroTools: postwalk, prewalk, striplines, flatten, unresolve, resyntax
+using MacroTools: postwalk, striplines, flatten, unresolve, resyntax
 
 macro yield(expr)
   esc(expr)
@@ -13,7 +13,7 @@ macro resumable(expr::Expr)
   func_def[:body] = postwalk(x->transform_for(x, ui8), func_def[:body])
   slots = getslots(copy(func_def))
   type_name = gensym()
-  type_expr = :(
+  type_expr = quote
     mutable struct $type_name <: ResumableFunctions.FiniteStateMachineIterator
       _state :: UInt8
       $((:($slotname :: $(slottype == Union{} ? Any : :($slottype))) for (slotname, slottype) in slots)...)
@@ -23,7 +23,8 @@ macro resumable(expr::Expr)
         $((:(fsmi.$arg = $arg) for arg in args)...)
         fsmi
       end
-    end)
+    end
+  end
   type_expr = type_expr |> striplines |> flatten |> unresolve |> resyntax
   println(type_expr)
   call_def = copy(func_def)
@@ -50,9 +51,5 @@ macro resumable(expr::Expr)
   func_def[:args] = [combinearg(:_arg, Any, false, :nothing)]
   func_expr = combinedef(func_def) |> striplines |> flatten |> unresolve |> resyntax
   println(func_expr)
-  esc(quote
-    $type_expr
-    $func_expr
-    $call_expr
-  end)
+  esc(:($type_expr; $func_expr; $call_expr))
 end
