@@ -50,6 +50,6 @@ macro resumable(expr::Expr)
   end
   func_def[:args] = [combinearg(:_arg, Any, false, :nothing)]
   func_expr = combinedef(func_def) |> striplines |> flatten |> unresolve |> resyntax
-  println(func_expr)
+  #println(func_expr)
   esc(:($type_expr; $func_expr; $call_expr))
 end
