@@ -12,11 +12,12 @@ macro resumable(expr::Expr)
   ui8 = BoxedUInt8(zero(UInt8))
   func_def[:body] = postwalk(x->transform_for(x, ui8), func_def[:body])
   slots = getslots(copy(func_def))
+  #println(slots)
   type_name = gensym()
   type_expr = quote
     mutable struct $type_name <: ResumableFunctions.FiniteStateMachineIterator
       _state :: UInt8
-      $((:($slotname :: $(slottype == Union{} ? Any : :($slottype))) for (slotname, slottype) in slots)...)
+      $((:($slotname :: $(slottype == Void ? Any : :($slottype))) for (slotname, slottype) in slots)...)
       function $type_name($(func_def[:args]...);$(func_def[:kwargs]...))
         fsmi = new()
         fsmi._state = 0x00
@@ -26,7 +27,7 @@ macro resumable(expr::Expr)
     end
   end
   type_expr = type_expr |> striplines |> flatten |> unresolve |> resyntax
-  println(type_expr)
+  #println(type_expr)
   call_def = copy(func_def)
   call_def[:name] = func_def[:name]
   call_def[:rtype] = type_name
@@ -43,7 +44,7 @@ macro resumable(expr::Expr)
   func_def[:body] = quote
     _fsmi._state == 0x00 && @goto _STATE_0
     $((:(_fsmi._state == $i && @goto $(Symbol("_STATE_",:($i)))) for i in 0x01:ui8.n)...)
-    error("Iterator has stopped!")
+    error("@resumable function has stopped!")
     @label _STATE_0
     _fsmi._state = 0xff
     _arg isa Exception && throw(_arg)
@@ -51,6 +52,6 @@ macro resumable(expr::Expr)
   end
   func_def[:args] = [combinearg(:_arg, Any, false, :nothing)]
   func_expr = combinedef(func_def) |> striplines |> flatten |> unresolve |> resyntax
-  println(func_expr)
+  #println(func_expr)
   esc(:($type_expr; $func_expr; $call_expr))
 end
