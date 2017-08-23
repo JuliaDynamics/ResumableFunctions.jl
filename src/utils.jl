@@ -12,6 +12,7 @@ function get_slots(func_def::Dict) :: Dict{Symbol, Type}
     slots[slotname] = code_info.slottypes[i]
   end
   postwalk(x->remove_catch_exc(x, slots), func_def[:body])
+  postwalk(x->make_arg_any(x, slots), func_def[:body])
   delete!(slots, Symbol("#temp#"))
   delete!(slots, Symbol("#unused#"))
   delete!(slots, Symbol("#self#"))
@@ -20,5 +21,12 @@ end
 
 function remove_catch_exc(expr, slots::Dict{Symbol, Type})
   @capture(expr, try body__ catch exc_; handling__ end) && delete!(slots, exc)
+  expr
+end
+
+function make_arg_any(expr, slots::Dict{Symbol, Type})
+  @capture(expr, arg_ = @yield ret_) || return expr
+  #arg == nothing && return expr
+  slots[arg] = Any
   expr
 end

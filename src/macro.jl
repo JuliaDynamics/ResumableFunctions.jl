@@ -1,7 +1,7 @@
 using MacroTools: postwalk, striplines, flatten, unresolve, resyntax
 
 macro yield(expr=nothing)
-  esc(expr)
+  esc(:nothing)
 end
 
 macro resumable(expr::Expr)
@@ -17,7 +17,7 @@ macro resumable(expr::Expr)
   type_expr = quote
     mutable struct $type_name <: ResumableFunctions.FiniteStateMachineIterator
       _state :: UInt8
-      $((:($slotname :: $(slottype == Void ? Any : :($slottype))) for (slotname, slottype) in slots)...)
+      $((:($slotname :: $slottype) for (slotname, slottype) in slots)...)
       function $type_name($(func_def[:args]...);$(func_def[:kwargs]...))
         fsmi = new()
         fsmi._state = 0x00
