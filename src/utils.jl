@@ -1,6 +1,7 @@
-using MacroTools: flatten
+using MacroTools
+using MacroTools: flatten, postwalk
 
-function getslots(func_def::Dict) :: Dict{Symbol, Type}
+function get_slots(func_def::Dict) :: Dict{Symbol, Type}
   slots = Dict{Symbol, Type}()
   func_name = gensym()
   func_def[:name] = func_name
@@ -10,8 +11,14 @@ function getslots(func_def::Dict) :: Dict{Symbol, Type}
   for (i, slotname) in enumerate(code_info.slotnames)
     slots[slotname] = code_info.slottypes[i]
   end
+  postwalk(x->remove_catch_exc(x, slots), func_def[:body])
   delete!(slots, Symbol("#temp#"))
   delete!(slots, Symbol("#unused#"))
   delete!(slots, Symbol("#self#"))
   slots
+end
+
+function remove_catch_exc(expr, slots::Dict{Symbol, Type})
+  @capture(expr, try body__ catch exc_; handling__ end) && delete!(slots, exc)
+  expr
 end

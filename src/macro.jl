@@ -11,8 +11,8 @@ macro resumable(expr::Expr)
           (begin (a, b, c, d) = splitarg(arg); :($a) end for arg in func_def[:kwargs])...]
   ui8 = BoxedUInt8(zero(UInt8))
   func_def[:body] = postwalk(x->transform_for(x, ui8), func_def[:body])
-  slots = getslots(copy(func_def))
-  #println(slots)
+  slots = get_slots(copy(func_def))
+  println(slots)
   type_name = gensym()
   type_expr = quote
     mutable struct $type_name <: ResumableFunctions.FiniteStateMachineIterator

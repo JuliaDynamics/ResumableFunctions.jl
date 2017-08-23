@@ -26,7 +26,6 @@ function transform_arg(expr)
   quote
     @yield $ret
     $arg = _arg
-    _arg isa Exception && throw(_arg)
   end
 end
 
@@ -39,13 +38,13 @@ function transform_exc(expr)
 end
 
 function transform_try(expr)
-  @capture(expr, try body__ catch; handling__ end) || return expr
+  @capture(expr, try body__ catch exc_; handling__ end) || return expr
   println("true")
   new_body = []
   segment = []
   for ex in body
     if @capture(ex, (@yield ret_) | @yield)
-      push!(new_body, :(try $(segment...) catch; $(handling...) end))
+      exc == nothing ? push!(new_body, :(try $(segment...) catch; $(handling...) end)) : push!(new_body, :(try $(segment...) catch $exc; $(handling...) end))
       push!(new_body, quote @yield $ret end)
       segment = []
     else
@@ -53,7 +52,7 @@ function transform_try(expr)
     end
   end
   if segment != []
-    push!(new_body, :(try $(segment...) catch; $(handling...) end))
+    exc == nothing ? push!(new_body, :(try $(segment...) catch; $(handling...) end)) : push!(new_body, :(try $(segment...) catch $exc; $(handling...) end))
   end
   quote $(new_body...) end
 end

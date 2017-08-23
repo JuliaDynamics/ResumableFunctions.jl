@@ -20,7 +20,7 @@ end
     @yield a
     a = 2
     c = @yield a
-  catch
-    println("Exception")
+  catch except
+    println(except)
   end
 end
