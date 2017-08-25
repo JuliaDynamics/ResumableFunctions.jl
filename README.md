@@ -20,6 +20,20 @@ A `@resumable` function yielding values is transformed in a finite state-machine
 Pkg.clone(https://github.com/BenLauwens/ResumableFunctions.jl.git)
 ```
 
+#### Example
+
+```julia
+using ResumableFunctions
+
+@resumable function fibonnaci(a::Int) :: Int
+  b = a + 1
+  while true
+    @yield a
+    a, b = b, a+b
+  end
+end
+```
+
 #### Release Notes
 
 * This is pre-release software. 
