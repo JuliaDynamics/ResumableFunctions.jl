@@ -20,7 +20,26 @@ end
     @yield a
     a = 2
     c = @yield a
+    println(c)
   catch except
     println(except)
+  finally
+    println("Always")
   end
 end
+
+struct SpecialException <: Exception end
+
+try_me = test_try()
+try_me()
+try_me(SpecialException())
+
+try_me = test_try()
+try_me()
+try_me()
+try_me("hi")
+
+try_me = test_try()
+try_me()
+try_me()
+try_me(SpecialException())

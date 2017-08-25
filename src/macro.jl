@@ -38,7 +38,8 @@ macro resumable(expr::Expr)
   func_def[:body] = postwalk(x->transform_slots(x, keys(slots)), func_def[:body])
   func_def[:body] = postwalk(transform_arg, func_def[:body]) |> flatten
   func_def[:body] = postwalk(transform_exc, func_def[:body]) |> flatten
-  func_def[:body] = postwalk(transform_try, func_def[:body]) |> flatten
+  ui8 = BoxedUInt8(zero(UInt8))
+  func_def[:body] = postwalk(x->transform_try(x, ui8), func_def[:body]) |> flatten
   ui8 = BoxedUInt8(zero(UInt8))
   func_def[:body] = postwalk(x->transform_yield(x, ui8), func_def[:body])
   func_def[:body] = quote

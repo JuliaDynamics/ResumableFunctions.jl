@@ -37,14 +37,14 @@ function transform_exc(expr)
   end
 end
 
-function transform_try(expr)
-  @capture(expr, try body__ catch exc_; handling__ end) || return expr
-  println("true")
+function transform_try(expr, ui8::BoxedUInt8)
+  @capture(expr, (try body__ end) | (try body__ catch exc_; handling__ end) | (try body__ catch exc_; handling__ finally always__ end)) || return expr
+  ui8.n += one(UInt8)
   new_body = []
   segment = []
   for ex in body
     if @capture(ex, (@yield ret_) | @yield)
-      exc == nothing ? push!(new_body, :(try $(segment...) catch; $(handling...) end)) : push!(new_body, :(try $(segment...) catch $exc; $(handling...) end))
+      exc == nothing ? push!(new_body, :(try $(segment...) catch; $(handling...); @goto $(Symbol("_TRY_", :($(ui8.n)))) end)) : push!(new_body, :(try $(segment...) catch $exc; $(handling...) ; @goto $(Symbol("_TRY_", :($(ui8.n)))) end))
       push!(new_body, quote @yield $ret end)
       segment = []
     else
@@ -54,6 +54,8 @@ function transform_try(expr)
   if segment != []
     exc == nothing ? push!(new_body, :(try $(segment...) catch; $(handling...) end)) : push!(new_body, :(try $(segment...) catch $exc; $(handling...) end))
   end
+  push!(new_body, :(@label $(Symbol("_TRY_", :($(ui8.n))))))
+  always == nothing || push!(new_body, quote $(always...) end)
   quote $(new_body...) end
 end
 

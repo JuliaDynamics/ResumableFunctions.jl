@@ -20,7 +20,7 @@ function get_slots(func_def::Dict) :: Dict{Symbol, Type}
 end
 
 function remove_catch_exc(expr, slots::Dict{Symbol, Type})
-  @capture(expr, try body__ catch exc_; handling__ end) && delete!(slots, exc)
+  @capture(expr, (try body__ catch exc_; handling__ end) | (try body__ catch exc_; handling__ finally always__ end)) && delete!(slots, exc)
   expr
 end
 
