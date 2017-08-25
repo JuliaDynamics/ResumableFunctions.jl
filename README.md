@@ -1,7 +1,7 @@
 # ResumableFunctions
 
 `ResumableFunctions` is a Julia package providing C# sharp style generators a.k.a. semi-coroutines.
-A `@resumable` function yielding values is transformed in a finite state-machine and the next function call will continue after the previous `@yield` statement.
+A `@resumable` function yielding values is transformed in a finite state-machine. The function returns when a `@yield` statement is executed and the next time the function is called, the function will continue after the previous `@yield` statement.
 
 #### Build Status
 
