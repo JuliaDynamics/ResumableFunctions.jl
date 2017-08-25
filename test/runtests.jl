@@ -23,6 +23,8 @@ end
     println(c)
   catch except
     println(except)
+    d = @yield
+    println(d)
   finally
     println("Always")
   end
@@ -33,6 +35,7 @@ struct SpecialException <: Exception end
 try_me = test_try()
 try_me()
 try_me(SpecialException())
+try_me("hello")
 
 try_me = test_try()
 try_me()
