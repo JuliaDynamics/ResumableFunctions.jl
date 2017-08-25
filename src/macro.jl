@@ -1,4 +1,4 @@
-using MacroTools: postwalk, striplines, flatten, unresolve, resyntax
+using MacroTools: postwalk, flatten
 
 macro yield(expr=nothing)
   esc(:nothing)
@@ -26,13 +26,13 @@ macro resumable(expr::Expr)
       end
     end
   end
-  type_expr = type_expr |> striplines |> flatten |> unresolve |> resyntax
+  type_expr = type_expr
   #println(type_expr)
   call_def = copy(func_def)
   call_def[:name] = func_def[:name]
   call_def[:rtype] = type_name
   call_def[:body] = :($type_name($((:($arg) for arg in args)...)))
-  call_expr = combinedef(call_def) |> striplines |> flatten |> unresolve |> resyntax
+  call_expr = combinedef(call_def) |> flatten
   #println(call_expr)
   func_def[:name] = :((_fsmi::$type_name))
   func_def[:body] = postwalk(x->transform_slots(x, keys(slots)), func_def[:body])
@@ -41,7 +41,7 @@ macro resumable(expr::Expr)
   ui8 = BoxedUInt8(zero(UInt8))
   func_def[:body] = postwalk(x->transform_try(x, ui8), func_def[:body]) |> flatten
   ui8 = BoxedUInt8(zero(UInt8))
-  func_def[:body] = postwalk(x->transform_yield(x, ui8), func_def[:body])
+  func_def[:body] = postwalk(x->transform_yield(x, ui8), func_def[:body]) |> flatten
   func_def[:body] = quote
     _fsmi._state == 0x00 && @goto _STATE_0
     $((:(_fsmi._state == $i && @goto $(Symbol("_STATE_",:($i)))) for i in 0x01:ui8.n)...)
@@ -52,7 +52,7 @@ macro resumable(expr::Expr)
     $(func_def[:body])
   end
   func_def[:args] = [combinearg(:_arg, Any, false, :nothing)]
-  func_expr = combinedef(func_def) |> striplines |> flatten |> unresolve |> resyntax
+  func_expr = combinedef(func_def) 
   #println(func_expr)
   esc(:($type_expr; $func_expr; $call_expr))
 end
