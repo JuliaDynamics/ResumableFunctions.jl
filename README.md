@@ -17,7 +17,7 @@ A `@resumable` function yielding values is transformed in a finite state-machine
 
 `ResumableFunctions` is not yet registered but can be installed by running:
 ```julia
-Pkg.clone(https://github.com/BenLauwens/ResumableFunctions.jl.git)
+Pkg.clone("https://github.com/BenLauwens/ResumableFunctions.jl.git")
 ```
 
 #### Example
