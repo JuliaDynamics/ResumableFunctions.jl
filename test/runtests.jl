@@ -48,3 +48,8 @@ try_me()
 try_me()
 try_me(SpecialException())
 println(try_me("hello"))
+try
+  try_me()
+catch exc
+  println(exc)
+end

@@ -1,7 +1,7 @@
 isdefined(Base, :__precompile__) && __precompile__()
 
 """
-Main module for ResumableFunctions.jl – C# style generators for Julia
+Main module for ResumableFunctions.jl – C# style generators a.k.a. semi-coroutines for Julia
 """
 module ResumableFunctions
 
