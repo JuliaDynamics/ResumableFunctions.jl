@@ -25,12 +25,18 @@ Pkg.clone(https://github.com/BenLauwens/ResumableFunctions.jl.git)
 ```julia
 using ResumableFunctions
 
-@resumable function fibonnaci(a::Int) :: Int
-  b = a + 1
-  while true
+@resumable function fibonnaci(n::Int) :: Int
+  a = 0
+  b = 1
+  for i in 1:n-1
     @yield a
     a, b = b, a+b
   end
+  a
+end
+
+for fib in fibonnaci(10)
+  println(fib)
 end
 ```
 
@@ -39,6 +45,18 @@ end
 * This is pre-release software. 
 * Tests and documentation are a work in progress.
 * Comments and bug reports are greatly appreciated!
+* Two-way communication is allowed between master and slave function:
+```julia
+arg = @yield ret
+```
+* `#yield` statements in a `try`-`catch`-`finally`-`end` expression are allowed in the `try` part (only top level statements) and the `catch` part:
+```julia
+try
+  @yield
+catch
+  @yield
+end
+```
 
 #### Authors
 
