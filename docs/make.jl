@@ -4,8 +4,12 @@ using ResumableFunctions
 makedocs(
   format = :html,
   sitename = "ResumableFunctions",
+  authors = "Ben Lauwens",
   pages = [
-      "index.md",
+    "Home" => "index.md",
+    "Manual" => "manual.md",
+    "Internals" => "internals.md",
+    "Library" => "library.md"
   ]
 )
 
