@@ -26,7 +26,6 @@ end
 
 function make_arg_any(expr, slots::Dict{Symbol, Type})
   @capture(expr, (arg_ = @yield ret_) | (arg_ = @yield)) || return expr
-  #arg == nothing && return expr
   slots[arg] = Any
   expr
 end
