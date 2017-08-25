@@ -12,7 +12,7 @@ macro resumable(expr::Expr)
   ui8 = BoxedUInt8(zero(UInt8))
   func_def[:body] = postwalk(x->transform_for(x, ui8), func_def[:body])
   slots = get_slots(copy(func_def))
-  println(slots)
+  #println(slots)
   type_name = gensym()
   type_expr = quote
     mutable struct $type_name <: ResumableFunctions.FiniteStateMachineIterator
@@ -27,7 +27,7 @@ macro resumable(expr::Expr)
     end
   end
   type_expr = type_expr |> striplines |> flatten |> unresolve |> resyntax
-  println(type_expr)
+  #println(type_expr)
   call_def = copy(func_def)
   call_def[:name] = func_def[:name]
   call_def[:rtype] = type_name
@@ -53,6 +53,6 @@ macro resumable(expr::Expr)
   end
   func_def[:args] = [combinearg(:_arg, Any, false, :nothing)]
   func_expr = combinedef(func_def) |> striplines |> flatten |> unresolve |> resyntax
-  println(func_expr)
+  #println(func_expr)
   esc(:($type_expr; $func_expr; $call_expr))
 end

@@ -28,6 +28,7 @@ end
   finally
     println("Always")
   end
+  a
 end
 
 struct SpecialException <: Exception end
@@ -35,14 +36,15 @@ struct SpecialException <: Exception end
 try_me = test_try()
 try_me()
 try_me(SpecialException())
-try_me("hello")
+println(try_me("hello"))
 
 try_me = test_try()
 try_me()
 try_me()
-try_me("hi")
+println(try_me("hello"))
 
 try_me = test_try()
 try_me()
 try_me()
 try_me(SpecialException())
+println(try_me("hello"))
