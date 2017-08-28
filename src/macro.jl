@@ -1,8 +1,23 @@
 using MacroTools: postwalk, flatten
 
+"""
+Macro if used in a `@resumable function` that returns the `expr` otherwise returns `:nothing`.
+"""
 macro yield(expr=nothing)
   esc(:nothing)
 end
+
+
+"""
+Macro that transforms a function definition in a finite-statemachine:
+
+- Defines a new `mutable struct` that implements the iterator interface and is used to store the internal state.
+- Makes this new type callable having following characteristics:
+  - implementents the statements from the initial function definition but;
+  - returns at a `@yield` statement and;
+  - continues after the `@yield` statement when called again/
+- Defines a constructor function that respects the calling conventions of the initial function definition and returns an object of the new type.
+"""
 
 macro resumable(expr::Expr)
   expr.head != :function && error("Expression is not a function definition!")

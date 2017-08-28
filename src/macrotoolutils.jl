@@ -1,5 +1,5 @@
 # Copy of utility functions from MacroTools (master)
-# Can be removed once new version of MacroTools is released
+# Can be removed once a new version of MacroTools is released
 
 using MacroTools: striplines, @match, @capture
 
