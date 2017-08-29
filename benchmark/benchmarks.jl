@@ -1,9 +1,10 @@
 using BenchmarkTools
 using ResumableFunctions
 
-const n = 100
+const n = 93
 
-@resumable function fibonnaci_resumable(a::Int)
+@resumable function fibonnaci_resumable()
+  a = zero(Int)
   b = a + one(a)
   while true
     @yield a
@@ -11,9 +12,15 @@ const n = 100
   end
 end
 
-fib_resumable = fibonnaci_resumable(0)
+function test_resumable()
+  fib_resumable = fibonnaci_resumable()
+  for i in 1:n 
+    fib_resumable() 
+  end
+end
+
 println("ResumableFunctions: ")
-@btime for i in 1:n fib_resumable() end
+@btime test_resumable()
 
 function my_produce(v)
   ct = current_task()
@@ -31,7 +38,8 @@ function my_consume(producer::Task, values...)
   Base.schedule_and_wait(producer)
 end
 
-function fibonnaci_produce(a::Int)
+function fibonnaci_produce()
+  a = zero(Int)
   b = a + one(a)
   while true
     my_produce(a)
@@ -39,11 +47,18 @@ function fibonnaci_produce(a::Int)
   end
 end
 
-fib_produce = @task fibonnaci_produce(0)
-println("Produce/consume: ")
-@btime for i in 1:n my_consume(fib_produce) end
+function test_produce()
+  fib_produce = @task fibonnaci_produce()
+  for i in 1:n 
+    my_consume(fib_produce) 
+  end
+end
 
-function fibonnaci_channel(ch::Channel, a)
+println("Produce/consume: ")
+@btime test_produce()
+
+function fibonnaci_channel(ch::Channel)
+  a = zero(Int)
   b = a + one(a)
   while true
     put!(ch, a)
@@ -51,10 +66,18 @@ function fibonnaci_channel(ch::Channel, a)
   end
 end
 
-fib_channel_0 = Channel(chan->fibonnaci_channel(chan, 0); ctype=Int, csize=0)
-println("Channels csize=0: ")
-@btime for i in 1:n take!(fib_channel_0) end
+function test_channel(csize::Int)
+  fib_channel = Channel(fibonnaci_channel; ctype=Int, csize=csize)
+  for i in 1:n 
+    take!(fib_channel) 
+  end
+end
 
-fib_channel_100 = Channel(chan->fibonnaci_channel(chan, 0); ctype=Int, csize=100)
+println("Channels csize=0: ")
+@btime test_channel(0)
+
+println("Channels csize=20: ")
+@btime test_channel(20)
+
 println("Channels csize=100: ")
-@btime for i in 1:n take!(fib_channel_100) end
+@btime test_channel(100)
