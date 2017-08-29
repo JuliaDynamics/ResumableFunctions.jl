@@ -101,7 +101,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Library",
     "title": "ResumableFunctions.@resumable",
     "category": "Macro",
-    "text": "Macro that transforms a function definition in a finite-statemachine:\n\nDefines a new mutable struct that implements the iterator interface and is used to store the internal state.\nMakes this new type callable having following characteristics:\nimplementents the statements from the initial function definition but;\nreturns at a @yield statement and;\ncontinues after the @yield statement when called again/\nDefines a constructor function that respects the calling conventions of the initial function definition and returns an object of the new type.\n\n\n\n"
+    "text": "Macro that transforms a function definition in a finite-statemachine:\n\nDefines a new mutable struct that implements the iterator interface and is used to store the internal state.\nMakes this new type callable having following characteristics:\nimplementents the statements from the initial function definition but;\nreturns at a @yield statement and;\ncontinues after the @yield statement when called again.\nDefines a constructor function that respects the calling conventions of the initial function definition and returns an object of the new type.\n\n\n\n"
 },
 
 {
