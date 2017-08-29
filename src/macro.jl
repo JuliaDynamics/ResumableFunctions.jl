@@ -15,7 +15,7 @@ Macro that transforms a function definition in a finite-statemachine:
 - Makes this new type callable having following characteristics:
   - implementents the statements from the initial function definition but;
   - returns at a `@yield` statement and;
-  - continues after the `@yield` statement when called again/
+  - continues after the `@yield` statement when called again.
 - Defines a constructor function that respects the calling conventions of the initial function definition and returns an object of the new type.
 """
 
