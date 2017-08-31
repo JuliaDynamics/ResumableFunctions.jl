@@ -21,7 +21,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Home",
     "title": "Example",
     "category": "section",
-    "text": "using ResumableFunctions\n\n@resumable function fibonnaci(n::Int) :: Int\n  a = 0\n  b = 1\n  for i in 1:n-1\n    @yield a\n    a, b = b, a+b\n  end\n  a\nend\n\nfor fib in fibonnaci(10)\n  println(fib)\nend"
+    "text": "using ResumableFunctions\n\n@resumable function fibonnaci(n::Int)\n  a = 0\n  b = 1\n  for i in 1:n-1\n    @yield a\n    a, b = b, a+b\n  end\n  a\nend\n\n[fibonnaci(10)...]\n\n# output\n\n10-element Array{Int64,1}:\n  0\n  1\n  1\n  2\n  3\n  5\n  8\n 13\n 21\n 34"
 },
 
 {
@@ -69,7 +69,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Manual",
     "title": "Basic usage",
     "category": "section",
-    "text": "When a @resumable function is called, it continues where it left during the previous invocation:DocTestSetup = quote\n  using ResumableFunctions\n  \n  @resumable function basic_example()\n    @yield \"Initial call\"\n    @yield \"Second call\"\n    \"Final call\"\n  end\nend@resumable function basic_example()\n  @yield \"Initial call\"\n  @yield \"Second call\"\n  \"Final call\"\nendjulia> basic_iterator = basic_example();\n\njulia> basic_iterator()\n\"Initial call\"\n\njulia> basic_iterator()\n\"Second call\"\n\njulia> basic_iterator()\n\"Final call\"DocTestSetup = nothing"
+    "text": "When a @resumable function is called, it continues where it left during the previous invocation:DocTestSetup = quote\n  using ResumableFunctions\n\n  @resumable function basic_example()\n    @yield \"Initial call\"\n    @yield \"Second call\"\n    \"Final call\"\n  end\nend@resumable function basic_example()\n  @yield \"Initial call\"\n  @yield \"Second call\"\n  \"Final call\"\nendjulia> basic_iterator = basic_example();\n\njulia> basic_iterator()\n\"Initial call\"\n\njulia> basic_iterator()\n\"Second call\"\n\njulia> basic_iterator()\n\"Final call\"DocTestSetup = nothingThe @yield can also be used without a return argument:DocTestSetup = quote\n  using ResumableFunctions\n\n  @resumable function basic_example()\n    @yield \"Initial call\"\n    @yield \n    \"Final call\"\n  end\nend@resumable function basic_example()\n  @yield \"Initial call\"\n  @yield \n  \"Final call\"\nendjulia> basic_iterator = basic_example();\n\njulia> basic_iterator()\n\"Initial call\"\n\njulia> basic_iterator()\n\njulia> basic_iterator()\n\"Final call\"DocTestSetup = nothingThe famous Fibonnaci sequence can easily be generated:DocTestSetup = quote\n  using ResumableFunctions\n\n  @resumable function fibonnaci()\n    a = 0\n    b = 1\n    while true\n      @yield a\n      a, b = b, a + b\n    end\n  end\nend@resumable function fibonnaci()\n    a = 0\n    b = 1\n    while true\n      @yield a\n      a, b = b, a + b\n    end\n  endjulia> fib_iterator = fibonnaci();\n\njulia> fib_iterator()\n0\n\njulia> fib_iterator()\n1\n\njulia> fib_iterator()\n1\n\njulia> fib_iterator()\n2\n\njulia> fib_iterator()\n3\n\njulia> fib_iterator()\n5\n\njulia> fib_iterator()\n8DocTestSetup = nothing"
 },
 
 {
