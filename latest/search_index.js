@@ -69,7 +69,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Manual",
     "title": "Basic usage",
     "category": "section",
-    "text": "When a @resumable function is called, it continues where it left during the previous invocation:julia> @resumable function basic_example()\n  @yield \"Initial call\"\n  @yield \"Second call\"\n  \"Final call\"\nend;\n\njulia> basic_iterator = basic_example();\n\njulia> basic_iterator()\n\"Initial call\"\n\njulia> basic_iterator()\n\"Second call\"\n\njulia> basic_iterator()\n\"Final call\""
+    "text": "When a @resumable function is called, it continues where it left during the previous invocation:DocTestSetup = quote\n  using ResumableFunctions\n  \n  @resumable function basic_example()\n    @yield \"Initial call\"\n    @yield \"Second call\"\n    \"Final call\"\n  end\nend@resumable function basic_example()\n  @yield \"Initial call\"\n  @yield \"Second call\"\n  \"Final call\"\nendjulia> basic_iterator = basic_example();\n\njulia> basic_iterator()\n\"Initial call\"\n\njulia> basic_iterator()\n\"Second call\"\n\njulia> basic_iterator()\n\"Final call\"DocTestSetup = nothing"
 },
 
 {
