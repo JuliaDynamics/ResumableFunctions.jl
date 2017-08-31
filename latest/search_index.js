@@ -45,7 +45,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Home",
     "title": "License",
     "category": "section",
-    "text": "ResumableFunctions licensed under the MIT \"Expat\" License."
+    "text": "ResumableFunctions is licensed under the MIT \"Expat\" License."
 },
 
 {
