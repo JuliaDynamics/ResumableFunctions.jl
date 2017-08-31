@@ -3,11 +3,15 @@ using ResumableFunctions
 
 const n = 93
 
+@noinline function fibonnaci_direct(a::Int, b::Int)
+  b, a+b
+end
+
 function test_direct()
   a = zero(Int)
   b = a + one(a)
-  for i in 1:n
-    a, b = b, a + b
+  for i in 1:n 
+    a, b = fibonnaci_direct(a, b)
   end
 end
 
@@ -132,3 +136,35 @@ end
 
 println("Closure optimised: ")
 @btime test_closure_opt()
+
+function fibonnaci_closure_stm()
+  a = Ref(zero(Int))
+  b = Ref(a[] + one(Int))
+  _state = Ref(zero(UInt8))
+  (_arg::Any=nothing)->begin
+    _state[] == 0x00 && @goto _STATE_0
+    _state[] == 0x01 && @goto _STATE_1
+    error("@resumable function has stopped!")
+    @label _STATE_0
+    _state[] = 0xff
+    _arg isa Exception && throw(_arg)
+    while true
+      _state[] = 0x01
+      return a[]
+      @label _STATE_1
+      _state[] = 0xff
+      _arg isa Exception && throw(_arg)
+      a[], b[] = b[], a[] + b[]
+    end
+  end
+end
+
+function test_closure_stm()
+  fib_closure = fibonnaci_closure_stm()
+  for i in 1:n 
+    fib_closure() 
+  end
+end
+
+println("Closure statemachine: ")
+@btime test_closure_stm()
