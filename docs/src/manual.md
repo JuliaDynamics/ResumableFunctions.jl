@@ -11,12 +11,14 @@ julia> @resumable function basic_example()
   "Final call"
 end;
 
-julia> basic_example()
-Initial call
+julia> basic_iterator = basic_example();
 
-julia> basic_example()
-Second call
+julia> basic_iterator()
+"Initial call"
 
-julia> basic_example()
-Final call
+julia> basic_iterator()
+"Second call"
+
+julia> basic_iterator()
+"Final call"
 ```
