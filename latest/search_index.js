@@ -17,6 +17,14 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "index.html#Example-1",
+    "page": "Home",
+    "title": "Example",
+    "category": "section",
+    "text": "using ResumableFunctions\n\n@resumable function fibonnaci(n::Int) :: Int\n  a = 0\n  b = 1\n  for i in 1:n-1\n    @yield a\n    a, b = b, a+b\n  end\n  a\nend\n\nfor fib in fibonnaci(10)\n  println(fib)\nend"
+},
+
+{
     "location": "index.html#Installation-1",
     "page": "Home",
     "title": "Installation",
@@ -25,11 +33,19 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "index.html#Example-1",
+    "location": "index.html#Authors-1",
     "page": "Home",
-    "title": "Example",
+    "title": "Authors",
     "category": "section",
-    "text": "using ResumableFunctions\n\n@resumable function fibonnaci(n::Int) :: Int\n  a = 0\n  b = 1\n  for i in 1:n-1\n    @yield a\n    a, b = b, a+b\n  end\n  a\nend\n\nfor fib in fibonnaci(10)\n  println(fib)\nend"
+    "text": "Ben Lauwens, Royal Military Academy, Brussels, Belgium."
+},
+
+{
+    "location": "index.html#License-1",
+    "page": "Home",
+    "title": "License",
+    "category": "section",
+    "text": "ResumableFunctions licensed under the MIT \"Expat\" License."
 },
 
 {
@@ -46,6 +62,14 @@ var documenterSearchIndex = {"docs": [
     "title": "Manual",
     "category": "section",
     "text": ""
+},
+
+{
+    "location": "manual.html#Basic-usage-1",
+    "page": "Manual",
+    "title": "Basic usage",
+    "category": "section",
+    "text": "When a @resumable function is called, it continues where it left during the previous invocation:julia> @resumable function basic_example()\n  @yield \"Initial call\"\n  @yield \"Second call\"\n  \"Final call\"\nend;\n\njulia> basic_example()\nInitial call\n\njulia> basic_example()\nSecond call\n\njulia> basic_example()\nFinal call"
 },
 
 {
