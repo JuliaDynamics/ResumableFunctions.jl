@@ -6,6 +6,8 @@ When a `@resumable function` is called, it continues where it left during the pr
 
 ```@meta
 DocTestSetup = quote
+  using ResumableFunctions
+  
   @resumable function basic_example()
     @yield "Initial call"
     @yield "Second call"
