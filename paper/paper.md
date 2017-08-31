@@ -31,6 +31,8 @@ The two last transformations are needed to overcome the limitations of the non l
 
 Straightforward two-way communication between the callee and the callable type is possible by calling the callable type with an extra argument. The value of this argument is passed to the left side of an `arg = @yield ret` expression.
 
+The `iterator` interface is implemented so that a `@resumable function` can be used transparently.
+
 Benchmarks show that this macro based implementation of semi-coroutines is an order of magnitude faster than both the original `Task` switching with `produce` and `consume` and the newer `Channel` based approach for inter-task communication. A context switch is more expensive than a function call.
 
 The next generation of process-driven simulations in the discrete-event simulation framework [@SimJulia] is based on this package.
