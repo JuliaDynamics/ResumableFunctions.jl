@@ -50,4 +50,4 @@ Pkg.add("ResumableFunctions")
 
 ## License
 
-`ResumableFunctions` licensed under the MIT "Expat" License.
+`ResumableFunctions` is licensed under the MIT "Expat" License.
