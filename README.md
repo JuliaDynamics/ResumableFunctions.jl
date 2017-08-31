@@ -1,7 +1,6 @@
 # ResumableFunctions
 
-`ResumableFunctions` is a Julia package providing C# sharp style generators a.k.a. semi-coroutines.
-A `@resumable` function yielding values is transformed in a finite state-machine. The function returns when a `@yield` statement is executed and the next time the function is called, the function will continue after the previous `@yield` statement.
+C# has a convenient way to create iterators [@C#Iterators] using the `yield return` statement. The package `ResumableFunctions` provides the same functionality for the Julia language by introducing the `@resumable` and the `@yield` macros. These macros can be used to replace the `Task` switching functions `produce` and `consume` which were deprecated in Julia v0.6. `Channels` are the preferred way for inter-task communication in julia v0.6+, but their performance is subpar for iterator applications.
 
 #### Build Status
 

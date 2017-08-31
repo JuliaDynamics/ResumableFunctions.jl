@@ -3,6 +3,17 @@ using ResumableFunctions
 
 const n = 93
 
+function test_direct()
+  a = zero(Int)
+  b = a + one(a)
+  for i in 1:n
+    a, b = b, a + b
+  end
+end
+
+println("Direct: ")
+@btime test_direct()
+
 @resumable function fibonnaci_resumable()
   a = zero(Int)
   b = a + one(a)
@@ -81,3 +92,43 @@ println("Channels csize=20: ")
 
 println("Channels csize=100: ")
 @btime test_channel(100)
+
+function fibonnaci_closure()
+  a = zero(Int)
+  b = a + one(Int)
+  function()
+    tmp = a
+    a, b = b, a + b
+    tmp
+  end
+end
+
+function test_closure()
+  fib_closure = fibonnaci_closure()
+  for i in 1:n 
+    fib_closure() 
+  end
+end
+
+println("Closure: ")
+@btime test_closure()
+
+function fibonnaci_closure_opt()
+  a = Ref(zero(Int))
+  b = Ref(a[] + one(Int))
+  function()
+    tmp = a[]
+    a[], b[] = b[], a[] + b[]
+    tmp
+  end
+end
+
+function test_closure_opt()
+  fib_closure = fibonnaci_closure_opt()
+  for i in 1:n 
+    fib_closure() 
+  end
+end
+
+println("Closure optimised: ")
+@btime test_closure_opt()
