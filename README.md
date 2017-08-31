@@ -12,10 +12,6 @@ C# has a convenient way to create iterators using the `yield return` statement. 
 [![Coverage Status](https://coveralls.io/repos/github/BenLauwens/ResumableFunctions.jl/badge.svg?branch=master)](https://coveralls.io/github/BenLauwens/ResumableFunctions.jl?branch=master)
 [![codecov.io](http://codecov.io/github/benlauwens/ResumableFunctions.jl/coverage.svg?branch=master)](http://codecov.io/github/benlauwens/ResumableFunctions.jl?branch=master)
 
-## Open Science
-
-[![DOI](https://zenodo.org/badge/100050892.svg)](https://zenodo.org/badge/latestdoi/100050892)
-
 ## Installation
 
 `ResumableFunctions` is a registered package and can be installed by running:
