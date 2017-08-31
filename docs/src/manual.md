@@ -4,13 +4,25 @@
 
 When a `@resumable function` is called, it continues where it left during the previous invocation:
 
-```jldoctest
-julia> @resumable function basic_example()
+```@meta
+DocTestSetup = quote
+  @resumable function basic_example()
+    @yield "Initial call"
+    @yield "Second call"
+    "Final call"
+  end
+end
+```
+
+```julia
+@resumable function basic_example()
   @yield "Initial call"
   @yield "Second call"
   "Final call"
-end;
+end
+```
 
+```jldoctest
 julia> basic_iterator = basic_example();
 
 julia> basic_iterator()
@@ -21,4 +33,8 @@ julia> basic_iterator()
 
 julia> basic_iterator()
 "Final call"
+```
+
+```@meta
+DocTestSetup = nothing
 ```
