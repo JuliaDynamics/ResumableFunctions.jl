@@ -21,7 +21,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Home",
     "title": "Example",
     "category": "section",
-    "text": "using ResumableFunctions\n\n@resumable function fibonnaci(n::Int)\n  a = 0\n  b = 1\n  for i in 1:n-1\n    @yield a\n    a, b = b, a+b\n  end\n  a\nend\n\n[fibonnaci(10)...]\n\n# output\n\n10-element Array{Int64,1}:\n  0\n  1\n  1\n  2\n  3\n  5\n  8\n 13\n 21\n 34"
+    "text": "using ResumableFunctions\n\n@resumable function fibonnaci(n::Int)\n  a = 0\n  b = 1\n  for i in 1:n-1\n    @yield a\n    a, b = b, a+b\n  end\n  a\nend\n\nfor val in fibonnaci(10) \n  println(val) \nend\n\n# output\n\n0\n1\n1\n2\n3\n5\n8\n13\n21\n34"
 },
 
 {
@@ -77,7 +77,23 @@ var documenterSearchIndex = {"docs": [
     "page": "Manual",
     "title": "Two-way communication",
     "category": "section",
-    "text": "The caller can transmit a variable to the @resumable function by assigning a @yield statement to a variable:DocTestSetup = quote\n  using ResumableFunctions\n\n  @resumable function two_way()\n    name = @yield \"Who are you?\"\n    \"Hello, \" * name * \"!\"\n  end\nend@resumable function two_way()\n  name = @yield \"Who are you?\"\n  \"Hello, \" * name * \"!\"\nendjulia> hello = two_way();\n\njulia> hello()\n\"Who are you?\"\n\njulia> hello(\"Ben\")\n\"Hello, Ben!DocTestSetup = nothingWhen an Exception is passed to the @resumable function, it is thrown at the resume point:"
+    "text": "The caller can transmit a variable to the @resumable function by assigning a @yield statement to a variable:DocTestSetup = quote\n  using ResumableFunctions\n\n  @resumable function two_way()\n    name = @yield \"Who are you?\"\n    \"Hello, \" * name * \"!\"\n  end\nend@resumable function two_way()\n  name = @yield \"Who are you?\"\n  \"Hello, \" * name * \"!\"\nendjulia> hello = two_way();\n\njulia> hello()\n\"Who are you?\"\n\njulia> hello(\"Ben\")\n\"Hello, Ben!\"DocTestSetup = nothingWhen an Exception is passed to the @resumable function, it is thrown at the resume point:DocTestSetup = quote\n  using ResumableFunctions\n\n  @resumable function mouse()\n    try\n      @yield \"Here I am!\"\n    catch exc\n      return \"You got me!\"\n    end\n  end\n\n  struct Cat <: Exception end\nend@resumable function mouse()\n  try\n    @yield \"Here I am!\"\n  catch exc\n    return \"You got me!\"\n  end\nend\n\nstruct Cat <: Exception endjulia> catch_me = mouse();\n\njulia> catch_me()\n\"Here I am!\"\n\njulia> catch_me(Cat())\n\"You got me!\"DocTestSetup = nothing"
+},
+
+{
+    "location": "manual.html#Iterator-interface-1",
+    "page": "Manual",
+    "title": "Iterator interface",
+    "category": "section",
+    "text": "The interator interface is implemented for a @resumable function:DocTestSetup = quote\n  using ResumableFunctions\n\n  @resumable function fibonnaci(n) :: Int\n    a = 0\n    b = 1\n    for i in 1:n-1\n      @yield a\n      a, b = b, a + b\n    end\n    a\n  end\nend@resumable function fibonnaci(n) :: Int\n  a = 0\n  b = 1\n  for i in 1:n-1\n    @yield a\n    a, b = b, a + b\n  end\n  a\nendjulia> for val in fibonnaci(10) println(val) end\n0\n1\n1\n2\n3\n5\n8\n13\n21\n34DocTestSetup = nothing"
+},
+
+{
+    "location": "manual.html#Caveats-1",
+    "page": "Manual",
+    "title": "Caveats",
+    "category": "section",
+    "text": "In a try block only top level @yield statements are allowed.\nIn a finally block a @yield statement is not allowed.\nAn anonymous function can not contain a @yield statement."
 },
 
 {
@@ -93,7 +109,111 @@ var documenterSearchIndex = {"docs": [
     "page": "Internals",
     "title": "Internals",
     "category": "section",
-    "text": ""
+    "text": "The macro @resumable transform a function definition into a finite state-machine, i.e. a callable type holding the state and references to the internal variables of the function and a constructor for this new type respecting the method signature of the original function definition. When calling the new type a modified version of the body of the original function definition is executed:a dispatch mechanism is inserted at the start to allow a non local jump to a label inside the body;\nthe @yield statement is replaced by a return statement and a label placeholder as endpoint of a non local jump;\nfor loops are transformed in while loops and\ntry-catch-finally-end expressions are converted in a sequence of try-catch-end expressions with at the end of the catch part a non local jump to a label that marks the beginning of the expressions in the finally part.The two last transformations are needed to overcome the limitations of the non local jump macros @goto and @label.The complete procedure is explained using the following example:@resumable function fibonnaci(n::Int)\n  a = 0\n  b = 1\n  for i in 1:n-1\n    @yield a\n    a, b = b, a + b\n  end\n  a\nend"
+},
+
+{
+    "location": "internals.html#Split-the-definition-1",
+    "page": "Internals",
+    "title": "Split the definition",
+    "category": "section",
+    "text": "The function definition is split by MacroTools.splitdef in different parts, eg. :name, :body, :args, ..."
+},
+
+{
+    "location": "internals.html#For-loops-1",
+    "page": "Internals",
+    "title": "For loops",
+    "category": "section",
+    "text": "for loops in the body of the function definition are transformed in equivalent while loops:begin\n  a = 0\n  b = 1\n  _iter = 1:n-1\n  _iterstate = start(_iter)\n  while !done(_iter, _iterstate)\n    i, _iterstate = next(_iter, _iterstate)\n    @yield a\n    a, b = b, a + b\n  end\n  a\nend"
+},
+
+{
+    "location": "internals.html#Slots-1",
+    "page": "Internals",
+    "title": "Slots",
+    "category": "section",
+    "text": "The slots and their types in the function definition are recovered by running the code_typed function for the locally evaluated function definition:n :: Int64\na :: Int64\nb :: Int64\n_iter :: UnitRange{Int64}\n_iterstate :: Int64\ni :: Int64"
+},
+
+{
+    "location": "internals.html#Type-definition-1",
+    "page": "Internals",
+    "title": "Type definition",
+    "category": "section",
+    "text": "A mutable struct is defined containing the state and the slots:mutable struct ##123 <: ResumableFunctions.FiniteStateMachineIterator\n      _state :: UInt8\n      n :: Int64\n      a :: Int64\n      b :: Int64\n      _iter :: UnitRange{Int64}\n      _iterstate :: Int64\n      i :: Int64 \n\n      function ##123(n::Int64)\n        fsmi = new()\n        fsmi._state = 0x00\n        fsmi.n = n\n        fsmi\n      end\n    end"
+},
+
+{
+    "location": "internals.html#Call-definition-1",
+    "page": "Internals",
+    "title": "Call definition",
+    "category": "section",
+    "text": "A call function is constructed that creates the previously defined composite type. This function satisfy the calling convention of the original function definition and is returned from the macro:function fibonnaci(n::Int)\n  ##123(n)\nend"
+},
+
+{
+    "location": "internals.html#Transformation-of-the-body-1",
+    "page": "Internals",
+    "title": "Transformation of the body",
+    "category": "section",
+    "text": "In 6 steps the body of the function definition is transformed into a finite state-machine."
+},
+
+{
+    "location": "internals.html#Renaming-of-slots-1",
+    "page": "Internals",
+    "title": "Renaming of slots",
+    "category": "section",
+    "text": "The slots are replaced by references to the fields of the composite type:begin\n  _fsmi.a = 0\n  _fsmi.b = 1\n  _fsmi._iter = 1:n-1\n  _fsmi._iterstate = start(_fsmi._iter)\n  while !done(_fsmi._iter, _fsmi._iterstate)\n    _fsmi.i, _fsmi._iterstate = next(_fsmi._iter, _fsmi._iterstate)\n    @yield _fsmi.a\n    _fsmi.a, _fsmi.b = _fsmi.b, _fsmi.a + _fsmi.b\n  end\n  _fsmi.a\nend"
+},
+
+{
+    "location": "internals.html#Two-way-communication-1",
+    "page": "Internals",
+    "title": "Two-way communication",
+    "category": "section",
+    "text": "All expressions of the form _fsmi.arg = @yield are transformed into:@yield\n_fsmi.arg = _arg"
+},
+
+{
+    "location": "internals.html#Exception-handling-1",
+    "page": "Internals",
+    "title": "Exception handling",
+    "category": "section",
+    "text": "Exception handling is added to @yield:begin\n  _fsmi.a = 0\n  _fsmi.b = 1\n  _fsmi._iter = 1:n-1\n  _fsmi._iterstate = start(_fsmi._iter)\n  while !done(_fsmi._iter, _fsmi._iterstate)\n    _fsmi.i, _fsmi._iterstate = next(_fsmi._iter, _fsmi._iterstate)\n    @yield _fsmi.a\n    _arg isa Exception && throw(_arg)\n    _fsmi.a, _fsmi.b = _fsmi.b, _fsmi.a + _fsmi.b\n  end\n  _fsmi.a\nend"
+},
+
+{
+    "location": "internals.html#Try-catch-finally-end-block-handling-1",
+    "page": "Internals",
+    "title": "Try catch finally end block handling",
+    "category": "section",
+    "text": "try-catch-finally-end expressions are converted in a sequence of try-catch-end expressions with at the end of the catch part a non local jump to a label that marks the beginning of the expressions in the finally part."
+},
+
+{
+    "location": "internals.html#Yield-transformation-1",
+    "page": "Internals",
+    "title": "Yield transformation",
+    "category": "section",
+    "text": "The @yield statement is replaced by a return statement and a label placeholder as endpoint of a non local jump:begin\n  _fsmi.a = 0\n  _fsmi.b = 1\n  _fsmi._iter = 1:n-1\n  _fsmi._iterstate = start(_fsmi._iter)\n  while !done(_fsmi._iter, _fsmi._iterstate)\n    _fsmi.i, _fsmi._iterstate = next(_fsmi._iter, _fsmi._iterstate)\n    _fsmi._state = 0x01\n    return _fsmi.a\n    @label _STATE_1\n    _fsmi._state = 0xff\n    _arg isa Exception && throw(_arg)\n    _fsmi.a, _fsmi.b = _fsmi.b, _fsmi.a + _fsmi.b\n  end\n  _fsmi.a\nend"
+},
+
+{
+    "location": "internals.html#Dispatch-mechanism-1",
+    "page": "Internals",
+    "title": "Dispatch mechanism",
+    "category": "section",
+    "text": "A dispatch mechanism is inserted at the start of the body to allow a non local jump to a label inside the body:begin\n  _fsmi_state == 0x00 && @goto _STATE_0\n  _fsmi_state == 0x01 && @goto _STATE_1\n  error(\"@resumable function has stopped!\")\n  @label _STATE_0\n  _fsmi._state = 0xff\n  _arg isa Exception && throw(_arg)\n  _fsmi.a = 0\n  _fsmi.b = 1\n  _fsmi._iter = 1:n-1\n  _fsmi._iterstate = start(_fsmi._iter)\n  while !done(_fsmi._iter, _fsmi._iterstate)\n    _fsmi.i, _fsmi._iterstate = next(_fsmi._iter, _fsmi._iterstate)\n    _fsmi._state = 0x01\n    return _fsmi.a\n    @label _STATE_1\n    _fsmi._state = 0xff\n    _arg isa Exception && throw(_arg)\n    _fsmi.a, _fsmi.b = _fsmi.b, _fsmi.a + _fsmi.b\n  end\n  _fsmi.a\nend"
+},
+
+{
+    "location": "internals.html#Making-the-type-callable-1",
+    "page": "Internals",
+    "title": "Making the type callable",
+    "category": "section",
+    "text": "A function is defined with one argument _arg:function (_fsmi::##123)(_arg::Any=nothing)\n  _fsmi_state == 0x00 && @goto _STATE_0\n  _fsmi_state == 0x01 && @goto _STATE_1\n  error(\"@resumable function has stopped!\")\n  @label _STATE_0\n  _fsmi._state = 0xff\n  _arg isa Exception && throw(_arg)\n  _fsmi.a = 0\n  _fsmi.b = 1\n  _fsmi._iter = 1:n-1\n  _fsmi._iterstate = start(_fsmi._iter)\n  while !done(_fsmi._iter, _fsmi._iterstate)\n    _fsmi.i, _fsmi._iterstate = next(_fsmi._iter, _fsmi._iterstate)\n    _fsmi._state = 0x01\n    return _fsmi.a\n    @label _STATE_1\n    _fsmi._state = 0xff\n    _arg isa Exception && throw(_arg)\n    _fsmi.a, _fsmi.b = _fsmi.b, _fsmi.a + _fsmi.b\n  end\n  _fsmi.a\nend"
 },
 
 {
@@ -118,30 +238,6 @@ var documenterSearchIndex = {"docs": [
     "title": "ResumableFunctions",
     "category": "Module",
     "text": "Main module for ResumableFunctions.jl – C# style generators a.k.a. semi-coroutines for Julia\n\n\n\n"
-},
-
-{
-    "location": "library.html#Base.done-Union{Tuple{T}, Tuple{T}, Tuple{T,UInt8}} where T<:ResumableFunctions.FiniteStateMachineIterator",
-    "page": "Library",
-    "title": "Base.done",
-    "category": "Method",
-    "text": "Implements the done method of the iterator interface for a subtype of FiniteStateMachineIterator.\n\n\n\n"
-},
-
-{
-    "location": "library.html#Base.next-Union{Tuple{T}, Tuple{T,UInt8}} where T<:ResumableFunctions.FiniteStateMachineIterator",
-    "page": "Library",
-    "title": "Base.next",
-    "category": "Method",
-    "text": "Implements the next method of the iterator interface for a subtype of FiniteStateMachineIterator.\n\n\n\n"
-},
-
-{
-    "location": "library.html#Base.start-Union{Tuple{T}, Tuple{T}} where T<:ResumableFunctions.FiniteStateMachineIterator",
-    "page": "Library",
-    "title": "Base.start",
-    "category": "Method",
-    "text": "Implements the start method of the iterator interface for a subtype of FiniteStateMachineIterator.\n\n\n\n"
 },
 
 {
@@ -182,6 +278,30 @@ var documenterSearchIndex = {"docs": [
     "title": "ResumableFunctions.FiniteStateMachineIterator",
     "category": "Type",
     "text": "Abstract type used as base type for the type created by the @resumable macro.\n\n\n\n"
+},
+
+{
+    "location": "library.html#Base.done-Union{Tuple{T}, Tuple{T}, Tuple{T,UInt8}} where T<:ResumableFunctions.FiniteStateMachineIterator",
+    "page": "Library",
+    "title": "Base.done",
+    "category": "Method",
+    "text": "Implements the done method of the iterator interface for a subtype of FiniteStateMachineIterator.\n\n\n\n"
+},
+
+{
+    "location": "library.html#Base.next-Union{Tuple{T}, Tuple{T,UInt8}} where T<:ResumableFunctions.FiniteStateMachineIterator",
+    "page": "Library",
+    "title": "Base.next",
+    "category": "Method",
+    "text": "Implements the next method of the iterator interface for a subtype of FiniteStateMachineIterator.\n\n\n\n"
+},
+
+{
+    "location": "library.html#Base.start-Union{Tuple{T}, Tuple{T}} where T<:ResumableFunctions.FiniteStateMachineIterator",
+    "page": "Library",
+    "title": "Base.start",
+    "category": "Method",
+    "text": "Implements the start method of the iterator interface for a subtype of FiniteStateMachineIterator.\n\n\n\n"
 },
 
 {
