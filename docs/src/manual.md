@@ -219,7 +219,7 @@ julia> hello()
 "Who are you?"
 
 julia> hello("Ben")
-"Hello, Ben!
+"Hello, Ben!"
 ```
 
 ```@meta
@@ -227,3 +227,101 @@ DocTestSetup = nothing
 ```
 
 When an `Exception` is passed to the `@resumable function`, it is thrown at the resume point:
+
+```@meta
+DocTestSetup = quote
+  using ResumableFunctions
+
+  @resumable function mouse()
+    try
+      @yield "Here I am!"
+    catch exc
+      return "You got me!"
+    end
+  end
+
+  struct Cat <: Exception end
+end
+```
+
+```julia
+@resumable function mouse()
+  try
+    @yield "Here I am!"
+  catch exc
+    return "You got me!"
+  end
+end
+
+struct Cat <: Exception end
+```
+
+```jldoctest
+julia> catch_me = mouse();
+
+julia> catch_me()
+"Here I am!"
+
+julia> catch_me(Cat())
+"You got me!"
+```
+
+```@meta
+DocTestSetup = nothing
+```
+
+## Iterator interface
+
+The interator interface is implemented for a `@resumable function`:
+
+```@meta
+DocTestSetup = quote
+  using ResumableFunctions
+
+  @resumable function fibonnaci(n) :: Int
+    a = 0
+    b = 1
+    for i in 1:n-1
+      @yield a
+      a, b = b, a + b
+    end
+    a
+  end
+end
+```
+
+```julia
+@resumable function fibonnaci(n) :: Int
+  a = 0
+  b = 1
+  for i in 1:n-1
+    @yield a
+    a, b = b, a + b
+  end
+  a
+end
+```
+
+```jldoctest
+julia> for val in fibonnaci(10) println(val) end
+0
+1
+1
+2
+3
+5
+8
+13
+21
+34
+```
+
+```@meta
+DocTestSetup = nothing
+```
+
+## Caveats
+
+- In a `try` block only top level `@yield` statements are allowed.
+- In a `finally` block a `@yield` statement is not allowed.
+- An anonymous function can not contain a `@yield` statement.

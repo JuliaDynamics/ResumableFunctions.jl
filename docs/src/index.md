@@ -6,7 +6,7 @@ C# has a convenient way to create iterators [@C#Iterators] using the `yield retu
 
 ## Example
 
-```julia
+```jldoctest
 using ResumableFunctions
 
 @resumable function fibonnaci(n::Int)
@@ -19,21 +19,22 @@ using ResumableFunctions
   a
 end
 
-[fibonnaci(10)...]
+for val in fibonnaci(10) 
+  println(val) 
+end
 
 # output
 
-10-element Array{Int64,1}:
-  0
-  1
-  1
-  2
-  3
-  5
-  8
- 13
- 21
- 34
+0
+1
+1
+2
+3
+5
+8
+13
+21
+34
 ```
 
 ## Installation
