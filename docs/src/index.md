@@ -9,7 +9,7 @@ C# has a convenient way to create iterators [@C#Iterators] using the `yield retu
 ```julia
 using ResumableFunctions
 
-@resumable function fibonnaci(n::Int) :: Int
+@resumable function fibonnaci(n::Int)
   a = 0
   b = 1
   for i in 1:n-1
@@ -19,9 +19,21 @@ using ResumableFunctions
   a
 end
 
-for fib in fibonnaci(10)
-  println(fib)
-end
+[fibonnaci(10)...]
+
+# output
+
+10-element Array{Int64,1}:
+  0
+  1
+  1
+  2
+  3
+  5
+  8
+ 13
+ 21
+ 34
 ```
 
 ## Installation
