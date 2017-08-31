@@ -14,9 +14,9 @@ C# has a convenient way to create iterators [@C#Iterators] using the `yield retu
 
 ## Installation
 
-`ResumableFunctions` is not yet registered but can be installed by running:
+`ResumableFunctions` is a registered package and can be installed by running:
 ```julia
-Pkg.clone("https://github.com/BenLauwens/ResumableFunctions.jl.git")
+Pkg.add("ResumableFunctions")
 ```
 
 ## Example
@@ -43,24 +43,6 @@ end
 
 [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://benlauwens.github.io/ResumableFunctions.jl/stable)
 [![](https://img.shields.io/badge/docs-latest-blue.svg)](https://benlauwens.github.io/ResumableFunctions.jl/latest)
-
-## Release Notes
-
-* This is pre-release software. 
-* Tests and documentation are a work in progress.
-* Comments and bug reports are greatly appreciated!
-* Two-way communication is allowed between master and slave function:
-```julia
-arg = @yield ret
-```
-* `#yield` statements in a `try`-`catch`-`finally`-`end` expression are allowed in the `try` part (only top level statements) and the `catch` part:
-```julia
-try
-  @yield
-catch
-  @yield
-end
-```
 
 ## Authors
 
