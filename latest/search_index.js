@@ -13,7 +13,23 @@ var documenterSearchIndex = {"docs": [
     "page": "Home",
     "title": "ResumableFunctions",
     "category": "section",
-    "text": "C# sharp style generators a.k.a. semi-coroutines for Julia."
+    "text": "C# sharp style generators a.k.a. semi-coroutines for Julia.C# has a convenient way to create iterators [@C#Iterators] using the yield return statement. The package ResumableFunctions provides the same functionality for the Julia language by introducing the @resumable and the @yield macros. These macros can be used to replace the Task switching functions produce and consume which were deprecated in Julia v0.6. Channels are the preferred way for inter-task communication in julia v0.6+, but their performance is subpar for iterator applications."
+},
+
+{
+    "location": "index.html#Installation-1",
+    "page": "Home",
+    "title": "Installation",
+    "category": "section",
+    "text": "ResumableFunctions is a registered package and can be installed by running:Pkg.add(\"ResumableFunctions\")"
+},
+
+{
+    "location": "index.html#Example-1",
+    "page": "Home",
+    "title": "Example",
+    "category": "section",
+    "text": "using ResumableFunctions\n\n@resumable function fibonnaci(n::Int) :: Int\n  a = 0\n  b = 1\n  for i in 1:n-1\n    @yield a\n    a, b = b, a+b\n  end\n  a\nend\n\nfor fib in fibonnaci(10)\n  println(fib)\nend"
 },
 
 {
