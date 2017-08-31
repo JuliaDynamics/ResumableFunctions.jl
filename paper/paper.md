@@ -29,7 +29,7 @@ The macro `@resumable` transform a function definition into a finite state-machi
   - `try`-`catch`-`finally`-`end` expressions are converted in a sequence of `try`-`catch`-`end` expressions with at the end of the `catch` part a non local jump to a label that marks the beginning of the expressions in the `finally` part.
 The two last transformations are needed to overcome the limitations of the non local jump macros `@goto` and `@label`.
 
-Straightforward two-way communication between the callee and the callable type is possible by calling the callable type with an extra argument. The value of this argument is passed to the left side of an `arg = @yield ret` expression.
+Straightforward two-way communication between the caller and the callable type is possible by calling the callable type with an extra argument. The value of this argument is passed to the left side of an `arg = @yield ret` expression.
 
 The `iterator` interface is implemented so that a `@resumable function` can be used transparently.
 
