@@ -4,7 +4,6 @@ tags:
   - semi-coroutine
   - finite-state-machine
   - julia
-  - generator
   - iterator
   - stackless
 authors:
