@@ -9,7 +9,6 @@ function get_slots(func_def::Dict) :: Dict{Symbol, Type}
   func_def[:name] = gensym()
   func_expr = combinedef(func_def) |> flatten
   func = Main.eval(func_expr)
-  println(func)
   code_data_infos = @eval code_typed(Main.$(func_def[:name]))
   (code_info, data_type) = code_data_infos[1]
   for (i, slotname) in enumerate(code_info.slotnames)
