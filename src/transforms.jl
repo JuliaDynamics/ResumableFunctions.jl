@@ -22,13 +22,17 @@ end
 Function that replaces a variable `x` in an expression by `_fsmi.x` where `x` is a known slot.
 """
 function transform_slots(expr, symbols::Base.KeyIterator{Dict{Symbol,Type}})
-  @capture(expr, sym_ | sym_.inner_) || return expr
-  sym isa Symbol && sym in symbols || return expr
-  inner == nothing ? :(_fsmi.$sym) : :(_fsmi.$sym.$inner)
+  expr isa Expr || return expr
+  for i in 1:length(expr.args)
+    expr.head == :kw && i == 1 && continue
+    expr.head == Symbol("quote") && continue
+    expr.args[i] = expr.args[i] isa Symbol && expr.args[i] in symbols ? :(_fsmi.$(expr.args[i])) : expr.args[i]
+  end
+  expr
 end
 
 """
-Function that replaces a `arg = @yield ret` statement  by 
+Function that replaces a `arg = @yield ret` statement by 
 ```julia 
   @yield ret; 
   arg = arg_
