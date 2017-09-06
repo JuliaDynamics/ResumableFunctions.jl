@@ -333,7 +333,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Library",
     "title": "ResumableFunctions.transform_arg",
     "category": "Method",
-    "text": "Function that replaces a arg = @yield ret statement  by \n\n  @yield ret; \n  arg = arg_\n\nwhere arg_ is the argument of the function containing the expression.\n\n\n\n"
+    "text": "Function that replaces a arg = @yield ret statement by \n\n  @yield ret; \n  arg = arg_\n\nwhere arg_ is the argument of the function containing the expression.\n\n\n\n"
 },
 
 {
