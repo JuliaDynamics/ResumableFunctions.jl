@@ -2,6 +2,30 @@ using MacroTools
 using MacroTools: flatten, postwalk
 
 """
+Function returning the arguments of a function definition
+"""
+function get_arguments(expr) :: Vector{Symbol}
+  args = Symbol[]
+  kws = Symbol[]
+  params = Symbol[]
+  expr_args = expr.args[1].head == :call ? expr.args[1].args : expr.args[1].args[1].args
+  for arg in expr_args
+    if isa(arg, Symbol)
+      push!(args, arg)
+    elseif arg.head == Symbol("::")
+      push!(args, arg.args[1])
+    elseif arg.head == :kw
+      isa(arg.args[1], Symbol) ? push!(kws, arg.args[1]) : push!(kws, arg.args[1].args[1])
+    elseif arg.head == :parameters
+      for arg2 in arg.args
+        isa(arg2.args[1], Symbol) ? push!(params, arg2.args[1]) : push!(params, arg2.args[1].args[1])
+      end
+    end
+  end
+  [args; kws; params]
+end
+
+"""
 Function returning the slots of a function definition
 """
 function get_slots(func_def::Dict) :: Dict{Symbol, Type}
