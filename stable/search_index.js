@@ -13,7 +13,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Home",
     "title": "ResumableFunctions",
     "category": "section",
-    "text": "C# sharp style generators a.k.a. semi-coroutines for Julia.C# has a convenient way to create iterators [@C#Iterators] using the yield return statement. The package ResumableFunctions provides the same functionality for the Julia language by introducing the @resumable and the @yield macros. These macros can be used to replace the Task switching functions produce and consume which were deprecated in Julia v0.6. Channels are the preferred way for inter-task communication in julia v0.6+, but their performance is subpar for iterator applications."
+    "text": "C# sharp style generators a.k.a. semi-coroutines for Julia.C# has a convenient way to create iterators using the yield return statement. The package ResumableFunctions provides the same functionality for the Julia language by introducing the @resumable and the @yield macros. These macros can be used to replace the Task switching functions produce and consume which were deprecated in Julia v0.6. Channels are the preferred way for inter-task communication in julia v0.6+, but their performance is subpar for iterator applications."
 },
 
 {
@@ -45,7 +45,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Home",
     "title": "License",
     "category": "section",
-    "text": "ResumableFunctions licensed under the MIT \"Expat\" License."
+    "text": "ResumableFunctions is licensed under the MIT \"Expat\" License."
 },
 
 {
@@ -333,7 +333,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Library",
     "title": "ResumableFunctions.transform_arg",
     "category": "Method",
-    "text": "Function that replaces a arg = @yield ret statement  by \n\n  @yield ret; \n  arg = arg_\n\nwhere arg_ is the argument of the function containing the expression.\n\n\n\n"
+    "text": "Function that replaces a arg = @yield ret statement by \n\n  @yield ret; \n  arg = arg_\n\nwhere arg_ is the argument of the function containing the expression.\n\n\n\n"
 },
 
 {
