@@ -21,11 +21,8 @@ Macro that transforms a function definition in a finite-statemachine:
 
 macro resumable(expr::Expr)
   expr.head != :function && error("Expression is not a function definition!")
-  args = get_arguments(expr)
-  shift!(args)
   func_def = splitdef(expr)
-  #args = [(begin (a, b, c, d) = splitarg(arg); :($a) end for arg in func_def[:args])...,
-  #        (begin (a, b, c, d) = splitarg(arg); :($a) end for arg in func_def[:kwargs])...]
+  args = [[get_arg_name(arg) for arg in func_def[:args]]..., [get_arg_name(arg) for arg in func_def[:kwargs]]...]
   ui8 = BoxedUInt8(zero(UInt8))
   func_def[:body] = postwalk(x->transform_for(x, ui8), func_def[:body])
   slots = get_slots(copy(func_def))
@@ -68,7 +65,7 @@ macro resumable(expr::Expr)
     _arg isa Exception && throw(_arg)
     $(func_def[:body])
   end
-  func_def[:args] = [combinearg(:_arg, Any, false, :nothing)]
+  func_def[:args] = [Expr(:kw, :(_arg::Any), nothing)]
   func_expr = combinedef(func_def) 
   #println(func_expr)
   esc(:($type_expr; $func_expr; $call_expr))

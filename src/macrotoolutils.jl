@@ -49,25 +49,3 @@ function combinedef(dict::Dict)
           $(dict[:body])
       end)
 end
-
-function splitarg(arg_expr)
-  splitvar(arg) =
-      @match arg begin
-          ::T_ => (nothing, T)
-          name_::T_ => (name::Symbol, T)
-          x_ => (x::Symbol, :Any)
-      end
-  (is_splat = @capture(arg_expr, arg_expr2_...)) || (arg_expr2 = arg_expr)
-  if @capture(arg_expr2, arg_ = default_)
-      @assert default !== nothing "splitarg cannot handle `nothing` as a default. Use a quoted `nothing` if possible. (MacroTools#35)"
-      return (splitvar(arg)..., is_splat, default)
-  else
-      return (splitvar(arg_expr2)..., is_splat, nothing)
-  end
-end
-
-function combinearg(arg_name, arg_type, is_splat, default)
-  a = arg_name===nothing ? :(::$arg_type) : :($arg_name::$arg_type)
-  a2 = is_splat ? Expr(:..., a) : a
-  return default === nothing ? a2 : Expr(:kw, a2, default)
-end
