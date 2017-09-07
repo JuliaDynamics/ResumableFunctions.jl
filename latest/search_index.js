@@ -305,11 +305,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "library.html#ResumableFunctions.get_arguments-Tuple{Any}",
+    "location": "library.html#ResumableFunctions.get_arg_name-Tuple{Any}",
     "page": "Library",
-    "title": "ResumableFunctions.get_arguments",
+    "title": "ResumableFunctions.get_arg_name",
     "category": "Method",
-    "text": "Function returning the arguments of a function definition\n\n\n\n"
+    "text": "Function returning the name of an argument expression\n\n\n\n"
 },
 
 {
