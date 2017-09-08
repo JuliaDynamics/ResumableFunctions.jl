@@ -305,6 +305,30 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "library.html#ResumableFunctions.combinedef-Tuple{Dict}",
+    "page": "Library",
+    "title": "ResumableFunctions.combinedef",
+    "category": "Method",
+    "text": "combinedef(dict::Dict)\n\ncombinedef is the inverse of splitdef. It takes a splitdef-like Dict and returns a function definition. \n\n\n\n"
+},
+
+{
+    "location": "library.html#ResumableFunctions.gatherwheres-Tuple{Any}",
+    "page": "Library",
+    "title": "ResumableFunctions.gatherwheres",
+    "category": "Method",
+    "text": "gatherwheres(:(f(x::T, y::U) where T where U)) => (:(f(x::T, y::U)), (:U, :T))\n\n\n\n"
+},
+
+{
+    "location": "library.html#ResumableFunctions.get_arg_name-Tuple{Any}",
+    "page": "Library",
+    "title": "ResumableFunctions.get_arg_name",
+    "category": "Method",
+    "text": "Function returning the name of an argument expression\n\n\n\n"
+},
+
+{
     "location": "library.html#ResumableFunctions.get_slots-Tuple{Dict}",
     "page": "Library",
     "title": "ResumableFunctions.get_slots",
@@ -326,6 +350,14 @@ var documenterSearchIndex = {"docs": [
     "title": "ResumableFunctions.remove_catch_exc",
     "category": "Method",
     "text": "Function removing the exc symbol of a catch exc statement of a list of slots.\n\n\n\n"
+},
+
+{
+    "location": "library.html#ResumableFunctions.splitdef-Tuple{Any}",
+    "page": "Library",
+    "title": "ResumableFunctions.splitdef",
+    "category": "Method",
+    "text": "splitdef(fdef)\n\nMatch any function definition\n\nfunction name{params}(args; kwargs)::rtype where {whereparams}\n   body\nend\n\nand return Dict(:name=>..., :args=>..., etc.). The definition can be rebuilt by calling MacroTools.combinedef(dict), or explicitly with\n\nrtype = get(dict, :rtype, :Any)\nall_params = [get(dict, :params, [])..., get(dict, :whereparams, [])...]\n:(function $(dict[:name]){$(all_params...)}($(dict[:args]...);\n                                            $(dict[:kwargs]...))::$rtype\n      $(dict[:body])\n  end)\n\n\n\n"
 },
 
 {
