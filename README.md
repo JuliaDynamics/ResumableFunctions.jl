@@ -41,11 +41,28 @@ for fib in fibonnaci(10)
 end
 ```
 
-## Licence & Reference
+## Licence & References
 
 [![License](http://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat)](LICENSE.md)
 [![status](http://joss.theoj.org/papers/889b2faed426b978ee705689c8f8440b/status.svg)](http://joss.theoj.org/papers/889b2faed426b978ee705689c8f8440b)
 
 ## Authors
 
-* Ben Lauwens, Royal Military Academy, Brussels, Belgium
+* Ben Lauwens, Royal Military Academy, Brussels, Belgium.
+
+## Release notes
+
+* 2017: v0.1 Initial release:
+  * Introduction of the `@resumable` and the `@yield` macros.
+  * A `@resumable function` generates a type that implements the [iterator](https://docs.julialang.org/en/stable/manual/interfaces/#man-interface-iteration-1) interface.
+
+## Caveats
+
+* In a `try` block only top level `@yield` statements are allowed.
+* In a `finally` block a `@yield` statement is not allowed.
+* An anonymous function can not contain a `@yield` statement.
+
+## Todo
+
+* Parametric resumable functions.
+  
