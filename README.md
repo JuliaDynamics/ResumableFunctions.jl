@@ -41,8 +41,11 @@ for fib in fibonnaci(10)
 end
 ```
 
-## Licence and Authors
+## Licence & Reference
 
 [![License](http://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat)](LICENSE.md)
+[![status](http://joss.theoj.org/papers/889b2faed426b978ee705689c8f8440b/status.svg)](http://joss.theoj.org/papers/889b2faed426b978ee705689c8f8440b)
+
+## Authors
 
 * Ben Lauwens, Royal Military Academy, Brussels, Belgium
