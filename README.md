@@ -50,6 +50,11 @@ end
 
 * Ben Lauwens, [Royal Military Academy](http://www.rma.ac.be), Brussels, Belgium.
 
+## Contributing
+
+* To discuss problems or feature requests, file an issue. For bugs, please include as much information as possible, including operating system, julia version, and version of [MacroTools](https://github.com/MikeInnes/MacroTools.jl.git).
+* To contribute, make a pull request. Contributions should include tests for any new features/bug fixes.
+
 ## Release notes
 
 * 2017: v0.1 initial release that is Julia v0.6 and v0.7 compatible:
