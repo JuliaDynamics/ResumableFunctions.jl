@@ -1,6 +1,6 @@
 # ResumableFunctions
 
-C# has a convenient way to create iterators using the `yield return` statement. The package `ResumableFunctions` provides the same functionality for the [Julia language](https://julialang.org) by introducing the `@resumable` and the `@yield` macros. These macros can be used to replace the `Task` switching functions `produce` and `consume` which were deprecated in Julia v0.6. `Channels` are the preferred way for inter-task communication in julia v0.6+, but their performance is subpar for iterator applications.
+[C#](https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/) has a convenient way to create iterators using the `yield return` statement. The package `ResumableFunctions` provides the same functionality for the [Julia language](https://julialang.org) by introducing the `@resumable` and the `@yield` macros. These macros can be used to replace the `Task` switching functions `produce` and `consume` which were deprecated in Julia v0.6. `Channels` are the preferred way for inter-task communication in julia v0.6+, but their performance is subpar for iterator applications.
 
 ## Build Status & Coverage
 
@@ -48,11 +48,11 @@ end
 
 ## Authors
 
-* Ben Lauwens, Royal Military Academy, Brussels, Belgium.
+* Ben Lauwens, [Royal Military Academy](http://www.rma.ac.be), Brussels, Belgium.
 
 ## Release notes
 
-* 2017: v0.1 Initial release:
+* 2017: v0.1 initial release that is Julia v0.6 and v0.7 compatible:
   * Introduction of the `@resumable` and the `@yield` macros.
   * A `@resumable function` generates a type that implements the [iterator](https://docs.julialang.org/en/stable/manual/interfaces/#man-interface-iteration-1) interface.
 
@@ -64,5 +64,5 @@ end
 
 ## Todo
 
-* Parametric `@resumable function`s.
+* Parametric `@resumable function`.
   
