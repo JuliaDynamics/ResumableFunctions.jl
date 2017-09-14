@@ -188,7 +188,7 @@ ERROR: @resumable function has stopped!
 DocTestSetup = nothing
 ```
 
-If the `@resumable function` returns normally and error will be thrown if called again.
+When the `@resumable function` returns normally an error will be thrown if called again.
 
 ## Two-way communication
 
