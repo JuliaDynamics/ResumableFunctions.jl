@@ -99,6 +99,7 @@ function transform_try(expr, ui8::BoxedUInt8)
   ui8.n += one(UInt8)
   new_body = []
   segment = []
+  handling = handling == nothing ? [] : handling
   for ex in body
     if @capture(ex, (@yield ret_) | @yield)
       exc == nothing ? push!(new_body, :(try $(segment...) catch; $(handling...); @goto $(Symbol("_TRY_", :($(ui8.n)))) end)) : push!(new_body, :(try $(segment...) catch $exc; $(handling...) ; @goto $(Symbol("_TRY_", :($(ui8.n)))) end))
