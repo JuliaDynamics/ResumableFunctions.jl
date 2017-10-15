@@ -13,7 +13,7 @@ end
 """
 Implements the `start` method of the *iterator* interface for a subtype of `FiniteStateMachineIterator`.
 """
-(start(fsm_iter::T) :: UInt8) where T<:FiniteStateMachineIterator = fsm_iter._state
+(start(fsm_iter::T) :: UInt8) where T<:FiniteStateMachineIterator = fsm_iter._state  = 0x00
 
 """
 Implements the `next` method of the *iterator* interface for a subtype of `FiniteStateMachineIterator`.
