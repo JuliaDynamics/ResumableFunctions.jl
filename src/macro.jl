@@ -43,7 +43,6 @@ macro resumable(expr::Expr)
   type_expr = type_expr
   #println(type_expr)
   call_def = copy(func_def)
-  call_def[:name] = func_def[:name]
   call_def[:rtype] = type_name
   call_def[:body] = :($type_name($((:($arg) for arg in args)...)))
   call_expr = combinedef(call_def) |> flatten
