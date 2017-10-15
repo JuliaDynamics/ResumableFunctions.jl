@@ -325,4 +325,4 @@ DocTestSetup = nothing
 - In a `try` block only top level `@yield` statements are allowed.
 - In a `finally` block a `@yield` statement is not allowed.
 - An anonymous function can not contain a `@yield` statement.
-- If a `FiniteStateMachineIterator` object is used in more than one `for` loop, the internal state is not reset. 
+- If a `FiniteStateMachineIterator` object is used in more than one `for` loop, only the `state` variable is reinitialised. A `@resumable function` that alters its arguments will use the modified values as initial parameters.
