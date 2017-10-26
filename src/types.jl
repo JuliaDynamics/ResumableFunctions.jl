@@ -2,6 +2,7 @@
 Abstract type used as base type for the type created by the `@resumable` macro.
 """
 abstract type FiniteStateMachineIterator end
+Base.iteratorsize(::Type{T}) where T<:FiniteStateMachineIterator = Base.SizeUnknown()
 
 """
 Mutable struct that contains a single `UInt8`.

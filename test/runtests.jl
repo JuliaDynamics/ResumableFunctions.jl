@@ -10,46 +10,50 @@ using Base.Test
   a
 end
 
-for a in test_for(4)
-  println(a)
+@testset "test_for" begin
+@test collect(test_for(4)) == [4, 5, 9, 14, 23, 37, 60, 97, 157, 254]
 end
 
-@resumable function test_try()
+
+@resumable function test_try(io)
   try
     a = 1
     @yield a
     a = 2
     c = @yield a
-    println(c)
+    println(io,c)
   catch except
-    println(except)
+    println(io,except)
     d = @yield
-    println(d)
+    println(io,d)
   finally
-    println("Always")
+    println(io,"Always")
   end
   a
 end
 
 struct SpecialException <: Exception end
-
-try_me = test_try()
+@testset "test_try" begin
+io = IOBuffer()
+try_me = test_try(io)
 try_me()
 try_me(SpecialException())
-println(try_me("hello"))
+@test try_me("hello") == 1
+@test String(io) == "SpecialException()\nhello\nAlways\n"
 
-try_me = test_try()
+io = IOBuffer()
+try_me = test_try(io)
 try_me()
 try_me()
-println(try_me("hello"))
+@test try_me("hello") == 2
+@test String(io) == "hello\nAlways\n"
 
-try_me = test_try()
+io = IOBuffer()
+try_me = test_try(io)
 try_me()
 try_me()
 try_me(SpecialException())
-println(try_me("hello"))
-try
-  try_me()
-catch exc
-  println(exc)
-end
+@test try_me("hello") == 2
+@test_throws ErrorException try_me()
+@test String(io) == "SpecialException()\nhello\nAlways\n"
+end #test_try
