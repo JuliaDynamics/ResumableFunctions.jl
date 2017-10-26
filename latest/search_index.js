@@ -97,6 +97,14 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "manual.html#Todo-1",
+    "page": "Manual",
+    "title": "Todo",
+    "category": "section",
+    "text": "Parametric @resumable function."
+},
+
+{
     "location": "internals.html#",
     "page": "Internals",
     "title": "Internals",
