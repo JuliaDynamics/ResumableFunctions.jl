@@ -93,7 +93,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Manual",
     "title": "Caveats",
     "category": "section",
-    "text": "In a try block only top level @yield statements are allowed.\nIn a finally block a @yield statement is not allowed.\nAn anonymous function can not contain a @yield statement."
+    "text": "In a try block only top level @yield statements are allowed.\nIn a finally block a @yield statement is not allowed.\nAn anonymous function can not contain a @yield statement.\nIf a FiniteStateMachineIterator object is used in more than one for loop, only the state variable is reinitialised. A @resumable function that alters its arguments will use the modified values as initial parameters."
 },
 
 {
@@ -233,9 +233,9 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "library.html#ResumableFunctions",
+    "location": "library.html#ResumableFunctions.ResumableFunctions",
     "page": "Library",
-    "title": "ResumableFunctions",
+    "title": "ResumableFunctions.ResumableFunctions",
     "category": "Module",
     "text": "Main module for ResumableFunctions.jl – C# style generators a.k.a. semi-coroutines for Julia\n\n\n\n"
 },
