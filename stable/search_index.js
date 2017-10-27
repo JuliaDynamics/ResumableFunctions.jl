@@ -93,7 +93,15 @@ var documenterSearchIndex = {"docs": [
     "page": "Manual",
     "title": "Caveats",
     "category": "section",
-    "text": "In a try block only top level @yield statements are allowed.\nIn a finally block a @yield statement is not allowed.\nAn anonymous function can not contain a @yield statement."
+    "text": "In a try block only top level @yield statements are allowed.\nIn a finally block a @yield statement is not allowed.\nAn anonymous function can not contain a @yield statement.\nIf a FiniteStateMachineIterator object is used in more than one for loop, only the state variable is reinitialised. A @resumable function that alters its arguments will use the modified values as initial parameters."
+},
+
+{
+    "location": "manual.html#Todo-1",
+    "page": "Manual",
+    "title": "Todo",
+    "category": "section",
+    "text": "Parametric @resumable function."
 },
 
 {
@@ -233,9 +241,9 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "library.html#ResumableFunctions",
+    "location": "library.html#ResumableFunctions.ResumableFunctions",
     "page": "Library",
-    "title": "ResumableFunctions",
+    "title": "ResumableFunctions.ResumableFunctions",
     "category": "Module",
     "text": "Main module for ResumableFunctions.jl – C# style generators a.k.a. semi-coroutines for Julia\n\n\n\n"
 },
@@ -289,6 +297,14 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "library.html#Base.iteratorsize-Union{Tuple{Type{T}}, Tuple{T}} where T<:ResumableFunctions.FiniteStateMachineIterator",
+    "page": "Library",
+    "title": "Base.iteratorsize",
+    "category": "Method",
+    "text": "Implements the iteratorsize method of the iterator interface for a subtype of FiniteStateMachineIterator.\n\n\n\n"
+},
+
+{
     "location": "library.html#Base.next-Union{Tuple{T}, Tuple{T,UInt8}} where T<:ResumableFunctions.FiniteStateMachineIterator",
     "page": "Library",
     "title": "Base.next",
@@ -302,22 +318,6 @@ var documenterSearchIndex = {"docs": [
     "title": "Base.start",
     "category": "Method",
     "text": "Implements the start method of the iterator interface for a subtype of FiniteStateMachineIterator.\n\n\n\n"
-},
-
-{
-    "location": "library.html#ResumableFunctions.combinedef-Tuple{Dict}",
-    "page": "Library",
-    "title": "ResumableFunctions.combinedef",
-    "category": "Method",
-    "text": "combinedef(dict::Dict)\n\ncombinedef is the inverse of splitdef. It takes a splitdef-like Dict and returns a function definition. \n\n\n\n"
-},
-
-{
-    "location": "library.html#ResumableFunctions.gatherwheres-Tuple{Any}",
-    "page": "Library",
-    "title": "ResumableFunctions.gatherwheres",
-    "category": "Method",
-    "text": "gatherwheres(:(f(x::T, y::U) where T where U)) => (:(f(x::T, y::U)), (:U, :T))\n\n\n\n"
 },
 
 {
@@ -350,14 +350,6 @@ var documenterSearchIndex = {"docs": [
     "title": "ResumableFunctions.remove_catch_exc",
     "category": "Method",
     "text": "Function removing the exc symbol of a catch exc statement of a list of slots.\n\n\n\n"
-},
-
-{
-    "location": "library.html#ResumableFunctions.splitdef-Tuple{Any}",
-    "page": "Library",
-    "title": "ResumableFunctions.splitdef",
-    "category": "Method",
-    "text": "splitdef(fdef)\n\nMatch any function definition\n\nfunction name{params}(args; kwargs)::rtype where {whereparams}\n   body\nend\n\nand return Dict(:name=>..., :args=>..., etc.). The definition can be rebuilt by calling MacroTools.combinedef(dict), or explicitly with\n\nrtype = get(dict, :rtype, :Any)\nall_params = [get(dict, :params, [])..., get(dict, :whereparams, [])...]\n:(function $(dict[:name]){$(all_params...)}($(dict[:args]...);\n                                            $(dict[:kwargs]...))::$rtype\n      $(dict[:body])\n  end)\n\n\n\n"
 },
 
 {
