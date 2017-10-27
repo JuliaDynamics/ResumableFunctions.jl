@@ -5,11 +5,8 @@ Main module for ResumableFunctions.jl – C# style generators a.k.a. semi-corout
 """
 module ResumableFunctions
 
-  import Base.start, Base.next, Base.done
-
   export @resumable, @yield
 
-  include("macrotoolutils.jl")
   include("types.jl")
   include("utils.jl")
   include("transforms.jl")

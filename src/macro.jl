@@ -1,4 +1,4 @@
-using MacroTools: postwalk, flatten
+using MacroTools: postwalk, flatten, splitdef, combinedef
 
 """
 Macro if used in a `@resumable function` that returns the `expr` otherwise returns `:nothing`.

@@ -2,7 +2,6 @@
 Abstract type used as base type for the type created by the `@resumable` macro.
 """
 abstract type FiniteStateMachineIterator end
-Base.iteratorsize(::Type{T}) where T<:FiniteStateMachineIterator = Base.SizeUnknown()
 
 """
 Mutable struct that contains a single `UInt8`.
@@ -14,14 +13,19 @@ end
 """
 Implements the `start` method of the *iterator* interface for a subtype of `FiniteStateMachineIterator`.
 """
-(start(fsm_iter::T) :: UInt8) where T<:FiniteStateMachineIterator = fsm_iter._state  = 0x00
+(Base.start(fsm_iter::T) :: UInt8) where T<:FiniteStateMachineIterator = fsm_iter._state  = 0x00
 
 """
 Implements the `next` method of the *iterator* interface for a subtype of `FiniteStateMachineIterator`.
 """
-next(fsm_iter::T, state::UInt8) where T<:FiniteStateMachineIterator = fsm_iter(), fsm_iter._state
+Base.next(fsm_iter::T, state::UInt8) where T<:FiniteStateMachineIterator = fsm_iter(), fsm_iter._state
 
 """
 Implements the `done` method of the *iterator* interface for a subtype of `FiniteStateMachineIterator`.
 """
-(done(fsm_iter::T, state::UInt8=0x00) :: Bool) where T<:FiniteStateMachineIterator = fsm_iter._state == 0xff
+(Base.done(fsm_iter::T, state::UInt8=0x00) :: Bool) where T<:FiniteStateMachineIterator = fsm_iter._state == 0xff
+
+"""
+Implements the `iteratorsize` method of the *iterator* interface for a subtype of `FiniteStateMachineIterator`.
+"""
+Base.iteratorsize(::Type{T}) where T<:FiniteStateMachineIterator = Base.SizeUnknown()
