@@ -19,7 +19,7 @@ bibliography: paper.bib
 
 # Summary
 
-C# has a convenient way to create iterators [@C#Iterators] using the `yield return` statement. The package [@ResumableFunctions] provides the same functionality for the Julia language [@Julia] by introducing the `@resumable` and the `@yield` macros. These macros can be used to replace the `Task` switching functions `produce` and `consume` which were deprecated in Julia v0.6. `Channels` are the preferred way for inter-task communication in julia v0.6+, but their performance is subpar for iterator applications.
+C# has a convenient way to create iterators [@CsharpIterators] using the `yield return` statement. The package [@ResumableFunctions] provides the same functionality for the Julia language [@Julia] by introducing the `@resumable` and the `@yield` macros. These macros can be used to replace the `Task` switching functions `produce` and `consume` which were deprecated in Julia v0.6. `Channels` are the preferred way for inter-task communication in julia v0.6+, but their performance is subpar for iterator applications.
 
 The macro `@resumable` transform a function definition into a finite state-machine, i.e. a callable type holding the state and references to the internal variables of the function and a constructor for this new type respecting the method signature of the original function definition. When calling the new type a modified version of the body of the original function definition is executed:
   - a dispatch mechanism is inserted at the start to allow a non local jump to a label inside the body;
