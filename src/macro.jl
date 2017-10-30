@@ -40,7 +40,7 @@ macro resumable(expr::Expr)
       end
     end
   end
-  type_expr = type_expr
+  #type_expr = type_expr
   #println(type_expr)
   call_def = copy(func_def)
   call_def[:rtype] = type_name
