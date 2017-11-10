@@ -329,7 +329,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "library.html#ResumableFunctions.get_slots-Tuple{Dict}",
+    "location": "library.html#ResumableFunctions.get_slots-Tuple{Dict,Any}",
     "page": "Library",
     "title": "ResumableFunctions.get_slots",
     "category": "Method",
