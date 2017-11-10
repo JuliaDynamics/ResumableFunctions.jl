@@ -1,4 +1,4 @@
-using BenchmarkTools
+using BenchmarkTools, Compat
 using ResumableFunctions
 
 const n = 93
