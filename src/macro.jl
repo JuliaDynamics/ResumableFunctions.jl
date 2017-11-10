@@ -25,7 +25,8 @@ macro resumable(expr::Expr)
   args = [[get_arg_name(arg) for arg in func_def[:args]]..., [get_arg_name(arg) for arg in func_def[:kwargs]]...]
   ui8 = BoxedUInt8(zero(UInt8))
   func_def[:body] = postwalk(x->transform_for(x, ui8), func_def[:body])
-  slots = get_slots(copy(func_def))
+  mod = VERSION >= v"0.7.0" ? __module__ : current_module()
+  slots = get_slots(copy(func_def), mod)
   #println(slots)
   type_name = gensym()
   type_expr = quote

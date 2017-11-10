@@ -1,6 +1,5 @@
 using MacroTools
 using MacroTools: flatten, postwalk
-using Compat
 
 """
 Function returning the name of an argument expression
@@ -16,11 +15,10 @@ end
 """
 Function returning the slots of a function definition
 """
-function get_slots(func_def::Dict) :: Dict{Symbol, Type}
+function get_slots(func_def::Dict, mod) :: Dict{Symbol, Type}
   slots = Dict{Symbol, Type}()
   func_def[:name] = gensym()
   func_expr = combinedef(func_def) |> flatten
-  mod = current_module()#@__MODULE__
   func = @eval(mod, $func_expr)
   code_data_infos = @eval(mod, code_typed($(func_def[:name])))
   (code_info, data_type) = code_data_infos[1]
