@@ -39,14 +39,14 @@ try_me = test_try(io)
 try_me()
 try_me(SpecialException())
 @test try_me("hello") == 1
-@test String(io) == "SpecialException()\nhello\nAlways\n"
+@test String(copy(io)) == "SpecialException()\nhello\nAlways\n"
 
 io = IOBuffer()
 try_me = test_try(io)
 try_me()
 try_me()
 @test try_me("hello") == 2
-@test String(io) == "hello\nAlways\n"
+@test String(copy(io)) == "hello\nAlways\n"
 
 io = IOBuffer()
 try_me = test_try(io)
@@ -55,5 +55,5 @@ try_me()
 try_me(SpecialException())
 @test try_me("hello") == 2
 @test_throws ErrorException try_me()
-@test String(io) == "SpecialException()\nhello\nAlways\n"
+@test String(copy(io)) == "SpecialException()\nhello\nAlways\n"
 end #test_try
