@@ -19,8 +19,9 @@ function get_slots(func_def::Dict) :: Dict{Symbol, Type}
   slots = Dict{Symbol, Type}()
   func_def[:name] = gensym()
   func_expr = combinedef(func_def) |> flatten
-  func = Main.eval(func_expr)
-  code_data_infos = @eval code_typed(Main.$(func_def[:name]))
+  mod = current_module()
+  func = @eval(mod, $func_expr)
+  code_data_infos = @eval(mod, code_typed($(func_def[:name])))
   (code_info, data_type) = code_data_infos[1]
   for (i, slotname) in enumerate(code_info.slotnames)
     slots[slotname] = code_info.slottypes[i]
