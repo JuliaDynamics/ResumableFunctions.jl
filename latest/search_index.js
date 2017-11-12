@@ -101,7 +101,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Manual",
     "title": "Todo",
     "category": "section",
-    "text": "Parametric @resumable function."
+    "text": "Parametric @resumable functions are now available in master branch. Further testing is needed!"
 },
 
 {
