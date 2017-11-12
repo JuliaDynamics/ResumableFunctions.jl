@@ -329,4 +329,4 @@ DocTestSetup = nothing
 
 ## Todo
 
-- Parametric @resumable function.
+- Parametric @resumable functions are now available in master branch. Further testing is needed!

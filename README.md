@@ -70,5 +70,5 @@ end
 
 ## Todo
 
-* Parametric `@resumable function` are now in master branch.
+* Parametric `@resumable functions` are now in master branch.
   
