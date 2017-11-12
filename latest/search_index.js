@@ -329,6 +329,14 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "library.html#ResumableFunctions.get_param_name-Tuple{Any}",
+    "page": "Library",
+    "title": "ResumableFunctions.get_param_name",
+    "category": "Method",
+    "text": "Function returning the names of the where parameters\n\n\n\n"
+},
+
+{
     "location": "library.html#ResumableFunctions.get_slots-Tuple{Dict,Any}",
     "page": "Library",
     "title": "ResumableFunctions.get_slots",
