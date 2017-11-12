@@ -57,7 +57,16 @@ try_me(SpecialException())
 @test String(take!(copy(io))) == "SpecialException()\nhello\nAlways\n"
 end #test_try
 
-@resumable function (test_where(a::N) :: N) where {N<:Number}
+@resumable function (test_where1(a::N) :: N) where {N<:Number}
+  b = a + one(N)
+  for i in 1:9
+    @yield a
+    a, b = b, a+b
+  end
+  a
+end
+
+@resumable function (test_where2(a::N) :: N) where N
   b = a + one(N)
   for i in 1:9
     @yield a
@@ -67,5 +76,6 @@ end #test_try
 end
 
 @testset "test_where" begin
-@test collect(test_where(4.0)) == [4.0, 5.0, 9.0, 14.0, 23.0, 37.0, 60.0, 97.0, 157.0, 254.0]
+@test collect(test_where1(4.0)) == [4.0, 5.0, 9.0, 14.0, 23.0, 37.0, 60.0, 97.0, 157.0, 254.0]
+@test collect(test_where2(4)) == [4, 5, 9, 14, 23, 37, 60, 97, 157, 254]
 end

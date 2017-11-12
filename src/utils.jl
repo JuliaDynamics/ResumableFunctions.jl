@@ -9,7 +9,6 @@ function get_arg_name(expr) :: Symbol
   @capture(expr, arg_=val_) && return arg
   @capture(expr, arg_::arg_type_) && return arg
   @capture(expr, arg_) && return arg
-  :nothing
 end
 
 """
@@ -18,7 +17,6 @@ Function returning the names of the where parameters
 function get_param_name(expr) :: Symbol
   @capture(expr, arg_<:arg_type_) && return arg
   @capture(expr, arg_) && return arg
-  :nothing
 end
 
 """
