@@ -22,32 +22,60 @@ Macro that transforms a function definition in a finite-statemachine:
 macro resumable(expr::Expr)
   expr.head != :function && error("Expression is not a function definition!")
   func_def = splitdef(expr)
-  args = [[get_arg_name(arg) for arg in func_def[:args]]..., [get_arg_name(arg) for arg in func_def[:kwargs]]...]
+  args = ((get_arg_name(arg) for arg in func_def[:args])..., (get_arg_name(arg) for arg in func_def[:kwargs])...)
+  params = ((get_param_name(param) for param in func_def[:whereparams])...)
+  #println(params)
   ui8 = BoxedUInt8(zero(UInt8))
   func_def[:body] = postwalk(x->transform_for(x, ui8), func_def[:body])
   mod = VERSION >= v"0.7.0-" ? __module__ : current_module()
   slots = get_slots(copy(func_def), mod)
+  #println(func_def)
   #println(slots)
   type_name = gensym()
-  type_expr = quote
-    mutable struct $type_name <: ResumableFunctions.FiniteStateMachineIterator
-      _state :: UInt8
-      $((:($slotname :: $slottype) for (slotname, slottype) in slots)...)
-      function $type_name($(func_def[:args]...);$(func_def[:kwargs]...))
-        fsmi = new()
-        fsmi._state = 0x00
-        $((:(fsmi.$arg = $arg) for arg in args)...)
-        fsmi
+  if isempty(params)
+    type_expr = quote
+      mutable struct $type_name <: ResumableFunctions.FiniteStateMachineIterator
+        _state :: UInt8
+        $((:($slotname :: $slottype) for (slotname, slottype) in slots)...)
+        function $type_name($(func_def[:args]...);$(func_def[:kwargs]...))
+          fsmi = new()
+          fsmi._state = 0x00
+          $((:(fsmi.$arg = $arg) for arg in args)...)
+          fsmi
+        end
+      end
+    end
+  else
+    type_expr = quote
+      mutable struct $type_name{$(func_def[:whereparams]...)} <: ResumableFunctions.FiniteStateMachineIterator
+        _state :: UInt8
+        $((:($slotname :: $slottype) for (slotname, slottype) in slots)...)
+        function $type_name{$(params...)}($(func_def[:args]...);$(func_def[:kwargs]...)) where $(func_def[:whereparams]...)
+          fsmi = new()
+          fsmi._state = 0x00
+          $((:(fsmi.$arg = $arg) for arg in args)...)
+          fsmi
+        end
       end
     end
   end
   #println(type_expr)
   call_def = copy(func_def)
-  call_def[:rtype] = type_name
-  call_def[:body] = :($type_name($((:($arg) for arg in args)...)))
+  if isempty(params)
+    call_def[:rtype] = :($type_name)
+    call_def[:body] = :($type_name($((:($arg) for arg in args)...)))
+  else
+    call_def[:rtype] = :($type_name{$(params...)})
+    call_def[:body] = :($type_name{$(params...)}($((:($arg) for arg in args)...)))
+  end
   call_expr = combinedef(call_def) |> flatten
   #println(call_expr)
-  func_def[:name] = :((_fsmi::$type_name))
+  #delete!(func_def, :whereparams)
+  if isempty(params)
+    func_def[:name] = :((_fsmi::$type_name))
+  else
+    func_def[:name] = :((_fsmi::$type_name{$(params...)}))
+  end
   func_def[:body] = postwalk(x->transform_slots(x, keys(slots)), func_def[:body])
   func_def[:body] = postwalk(transform_arg, func_def[:body]) |> flatten
   func_def[:body] = postwalk(transform_exc, func_def[:body]) |> flatten

@@ -13,13 +13,22 @@ function get_arg_name(expr) :: Symbol
 end
 
 """
+Function returning the names of the where parameters
+"""
+function get_param_name(expr) :: Symbol
+  @capture(expr, arg_<:arg_type_) && return arg
+  @capture(expr, arg_) && return arg
+  :nothing
+end
+
+"""
 Function returning the slots of a function definition
 """
 function get_slots(func_def::Dict, mod) :: Dict{Symbol, Type}
   slots = Dict{Symbol, Type}()
   func_def[:name] = gensym()
   func_expr = combinedef(func_def) |> flatten
-  func = @eval(mod, $func_expr)
+  @eval(mod, $func_expr)
   code_data_infos = @eval(mod, code_typed($(func_def[:name])))
   (code_info, data_type) = code_data_infos[1]
   for (i, slotname) in enumerate(code_info.slotnames)
