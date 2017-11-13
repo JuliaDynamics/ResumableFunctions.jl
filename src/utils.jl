@@ -32,7 +32,7 @@ function get_slots(func_def::Dict, args::Dict{Symbol, Symbol}, mod) :: Dict{Symb
   func_def[:kwargs] = []
   func_expr = combinedef(func_def) |> flatten |> striplines
   println(func_expr)
-  @eval(mod, $func_expr)
+  @eval(mod, @noinline $func_expr)
   code_data_infos = @eval(mod, code_typed($(func_def[:name])))
   (code_info, data_type) = code_data_infos[1]
   for (i, slotname) in enumerate(code_info.slotnames)
