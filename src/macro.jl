@@ -1,12 +1,9 @@
-using MacroTools: postwalk, flatten, splitdef, combinedef
-
 """
 Macro if used in a `@resumable function` that returns the `expr` otherwise returns `:nothing`.
 """
 macro yield(expr=nothing)
   esc(:nothing)
 end
-
 
 """
 Macro that transforms a function definition in a finite-statemachine:
@@ -26,7 +23,7 @@ macro resumable(expr::Expr)
   params = ((get_param_name(param) for param in func_def[:whereparams])...)
   #println(params)
   ui8 = BoxedUInt8(zero(UInt8))
-  func_def[:body] = postwalk(x->transform_for(x, ui8), func_def[:body])
+  func_def[:body] = postwalk(x->transform_for(x, ui8), func_def[:body]) |> flatten
   mod = VERSION >= v"0.7.0-" ? __module__ : current_module()
   slots = get_slots(copy(func_def), mod)
   #println(func_def)

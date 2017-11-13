@@ -1,5 +1,3 @@
-using MacroTools
-
 """
 Function that replaces a `for` loop by a corresponding `while` loop saving explicitely the *iterator* and its *state*.
 """

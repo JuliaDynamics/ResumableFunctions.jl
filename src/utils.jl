@@ -1,6 +1,3 @@
-using MacroTools
-using MacroTools: flatten, postwalk
-
 """
 Function returning the name of an argument expression
 """
