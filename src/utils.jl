@@ -22,6 +22,8 @@ Function returning the slots of a function definition
 function get_slots(func_def::Dict, mod) :: Dict{Symbol, Type}
   slots = Dict{Symbol, Type}()
   func_def[:name] = gensym()
+  func_def[:args] = (func_def[:args]..., func_def[:kwargs]...)
+  func_def[:kwargs] = []
   func_expr = combinedef(func_def) |> flatten
   @eval(mod, $func_expr)
   code_data_infos = @eval(mod, code_typed($(func_def[:name])))

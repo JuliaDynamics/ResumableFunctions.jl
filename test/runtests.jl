@@ -1,8 +1,7 @@
 using ResumableFunctions
 using Base.Test
 
-@resumable function test_for(a::Int=0) :: Int
-  b = a + 1
+@resumable function test_for(a::Int=0; b::Int=a+1) :: Int
   for i in 1:9
     @yield a
     a, b = b, a+b

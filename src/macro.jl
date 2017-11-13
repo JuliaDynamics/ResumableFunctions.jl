@@ -34,7 +34,7 @@ macro resumable(expr::Expr)
       mutable struct $type_name <: ResumableFunctions.FiniteStateMachineIterator
         _state :: UInt8
         $((:($slotname :: $slottype) for (slotname, slottype) in slots)...)
-        function $type_name($(func_def[:args]...);$(func_def[:kwargs]...))
+        function $type_name($(func_def[:args]...),$(func_def[:kwargs]...))
           fsmi = new()
           fsmi._state = 0x00
           $((:(fsmi.$arg = $arg) for arg in args)...)
@@ -47,7 +47,7 @@ macro resumable(expr::Expr)
       mutable struct $type_name{$(func_def[:whereparams]...)} <: ResumableFunctions.FiniteStateMachineIterator
         _state :: UInt8
         $((:($slotname :: $slottype) for (slotname, slottype) in slots)...)
-        function $type_name{$(params...)}($(func_def[:args]...);$(func_def[:kwargs]...)) where $(func_def[:whereparams]...)
+        function $type_name{$(params...)}($(func_def[:args]...),$(func_def[:kwargs]...)) where $(func_def[:whereparams]...)
           fsmi = new()
           fsmi._state = 0x00
           $((:(fsmi.$arg = $arg) for arg in args)...)
@@ -67,7 +67,7 @@ macro resumable(expr::Expr)
   end
   call_expr = combinedef(call_def) |> flatten
   #println(call_expr)
-  #delete!(func_def, :whereparams)
+  func_def[:kwargs] = []
   if isempty(params)
     func_def[:name] = :((_fsmi::$type_name))
   else
