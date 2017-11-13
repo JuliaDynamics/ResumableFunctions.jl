@@ -1,9 +1,12 @@
+using MacroTools: postwalk, flatten, splitdef, combinedef
+
 """
 Macro if used in a `@resumable function` that returns the `expr` otherwise returns `:nothing`.
 """
 macro yield(expr=nothing)
   esc(:nothing)
 end
+
 
 """
 Macro that transforms a function definition in a finite-statemachine:
@@ -15,29 +18,29 @@ Macro that transforms a function definition in a finite-statemachine:
   - continues after the `@yield` statement when called again.
 - Defines a constructor function that respects the calling conventions of the initial function definition and returns an object of the new type.
 """
+
 macro resumable(expr::Expr)
   expr.head != :function && error("Expression is not a function definition!")
   func_def = splitdef(expr)
-  args = get_args(func_def)
-  println(args)
+  args = ((get_arg_name(arg) for arg in func_def[:args])..., (get_arg_name(arg) for arg in func_def[:kwargs])...)
   params = ((get_param_name(param) for param in func_def[:whereparams])...)
   #println(params)
   ui8 = BoxedUInt8(zero(UInt8))
-  func_def[:body] = postwalk(x->transform_for(x, ui8), func_def[:body]) |> flatten
+  func_def[:body] = postwalk(x->transform_for(x, ui8), func_def[:body])
   mod = VERSION >= v"0.7.0-" ? __module__ : current_module()
-  slots = get_slots(copy(func_def), args, mod)
-  println(func_def)
-  println(slots)
+  slots = get_slots(copy(func_def), mod)
+  #println(func_def)
+  #println(slots)
   type_name = gensym()
   if isempty(params)
     type_expr = quote
       mutable struct $type_name <: ResumableFunctions.FiniteStateMachineIterator
         _state :: UInt8
         $((:($slotname :: $slottype) for (slotname, slottype) in slots)...)
-        function $type_name($((:($argname :: $argtype) for (argname, argtype) in args)...))
+        function $type_name($(func_def[:args]...);$(func_def[:kwargs]...))
           fsmi = new()
           fsmi._state = 0x00
-          $((:(fsmi.$arg = $arg) for arg in keys(args))...)
+          $((:(fsmi.$arg = $arg) for arg in args)...)
           fsmi
         end
       end
@@ -47,27 +50,26 @@ macro resumable(expr::Expr)
       mutable struct $type_name{$(func_def[:whereparams]...)} <: ResumableFunctions.FiniteStateMachineIterator
         _state :: UInt8
         $((:($slotname :: $slottype) for (slotname, slottype) in slots)...)
-        function $type_name{$(params...)}($((:($argname :: $argtype) for (argname, argtype) in args)...)) where $(func_def[:whereparams]...)
+        function $type_name{$(params...)}($(func_def[:args]...);$(func_def[:kwargs]...)) where $(func_def[:whereparams]...)
           fsmi = new()
           fsmi._state = 0x00
-          $((:(fsmi.$arg = $arg) for arg in keys(args))...)
+          $((:(fsmi.$arg = $arg) for arg in args)...)
           fsmi
         end
       end
     end
   end
-  println(type_expr)
+  #println(type_expr)
   call_def = copy(func_def)
   if isempty(params)
     call_def[:rtype] = :($type_name)
-    call_def[:body] = :($type_name($((:($arg) for arg in keys(args))...)))
+    call_def[:body] = :($type_name($((:($arg) for arg in args)...)))
   else
     call_def[:rtype] = :($type_name{$(params...)})
-    call_def[:body] = :($type_name{$(params...)}($((:($arg) for arg in keys(args))...)))
+    call_def[:body] = :($type_name{$(params...)}($((:($arg) for arg in args)...)))
   end
   call_expr = combinedef(call_def) |> flatten
-  println(call_expr)
-  func_def[:kwargs] = []
+  #println(call_expr)
   #delete!(func_def, :whereparams)
   if isempty(params)
     func_def[:name] = :((_fsmi::$type_name))
@@ -92,6 +94,6 @@ macro resumable(expr::Expr)
   end
   func_def[:args] = [Expr(:kw, :(_arg::Any), nothing)]
   func_expr = combinedef(func_def) 
-  println(func_expr)
+  #println(func_expr)
   esc(:($type_expr; $func_expr; $call_expr))
 end

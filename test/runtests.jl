@@ -1,8 +1,8 @@
 using ResumableFunctions
 using Base.Test
 
-@resumable function test_for(a::Int=0; b::Int=a+1) :: Int
-  #b = a + 1
+@resumable function test_for(a::Int=0) :: Int
+  b = a + 1
   for i in 1:9
     @yield a
     a, b = b, a+b
@@ -66,7 +66,8 @@ end #test_try
   a
 end
 
-@resumable function (test_where2(a::N, b::N) :: N) where N
+@resumable function (test_where2(a::N) :: N) where N
+  b = a + one(N)
   for i in 1:9
     @yield a
     a, b = b, a+b
@@ -76,5 +77,5 @@ end
 
 @testset "test_where" begin
 @test collect(test_where1(4.0)) == [4.0, 5.0, 9.0, 14.0, 23.0, 37.0, 60.0, 97.0, 157.0, 254.0]
-@test collect(test_where2(4, 5)) == [4, 5, 9, 14, 23, 37, 60, 97, 157, 254]
+@test collect(test_where2(4)) == [4, 5, 9, 14, 23, 37, 60, 97, 157, 254]
 end
