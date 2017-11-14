@@ -61,14 +61,10 @@ end
 * 2017: v0.1 initial release that is Julia v0.6 and v0.7 compatible:
   * Introduction of the `@resumable` and the `@yield` macros.
   * A `@resumable function` generates a type that implements the [iterator](https://docs.julialang.org/en/stable/manual/interfaces/#man-interface-iteration-1) interface.
+  * Parametric `@resumable functions` are supported.
 
 ## Caveats
 
 * In a `try` block only top level `@yield` statements are allowed.
 * In a `finally` block a `@yield` statement is not allowed.
 * An anonymous function can not contain a `@yield` statement.
-
-## Todo
-
-* Parametric `@resumable functions` are now in master branch.
-  

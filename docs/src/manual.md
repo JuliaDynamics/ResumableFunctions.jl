@@ -320,13 +320,55 @@ julia> for val in fibonnaci(10) println(val) end
 DocTestSetup = nothing
 ```
 
+## Parametric `@resumable` functions
+
+Type parameters can be specified with a `where` clause:
+
+```@meta
+DocTestSetup = quote
+  using ResumableFunctions
+
+  @resumable function fibonnaci(a::N, b::N=a+one(N)) :: N where {N<:Number}
+    for i in 1:9
+      @yield a
+      a, b = b, a + b
+    end
+    a
+  end
+end
+```
+
+```julia
+@resumable function fibonnaci(a::N, b::N=a+one(N)) :: N where {N<:Number}
+  for i in 1:9
+    @yield a
+    a, b = b, a + b
+   end
+  a
+end
+```
+
+```jldoctest
+julia> for val in fibonnaci(0.0) println(val) end
+0.0
+1.0
+1.0
+2.0
+3.0
+5.0
+8.0
+13.0
+21.0
+34.0
+```
+
+```@meta
+DocTestSetup = nothing
+```
+
 ## Caveats
 
 - In a `try` block only top level `@yield` statements are allowed.
 - In a `finally` block a `@yield` statement is not allowed.
 - An anonymous function can not contain a `@yield` statement.
 - If a `FiniteStateMachineIterator` object is used in more than one `for` loop, only the `state` variable is reinitialised. A `@resumable function` that alters its arguments will use the modified values as initial parameters.
-
-## Todo
-
-- Parametric @resumable functions are now available in master branch. Further testing is needed!
