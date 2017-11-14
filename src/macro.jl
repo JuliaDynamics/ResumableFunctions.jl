@@ -20,40 +20,39 @@ macro resumable(expr::Expr)
   expr.head != :function && error("Expression is not a function definition!")
   func_def = splitdef(expr)
   args, arg_dict = get_args(func_def)
+  #println(args)
   params = ((get_param_name(param) for param in func_def[:whereparams])...)
   #println(params)
   ui8 = BoxedUInt8(zero(UInt8))
-  func_def[:body] = postwalk(x->transform_for(x, ui8), func_def[:body]) |> flatten
+  func_def[:body] = postwalk(x->transform_for(x, ui8), func_def[:body])
   mod = VERSION >= v"0.7.0-" ? __module__ : current_module()
-  slots = get_slots(copy(func_def), mod, arg_dict)
-  #println(func_def)
+  slots = get_slots(copy(func_def), arg_dict, mod)
   #println(slots)
   type_name = gensym()
+  constr_def = copy(func_def)
   if isempty(params)
-    type_expr = quote
-      mutable struct $type_name <: ResumableFunctions.FiniteStateMachineIterator
-        _state :: UInt8
-        $((:($slotname :: $slottype) for (slotname, slottype) in slots)...)
-        function $type_name($(func_def[:args]...),$(func_def[:kwargs]...))
-          fsmi = new()
-          fsmi._state = 0x00
-          $((:(fsmi.$arg = $arg) for arg in args)...)
-          fsmi
-        end
-      end
-    end
+    struct_name = :($type_name <: ResumableFunctions.FiniteStateMachineIterator)
+    constr_def[:name] = :($type_name)
   else
-    type_expr = quote
-      mutable struct $type_name{$(func_def[:whereparams]...)} <: ResumableFunctions.FiniteStateMachineIterator
-        _state :: UInt8
-        $((:($slotname :: $slottype) for (slotname, slottype) in slots)...)
-        function $type_name{$(params...)}($(func_def[:args]...),$(func_def[:kwargs]...)) where $(func_def[:whereparams]...)
-          fsmi = new()
-          fsmi._state = 0x00
-          $((:(fsmi.$arg = $arg) for arg in args)...)
-          fsmi
-        end
-      end
+    struct_name = :($type_name{$(func_def[:whereparams]...)} <: ResumableFunctions.FiniteStateMachineIterator)
+    constr_def[:name] = :($type_name{$(params...)})
+  end
+  constr_def[:args] = (func_def[:args]..., func_def[:kwargs]...)
+  constr_def[:kwargs] = []
+  constr_def[:rtype] = constr_def[:name]
+  constr_def[:body] = quote
+    fsmi = new()
+    fsmi._state = 0x00
+    $((:(fsmi.$arg = $arg) for arg in args)...)
+    fsmi
+  end
+  constr_expr = combinedef(constr_def) |> flatten
+  #println(constr_expr)
+  type_expr = quote 
+    mutable struct $struct_name
+      _state :: UInt8
+      $((:($slotname :: $slottype) for (slotname, slottype) in slots)...)
+      $(constr_expr)
     end
   end
   #println(type_expr)
@@ -74,12 +73,12 @@ macro resumable(expr::Expr)
     func_def[:name] = :((_fsmi::$type_name{$(params...)}))
   end
   func_def[:body] = postwalk(x->transform_slots(x, keys(slots)), func_def[:body])
-  func_def[:body] = postwalk(transform_arg, func_def[:body]) |> flatten
+  func_def[:body] = postwalk(transform_arg, func_def[:body])
   func_def[:body] = postwalk(transform_exc, func_def[:body]) |> flatten
   ui8 = BoxedUInt8(zero(UInt8))
-  func_def[:body] = postwalk(x->transform_try(x, ui8), func_def[:body]) |> flatten
+  func_def[:body] = postwalk(x->transform_try(x, ui8), func_def[:body])
   ui8 = BoxedUInt8(zero(UInt8))
-  func_def[:body] = postwalk(x->transform_yield(x, ui8), func_def[:body]) |> flatten
+  func_def[:body] = postwalk(x->transform_yield(x, ui8), func_def[:body])
   func_def[:body] = quote
     _fsmi._state == 0x00 && @goto _STATE_0
     $((:(_fsmi._state == $i && @goto $(Symbol("_STATE_",:($i)))) for i in 0x01:ui8.n)...)
@@ -88,9 +87,9 @@ macro resumable(expr::Expr)
     _fsmi._state = 0xff
     _arg isa Exception && throw(_arg)
     $(func_def[:body])
-  end
+  end 
   func_def[:args] = [Expr(:kw, :(_arg::Any), nothing)]
-  func_expr = combinedef(func_def) 
+  func_expr = combinedef(func_def) |> flatten
   #println(func_expr)
   esc(:($type_expr; $func_expr; $call_expr))
 end

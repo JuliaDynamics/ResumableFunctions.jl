@@ -9,7 +9,6 @@ end
 """
 Function returning the arguments of a function definition
 """
-
 function get_args(func_def::Dict)
   arg_dict = Dict{Symbol, Any}()
   arg_list = Vector{Symbol}()
@@ -24,7 +23,7 @@ end
 """
 Function returning the slots of a function definition
 """
-function get_slots(func_def::Dict, mod, args::Dict{Symbol, Any}) :: Dict{Symbol, Any}
+function get_slots(func_def::Dict, args::Dict{Symbol, Any}, mod::Module) :: Dict{Symbol, Any}
   slots = Dict{Symbol, Any}()
   func_def[:name] = gensym()
   func_def[:args] = (func_def[:args]..., func_def[:kwargs]...)
