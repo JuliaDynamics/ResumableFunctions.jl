@@ -65,8 +65,7 @@ end #test_try
   a
 end
 
-@resumable function (test_where2(a::N) :: N) where N
-  b = a + one(N)
+@resumable function (test_where2(a::N=4; b::N=a + one(N)) :: N) where N
   for i in 1:9
     @yield a
     a, b = b, a+b

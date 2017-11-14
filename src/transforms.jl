@@ -19,7 +19,7 @@ end
 """
 Function that replaces a variable `x` in an expression by `_fsmi.x` where `x` is a known slot.
 """
-function transform_slots(expr, symbols::Base.KeyIterator{Dict{Symbol,Type}})
+function transform_slots(expr, symbols::Base.KeyIterator{Dict{Symbol,Any}})
   expr isa Expr || return expr
   for i in 1:length(expr.args)
     expr.head == :kw && i == 1 && continue
