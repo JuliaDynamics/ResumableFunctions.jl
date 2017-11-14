@@ -19,13 +19,13 @@ Macro that transforms a function definition in a finite-statemachine:
 macro resumable(expr::Expr)
   expr.head != :function && error("Expression is not a function definition!")
   func_def = splitdef(expr)
-  args = get_args(func_def)
+  args, arg_dict = get_args(func_def)
   params = ((get_param_name(param) for param in func_def[:whereparams])...)
   #println(params)
   ui8 = BoxedUInt8(zero(UInt8))
   func_def[:body] = postwalk(x->transform_for(x, ui8), func_def[:body]) |> flatten
   mod = VERSION >= v"0.7.0-" ? __module__ : current_module()
-  slots = get_slots(copy(func_def), mod, args)
+  slots = get_slots(copy(func_def), mod, arg_dict)
   #println(func_def)
   #println(slots)
   type_name = gensym()
@@ -37,7 +37,7 @@ macro resumable(expr::Expr)
         function $type_name($(func_def[:args]...),$(func_def[:kwargs]...))
           fsmi = new()
           fsmi._state = 0x00
-          $((:(fsmi.$arg = $arg) for arg in keys(args))...)
+          $((:(fsmi.$arg = $arg) for arg in args)...)
           fsmi
         end
       end
@@ -50,7 +50,7 @@ macro resumable(expr::Expr)
         function $type_name{$(params...)}($(func_def[:args]...),$(func_def[:kwargs]...)) where $(func_def[:whereparams]...)
           fsmi = new()
           fsmi._state = 0x00
-          $((:(fsmi.$arg = $arg) for arg in keys(args))...)
+          $((:(fsmi.$arg = $arg) for arg in args)...)
           fsmi
         end
       end
@@ -60,10 +60,10 @@ macro resumable(expr::Expr)
   call_def = copy(func_def)
   if isempty(params)
     call_def[:rtype] = :($type_name)
-    call_def[:body] = :($type_name($((:($arg) for arg in keys(args))...)))
+    call_def[:body] = :($type_name($((:($arg) for arg in args)...)))
   else
     call_def[:rtype] = :($type_name{$(params...)})
-    call_def[:body] = :($type_name{$(params...)}($((:($arg) for arg in keys(args))...)))
+    call_def[:body] = :($type_name{$(params...)}($((:($arg) for arg in args)...)))
   end
   call_expr = combinedef(call_def) |> flatten
   #println(call_expr)

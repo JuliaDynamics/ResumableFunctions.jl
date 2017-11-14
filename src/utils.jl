@@ -1,5 +1,5 @@
 """
-Function returning the names of the where parameters
+Function returning the name of a where parameter
 """
 function get_param_name(expr) :: Symbol
   @capture(expr, arg_<:arg_type_) && return arg
@@ -10,13 +10,15 @@ end
 Function returning the arguments of a function definition
 """
 
-function get_args(func_def::Dict) :: Dict{Symbol, Any}
-  args = Dict{Symbol, Any}()
+function get_args(func_def::Dict)
+  arg_dict = Dict{Symbol, Any}()
+  arg_list = Vector{Symbol}()
   for arg in (func_def[:args]..., func_def[:kwargs]...)
     arg_def = splitarg(arg)
-    args[arg_def[1]] = arg_def[2]
+    push!(arg_list, arg_def[1])
+    arg_dict[arg_def[1]] = arg_def[2]
   end
-  args
+  arg_list, arg_dict
 end
 
 """
