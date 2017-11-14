@@ -89,19 +89,19 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "manual.html#Parametric-@resumable-functions-1",
+    "page": "Manual",
+    "title": "Parametric @resumable functions",
+    "category": "section",
+    "text": "Type parameters can be specified with a where clause:DocTestSetup = quote\n  using ResumableFunctions\n\n  @resumable function fibonnaci(a::N, b::N=a+one(N)) :: N where {N<:Number}\n    for i in 1:9\n      @yield a\n      a, b = b, a + b\n    end\n    a\n  end\nend@resumable function fibonnaci(a::N, b::N=a+one(N)) :: N where {N<:Number}\n  for i in 1:9\n    @yield a\n    a, b = b, a + b\n   end\n  a\nendjulia> for val in fibonnaci(0.0) println(val) end\n0.0\n1.0\n1.0\n2.0\n3.0\n5.0\n8.0\n13.0\n21.0\n34.0DocTestSetup = nothing"
+},
+
+{
     "location": "manual.html#Caveats-1",
     "page": "Manual",
     "title": "Caveats",
     "category": "section",
     "text": "In a try block only top level @yield statements are allowed.\nIn a finally block a @yield statement is not allowed.\nAn anonymous function can not contain a @yield statement.\nIf a FiniteStateMachineIterator object is used in more than one for loop, only the state variable is reinitialised. A @resumable function that alters its arguments will use the modified values as initial parameters."
-},
-
-{
-    "location": "manual.html#Todo-1",
-    "page": "Manual",
-    "title": "Todo",
-    "category": "section",
-    "text": "Parametric @resumable functions are now available in master branch. Further testing is needed!"
 },
 
 {
