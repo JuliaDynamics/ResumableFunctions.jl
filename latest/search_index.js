@@ -321,11 +321,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "library.html#ResumableFunctions.get_arg_name-Tuple{Any}",
+    "location": "library.html#ResumableFunctions.get_args-Tuple{Dict}",
     "page": "Library",
-    "title": "ResumableFunctions.get_arg_name",
+    "title": "ResumableFunctions.get_args",
     "category": "Method",
-    "text": "Function returning the name of an argument expression\n\n\n\n"
+    "text": "Function returning the arguments of a function definition\n\n\n\n"
 },
 
 {
@@ -337,7 +337,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "library.html#ResumableFunctions.get_slots-Tuple{Dict,Any}",
+    "location": "library.html#ResumableFunctions.get_slots-Tuple{Dict,Any,Dict{Symbol,Any}}",
     "page": "Library",
     "title": "ResumableFunctions.get_slots",
     "category": "Method",
@@ -345,7 +345,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "library.html#ResumableFunctions.make_arg_any-Tuple{Any,Dict{Symbol,Type}}",
+    "location": "library.html#ResumableFunctions.make_arg_any-Tuple{Any,Dict{Symbol,Any}}",
     "page": "Library",
     "title": "ResumableFunctions.make_arg_any",
     "category": "Method",
@@ -353,7 +353,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "library.html#ResumableFunctions.remove_catch_exc-Tuple{Any,Dict{Symbol,Type}}",
+    "location": "library.html#ResumableFunctions.remove_catch_exc-Tuple{Any,Dict{Symbol,Any}}",
     "page": "Library",
     "title": "ResumableFunctions.remove_catch_exc",
     "category": "Method",
@@ -385,7 +385,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "library.html#ResumableFunctions.transform_slots-Tuple{Any,Base.KeyIterator{Dict{Symbol,Type}}}",
+    "location": "library.html#ResumableFunctions.transform_slots-Tuple{Any,Base.KeyIterator{Dict{Symbol,Any}}}",
     "page": "Library",
     "title": "ResumableFunctions.transform_slots",
     "category": "Method",
