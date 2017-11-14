@@ -89,19 +89,19 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "manual.html#Parametric-@resumable-functions-1",
+    "page": "Manual",
+    "title": "Parametric @resumable functions",
+    "category": "section",
+    "text": "Type parameters can be specified with a where clause:DocTestSetup = quote\n  using ResumableFunctions\n\n  @resumable function fibonnaci(a::N, b::N=a+one(N)) :: N where {N<:Number}\n    for i in 1:9\n      @yield a\n      a, b = b, a + b\n    end\n    a\n  end\nend@resumable function fibonnaci(a::N, b::N=a+one(N)) :: N where {N<:Number}\n  for i in 1:9\n    @yield a\n    a, b = b, a + b\n   end\n  a\nendjulia> for val in fibonnaci(0.0) println(val) end\n0.0\n1.0\n1.0\n2.0\n3.0\n5.0\n8.0\n13.0\n21.0\n34.0DocTestSetup = nothing"
+},
+
+{
     "location": "manual.html#Caveats-1",
     "page": "Manual",
     "title": "Caveats",
     "category": "section",
     "text": "In a try block only top level @yield statements are allowed.\nIn a finally block a @yield statement is not allowed.\nAn anonymous function can not contain a @yield statement.\nIf a FiniteStateMachineIterator object is used in more than one for loop, only the state variable is reinitialised. A @resumable function that alters its arguments will use the modified values as initial parameters."
-},
-
-{
-    "location": "manual.html#Todo-1",
-    "page": "Manual",
-    "title": "Todo",
-    "category": "section",
-    "text": "Parametric @resumable function."
 },
 
 {
@@ -321,15 +321,23 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "library.html#ResumableFunctions.get_arg_name-Tuple{Any}",
+    "location": "library.html#ResumableFunctions.get_args-Tuple{Dict}",
     "page": "Library",
-    "title": "ResumableFunctions.get_arg_name",
+    "title": "ResumableFunctions.get_args",
     "category": "Method",
-    "text": "Function returning the name of an argument expression\n\n\n\n"
+    "text": "Function returning the arguments of a function definition\n\n\n\n"
 },
 
 {
-    "location": "library.html#ResumableFunctions.get_slots-Tuple{Dict}",
+    "location": "library.html#ResumableFunctions.get_param_name-Tuple{Any}",
+    "page": "Library",
+    "title": "ResumableFunctions.get_param_name",
+    "category": "Method",
+    "text": "Function returning the name of a where parameter\n\n\n\n"
+},
+
+{
+    "location": "library.html#ResumableFunctions.get_slots-Tuple{Dict,Any,Dict{Symbol,Any}}",
     "page": "Library",
     "title": "ResumableFunctions.get_slots",
     "category": "Method",
@@ -337,7 +345,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "library.html#ResumableFunctions.make_arg_any-Tuple{Any,Dict{Symbol,Type}}",
+    "location": "library.html#ResumableFunctions.make_arg_any-Tuple{Any,Dict{Symbol,Any}}",
     "page": "Library",
     "title": "ResumableFunctions.make_arg_any",
     "category": "Method",
@@ -345,7 +353,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "library.html#ResumableFunctions.remove_catch_exc-Tuple{Any,Dict{Symbol,Type}}",
+    "location": "library.html#ResumableFunctions.remove_catch_exc-Tuple{Any,Dict{Symbol,Any}}",
     "page": "Library",
     "title": "ResumableFunctions.remove_catch_exc",
     "category": "Method",
@@ -377,7 +385,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "library.html#ResumableFunctions.transform_slots-Tuple{Any,Base.KeyIterator{Dict{Symbol,Type}}}",
+    "location": "library.html#ResumableFunctions.transform_slots-Tuple{Any,Base.KeyIterator{Dict{Symbol,Any}}}",
     "page": "Library",
     "title": "ResumableFunctions.transform_slots",
     "category": "Method",
