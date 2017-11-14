@@ -333,7 +333,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Library",
     "title": "ResumableFunctions.get_param_name",
     "category": "Method",
-    "text": "Function returning the names of the where parameters\n\n\n\n"
+    "text": "Function returning the name of a where parameter\n\n\n\n"
 },
 
 {
