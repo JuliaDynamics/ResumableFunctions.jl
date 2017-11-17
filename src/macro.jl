@@ -1,8 +1,9 @@
 """
-Macro if used in a `@resumable function` that returns the `expr` otherwise returns `:nothing`.
+Macro if used in a `@resumable function` that returns the `expr` otherwise throws an error.
 """
 macro yield(expr=nothing)
-  esc(:nothing)
+  #esc(:nothing)
+  error("@yield macro outside a @resumable function!")
 end
 
 """

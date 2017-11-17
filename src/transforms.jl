@@ -134,3 +134,16 @@ function transform_yield(expr, ui8::BoxedUInt8)
     _fsmi._state = 0xff
   end
 end
+
+"""
+Function that replaces a `@yield ret` or `@yield` statement with 
+```julia
+  return ret
+```
+"""
+function transform_yield(expr)
+  @capture(expr, (@yield ret_) | @yield) || return expr
+  quote
+    return $ret
+  end
+end

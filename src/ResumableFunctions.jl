@@ -11,7 +11,7 @@ module ResumableFunctions
   export @resumable, @yield
 
   include("types.jl")
-  include("utils.jl")
   include("transforms.jl")
+  include("utils.jl")
   include("macro.jl")
 end
