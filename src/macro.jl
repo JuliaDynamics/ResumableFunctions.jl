@@ -21,7 +21,7 @@ macro resumable(expr::Expr)
   expr.head != :function && error("Expression is not a function definition!")
   func_def = splitdef(expr)
   args, arg_dict = get_args(func_def)
-  #println(args)
+  #println(arg_dict)
   params = ((get_param_name(param) for param in func_def[:whereparams])...)
   #println(params)
   ui8 = BoxedUInt8(zero(UInt8))
@@ -38,7 +38,7 @@ macro resumable(expr::Expr)
     struct_name = :($type_name{$(func_def[:whereparams]...)} <: ResumableFunctions.FiniteStateMachineIterator)
     constr_def[:name] = :($type_name{$(params...)})
   end
-  constr_def[:args] = (func_def[:args]..., func_def[:kwargs]...)
+  constr_def[:args] = make_args(func_def)#(func_def[:args]..., func_def[:kwargs]...)
   constr_def[:kwargs] = []
   constr_def[:rtype] = constr_def[:name]
   constr_def[:body] = quote

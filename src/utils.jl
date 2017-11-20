@@ -15,7 +15,7 @@ function get_args(func_def::Dict)
   for arg in (func_def[:args]..., func_def[:kwargs]...)
     arg_def = splitarg(arg)
     push!(arg_list, arg_def[1])
-    arg_dict[arg_def[1]] = arg_def[2]
+    arg_dict[arg_def[1]] = arg_def[3] ? Tuple : arg_dict[arg_def[1]] = arg_def[2]
   end
   arg_list, arg_dict
 end
@@ -63,4 +63,17 @@ function make_arg_any(expr, slots::Dict{Symbol, Any})
   @capture(expr, (arg_ = @yield ret_) | (arg_ = @yield)) || return expr
   slots[arg] = Any
   expr
+end
+
+
+"""
+Function returning the args for the type construction.
+"""
+function make_args(func_def::Dict)
+  args=[]
+  for arg in (func_def[:args]..., func_def[:kwargs]...)
+    arg_def = splitarg(arg)
+    push!(args, combinearg(arg_def[1], arg_def[2], false, arg_def[4]))
+  end
+  (args...)
 end

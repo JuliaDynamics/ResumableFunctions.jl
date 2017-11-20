@@ -77,3 +77,17 @@ end
 @test collect(test_where1(4.0)) == [4.0, 5.0, 9.0, 14.0, 23.0, 37.0, 60.0, 97.0, 157.0, 254.0]
 @test collect(test_where2(4)) == [4, 5, 9, 14, 23, 37, 60, 97, 157, 254]
 end
+
+@resumable function test_varargs(a...)
+  for (i, e) in enumerate(a)
+    if i == length(a)
+      return e
+    else
+      @yield e
+    end
+  end
+end
+
+@testset "test_varargs" begin
+@test collect(test_varargs(1, 2, 3)) == [1, 2, 3]
+end 
