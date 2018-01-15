@@ -12,6 +12,7 @@
 ## Installation
 
 [![ResumableFunctions](http://pkg.julialang.org/badges/ResumableFunctions_0.6.svg)](http://pkg.julialang.org/detail/ResumableFunctions)
+[![ResumableFunctions](http://pkg.julialang.org/badges/ResumableFunctions_0.7.svg)](http://pkg.julialang.org/detail/ResumableFunctions)
 
 `ResumableFunctions` is a [registered package](http://pkg.julialang.org) and can be installed by running:
 ```julia
@@ -58,7 +59,9 @@ end
 
 ## Release notes
 
-* 2017: v0.1 initial release that is Julia v0.6 and v0.7 compatible:
+* 2018: v0.2 is Julia v0.7 compatible
+
+* 2017: v0.1 initial release that is Julia v0.6 compatible:
   * Introduction of the `@resumable` and the `@yield` macros.
   * A `@resumable function` generates a type that implements the [iterator](https://docs.julialang.org/en/stable/manual/interfaces/#man-interface-iteration-1) interface.
   * Parametric `@resumable functions` are supported.

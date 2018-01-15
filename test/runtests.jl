@@ -1,5 +1,5 @@
 using ResumableFunctions
-using Base.Test
+using Test
 
 @resumable function test_for(a::Int=0; b::Int=a+1) :: Int
   for i in 1:9

@@ -75,5 +75,5 @@ function make_args(func_def::Dict)
     arg_def = splitarg(arg)
     push!(args, combinearg(arg_def[1], arg_def[2], false, arg_def[4]))
   end
-  (args...)
+  (args...,)
 end

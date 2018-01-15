@@ -28,4 +28,4 @@ Implements the `done` method of the *iterator* interface for a subtype of `Finit
 """
 Implements the `iteratorsize` method of the *iterator* interface for a subtype of `FiniteStateMachineIterator`.
 """
-Base.iteratorsize(::Type{T}) where T<:FiniteStateMachineIterator = Base.SizeUnknown()
+Base.IteratorSize(::Type{T}) where T<:FiniteStateMachineIterator = Base.SizeUnknown()
