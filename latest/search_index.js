@@ -261,7 +261,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Library",
     "title": "ResumableFunctions.@yield",
     "category": "Macro",
-    "text": "Macro if used in a @resumable function that returns the expr otherwise returns :nothing.\n\n\n\n"
+    "text": "Macro if used in a @resumable function that returns the expr otherwise throws an error.\n\n\n\n"
 },
 
 {
@@ -270,6 +270,14 @@ var documenterSearchIndex = {"docs": [
     "title": "Public interface",
     "category": "section",
     "text": "Modules = [ResumableFunctions]\nPrivate = false"
+},
+
+{
+    "location": "library.html#Base.IteratorSize-Union{Tuple{Type{T}}, Tuple{T}} where T<:ResumableFunctions.FiniteStateMachineIterator",
+    "page": "Library",
+    "title": "Base.IteratorSize",
+    "category": "Method",
+    "text": "Implements the iteratorsize method of the iterator interface for a subtype of FiniteStateMachineIterator.\n\n\n\n"
 },
 
 {
@@ -294,14 +302,6 @@ var documenterSearchIndex = {"docs": [
     "title": "Base.done",
     "category": "Method",
     "text": "Implements the done method of the iterator interface for a subtype of FiniteStateMachineIterator.\n\n\n\n"
-},
-
-{
-    "location": "library.html#Base.iteratorsize-Union{Tuple{Type{T}}, Tuple{T}} where T<:ResumableFunctions.FiniteStateMachineIterator",
-    "page": "Library",
-    "title": "Base.iteratorsize",
-    "category": "Method",
-    "text": "Implements the iteratorsize method of the iterator interface for a subtype of FiniteStateMachineIterator.\n\n\n\n"
 },
 
 {
@@ -353,6 +353,14 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "library.html#ResumableFunctions.make_args-Tuple{Dict}",
+    "page": "Library",
+    "title": "ResumableFunctions.make_args",
+    "category": "Method",
+    "text": "Function returning the args for the type construction.\n\n\n\n"
+},
+
+{
     "location": "library.html#ResumableFunctions.remove_catch_exc-Tuple{Any,Dict{Symbol,Any}}",
     "page": "Library",
     "title": "ResumableFunctions.remove_catch_exc",
@@ -385,7 +393,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "library.html#ResumableFunctions.transform_slots-Tuple{Any,Base.KeyIterator{Dict{Symbol,Any}}}",
+    "location": "library.html#ResumableFunctions.transform_slots-Tuple{Any,Base.KeySet{Symbol,Dict{Symbol,Any}}}",
     "page": "Library",
     "title": "ResumableFunctions.transform_slots",
     "category": "Method",
@@ -406,6 +414,14 @@ var documenterSearchIndex = {"docs": [
     "title": "ResumableFunctions.transform_yield",
     "category": "Method",
     "text": "Function that replaces a @yield ret or @yield statement with \n\n  _fsmi._state = n\n  return ret\n  @label _STATE_n\n  _fsmi._state = 0xff\n\n\n\n"
+},
+
+{
+    "location": "library.html#ResumableFunctions.transform_yield-Tuple{Any}",
+    "page": "Library",
+    "title": "ResumableFunctions.transform_yield",
+    "category": "Method",
+    "text": "Function that replaces a @yield ret or @yield statement with \n\n  return ret\n\n\n\n"
 },
 
 {
