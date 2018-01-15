@@ -13,7 +13,7 @@ git:
 
 matrix:
   allow_failures:
-  - julia: nightly
+  - julia: 0.6
 
 after_success:
   # push coverage results to Coveralls
