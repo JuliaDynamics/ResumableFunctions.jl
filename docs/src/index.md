@@ -12,7 +12,7 @@ using ResumableFunctions
 @resumable function fibonnaci(n::Int)
   a = 0
   b = 1
-  for i in 1:n-1
+  for i in 1:n
     @yield a
     a, b = b, a+b
   end

@@ -144,7 +144,7 @@ DocTestSetup = quote
   @resumable function fibonnaci(n) :: Int
     a = 0
     b = 1
-    for i in 1:n-1
+    for i in 1:n
       @yield a
       a, b = b, a + b
     end
@@ -157,7 +157,7 @@ end
 @resumable function fibonnaci(n) :: Int
   a = 0
   b = 1
-  for i in 1:n-1
+  for i in 1:n
     @yield a
     a, b = b, a + b
   end
@@ -166,7 +166,7 @@ end
 ```
 
 ```jldoctest
-julia> fib_iterator = fibonnaci(4);
+julia> fib_iterator = fibonnaci(3);
 
 julia> fib_iterator()
 0
@@ -281,7 +281,7 @@ DocTestSetup = quote
   @resumable function fibonnaci(n) :: Int
     a = 0
     b = 1
-    for i in 1:n-1
+    for i in 1:n
       @yield a
       a, b = b, a + b
     end
@@ -294,7 +294,7 @@ end
 @resumable function fibonnaci(n) :: Int
   a = 0
   b = 1
-  for i in 1:n-1
+  for i in 1:n
     @yield a
     a, b = b, a + b
   end
@@ -329,7 +329,7 @@ DocTestSetup = quote
   using ResumableFunctions
 
   @resumable function fibonnaci(a::N, b::N=a+one(N)) :: N where {N<:Number}
-    for i in 1:9
+    for i in 1:10
       @yield a
       a, b = b, a + b
     end
@@ -340,7 +340,7 @@ end
 
 ```julia
 @resumable function fibonnaci(a::N, b::N=a+one(N)) :: N where {N<:Number}
-  for i in 1:9
+  for i in 1:10
     @yield a
     a, b = b, a + b
    end
