@@ -30,11 +30,10 @@ using ResumableFunctions
 @resumable function fibonnaci(n::Int) :: Int
   a = 0
   b = 1
-  for i in 1:n-1
+  for i in 1:n
     @yield a
     a, b = b, a+b
   end
-  a
 end
 
 for fib in fibonnaci(10)
@@ -59,7 +58,9 @@ end
 
 ## Release notes
 
-* 2018: v0.2 is Julia v0.7 compatible
+* 2018: v0.3 is Julia v0.7 compatible.
+
+* 2018: v0.2 the iterator now behaves as a Python generator: only values that are explicitely yielded are generated; the return value is ignored.
 
 * 2017: v0.1 initial release that is Julia v0.6 compatible:
   * Introduction of the `@resumable` and the `@yield` macros.
