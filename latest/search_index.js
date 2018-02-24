@@ -21,7 +21,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Home",
     "title": "Example",
     "category": "section",
-    "text": "using ResumableFunctions\n\n@resumable function fibonnaci(n::Int)\n  a = 0\n  b = 1\n  for i in 1:n-1\n    @yield a\n    a, b = b, a+b\n  end\n  a\nend\n\nfor val in fibonnaci(10) \n  println(val) \nend\n\n# output\n\n0\n1\n1\n2\n3\n5\n8\n13\n21\n34"
+    "text": "using ResumableFunctions\n\n@resumable function fibonnaci(n::Int)\n  a = 0\n  b = 1\n  for i in 1:n\n    @yield a\n    a, b = b, a+b\n  end\n  a\nend\n\nfor val in fibonnaci(10) \n  println(val) \nend\n\n# output\n\n0\n1\n1\n2\n3\n5\n8\n13\n21\n34"
 },
 
 {
@@ -69,7 +69,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Manual",
     "title": "Basic usage",
     "category": "section",
-    "text": "When a @resumable function is called, it continues where it left during the previous invocation:DocTestSetup = quote\n  using ResumableFunctions\n\n  @resumable function basic_example()\n    @yield \"Initial call\"\n    @yield \"Second call\"\n    \"Final call\"\n  end\nend@resumable function basic_example()\n  @yield \"Initial call\"\n  @yield \"Second call\"\n  \"Final call\"\nendjulia> basic_iterator = basic_example();\n\njulia> basic_iterator()\n\"Initial call\"\n\njulia> basic_iterator()\n\"Second call\"\n\njulia> basic_iterator()\n\"Final call\"DocTestSetup = nothingThe @yield can also be used without a return argument:DocTestSetup = quote\n  using ResumableFunctions\n\n  @resumable function basic_example()\n    @yield \"Initial call\"\n    @yield \n    \"Final call\"\n  end\nend@resumable function basic_example()\n  @yield \"Initial call\"\n  @yield \n  \"Final call\"\nendjulia> basic_iterator = basic_example();\n\njulia> basic_iterator()\n\"Initial call\"\n\njulia> basic_iterator()\n\njulia> basic_iterator()\n\"Final call\"DocTestSetup = nothingThe famous Fibonnaci sequence can easily be generated:DocTestSetup = quote\n  using ResumableFunctions\n\n  @resumable function fibonnaci()\n    a = 0\n    b = 1\n    while true\n      @yield a\n      a, b = b, a + b\n    end\n  end\nend@resumable function fibonnaci()\n  a = 0\n  b = 1\n  while true\n    @yield a\n    a, b = b, a + b\n  end\nendjulia> fib_iterator = fibonnaci();\n\njulia> fib_iterator()\n0\n\njulia> fib_iterator()\n1\n\njulia> fib_iterator()\n1\n\njulia> fib_iterator()\n2\n\njulia> fib_iterator()\n3\n\njulia> fib_iterator()\n5\n\njulia> fib_iterator()\n8DocTestSetup = nothingThe @resumable function can take arguments and the type of the return value can be specified:DocTestSetup = quote\n  using ResumableFunctions\n\n  @resumable function fibonnaci(n) :: Int\n    a = 0\n    b = 1\n    for i in 1:n-1\n      @yield a\n      a, b = b, a + b\n    end\n    a\n  end\nend@resumable function fibonnaci(n) :: Int\n  a = 0\n  b = 1\n  for i in 1:n-1\n    @yield a\n    a, b = b, a + b\n  end\n  a\nendjulia> fib_iterator = fibonnaci(4);\n\njulia> fib_iterator()\n0\n\njulia> fib_iterator()\n1\n\njulia> fib_iterator()\n1\n\njulia> fib_iterator()\n2\n\njulia> fib_iterator()\nERROR: @resumable function has stopped!DocTestSetup = nothingWhen the @resumable function returns normally an error will be thrown if called again."
+    "text": "When a @resumable function is called, it continues where it left during the previous invocation:DocTestSetup = quote\n  using ResumableFunctions\n\n  @resumable function basic_example()\n    @yield \"Initial call\"\n    @yield \"Second call\"\n    \"Final call\"\n  end\nend@resumable function basic_example()\n  @yield \"Initial call\"\n  @yield \"Second call\"\n  \"Final call\"\nendjulia> basic_iterator = basic_example();\n\njulia> basic_iterator()\n\"Initial call\"\n\njulia> basic_iterator()\n\"Second call\"\n\njulia> basic_iterator()\n\"Final call\"DocTestSetup = nothingThe @yield can also be used without a return argument:DocTestSetup = quote\n  using ResumableFunctions\n\n  @resumable function basic_example()\n    @yield \"Initial call\"\n    @yield \n    \"Final call\"\n  end\nend@resumable function basic_example()\n  @yield \"Initial call\"\n  @yield \n  \"Final call\"\nendjulia> basic_iterator = basic_example();\n\njulia> basic_iterator()\n\"Initial call\"\n\njulia> basic_iterator()\n\njulia> basic_iterator()\n\"Final call\"DocTestSetup = nothingThe famous Fibonnaci sequence can easily be generated:DocTestSetup = quote\n  using ResumableFunctions\n\n  @resumable function fibonnaci()\n    a = 0\n    b = 1\n    while true\n      @yield a\n      a, b = b, a + b\n    end\n  end\nend@resumable function fibonnaci()\n  a = 0\n  b = 1\n  while true\n    @yield a\n    a, b = b, a + b\n  end\nendjulia> fib_iterator = fibonnaci();\n\njulia> fib_iterator()\n0\n\njulia> fib_iterator()\n1\n\njulia> fib_iterator()\n1\n\njulia> fib_iterator()\n2\n\njulia> fib_iterator()\n3\n\njulia> fib_iterator()\n5\n\njulia> fib_iterator()\n8DocTestSetup = nothingThe @resumable function can take arguments and the type of the return value can be specified:DocTestSetup = quote\n  using ResumableFunctions\n\n  @resumable function fibonnaci(n) :: Int\n    a = 0\n    b = 1\n    for i in 1:n\n      @yield a\n      a, b = b, a + b\n    end\n    a\n  end\nend@resumable function fibonnaci(n) :: Int\n  a = 0\n  b = 1\n  for i in 1:n\n    @yield a\n    a, b = b, a + b\n  end\n  a\nendjulia> fib_iterator = fibonnaci(3);\n\njulia> fib_iterator()\n0\n\njulia> fib_iterator()\n1\n\njulia> fib_iterator()\n1\n\njulia> fib_iterator()\n2\n\njulia> fib_iterator()\nERROR: @resumable function has stopped!DocTestSetup = nothingWhen the @resumable function returns normally an error will be thrown if called again."
 },
 
 {
@@ -85,7 +85,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Manual",
     "title": "Iterator interface",
     "category": "section",
-    "text": "The interator interface is implemented for a @resumable function:DocTestSetup = quote\n  using ResumableFunctions\n\n  @resumable function fibonnaci(n) :: Int\n    a = 0\n    b = 1\n    for i in 1:n-1\n      @yield a\n      a, b = b, a + b\n    end\n    a\n  end\nend@resumable function fibonnaci(n) :: Int\n  a = 0\n  b = 1\n  for i in 1:n-1\n    @yield a\n    a, b = b, a + b\n  end\n  a\nendjulia> for val in fibonnaci(10) println(val) end\n0\n1\n1\n2\n3\n5\n8\n13\n21\n34DocTestSetup = nothing"
+    "text": "The interator interface is implemented for a @resumable function:DocTestSetup = quote\n  using ResumableFunctions\n\n  @resumable function fibonnaci(n) :: Int\n    a = 0\n    b = 1\n    for i in 1:n\n      @yield a\n      a, b = b, a + b\n    end\n    a\n  end\nend@resumable function fibonnaci(n) :: Int\n  a = 0\n  b = 1\n  for i in 1:n\n    @yield a\n    a, b = b, a + b\n  end\n  a\nendjulia> for val in fibonnaci(10) println(val) end\n0\n1\n1\n2\n3\n5\n8\n13\n21\n34DocTestSetup = nothing"
 },
 
 {
@@ -93,7 +93,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Manual",
     "title": "Parametric @resumable functions",
     "category": "section",
-    "text": "Type parameters can be specified with a where clause:DocTestSetup = quote\n  using ResumableFunctions\n\n  @resumable function fibonnaci(a::N, b::N=a+one(N)) :: N where {N<:Number}\n    for i in 1:9\n      @yield a\n      a, b = b, a + b\n    end\n    a\n  end\nend@resumable function fibonnaci(a::N, b::N=a+one(N)) :: N where {N<:Number}\n  for i in 1:9\n    @yield a\n    a, b = b, a + b\n   end\n  a\nendjulia> for val in fibonnaci(0.0) println(val) end\n0.0\n1.0\n1.0\n2.0\n3.0\n5.0\n8.0\n13.0\n21.0\n34.0DocTestSetup = nothing"
+    "text": "Type parameters can be specified with a where clause:DocTestSetup = quote\n  using ResumableFunctions\n\n  @resumable function fibonnaci(a::N, b::N=a+one(N)) :: N where {N<:Number}\n    for i in 1:10\n      @yield a\n      a, b = b, a + b\n    end\n    a\n  end\nend@resumable function fibonnaci(a::N, b::N=a+one(N)) :: N where {N<:Number}\n  for i in 1:10\n    @yield a\n    a, b = b, a + b\n   end\n  a\nendjulia> for val in fibonnaci(0.0) println(val) end\n0.0\n1.0\n1.0\n2.0\n3.0\n5.0\n8.0\n13.0\n21.0\n34.0DocTestSetup = nothing"
 },
 
 {
@@ -245,7 +245,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Library",
     "title": "ResumableFunctions.ResumableFunctions",
     "category": "Module",
-    "text": "Main module for ResumableFunctions.jl – C# style generators a.k.a. semi-coroutines for Julia\n\n\n\n"
+    "text": "Main module for ResumableFunctions.jl – C# style generators a.k.a. semi-coroutines for Julia\n\n\n\n\n\n"
 },
 
 {
@@ -253,7 +253,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Library",
     "title": "ResumableFunctions.@resumable",
     "category": "Macro",
-    "text": "Macro that transforms a function definition in a finite-statemachine:\n\nDefines a new mutable struct that implements the iterator interface and is used to store the internal state.\nMakes this new type callable having following characteristics:\nimplementents the statements from the initial function definition but;\nreturns at a @yield statement and;\ncontinues after the @yield statement when called again.\nDefines a constructor function that respects the calling conventions of the initial function definition and returns an object of the new type.\n\n\n\n"
+    "text": "Macro that transforms a function definition in a finite-statemachine:\n\nDefines a new mutable struct that implements the iterator interface and is used to store the internal state.\nMakes this new type callable having following characteristics:\nimplementents the statements from the initial function definition but;\nreturns at a @yield statement and;\ncontinues after the @yield statement when called again.\nDefines a constructor function that respects the calling conventions of the initial function definition and returns an object of the new type.\n\n\n\n\n\n"
 },
 
 {
@@ -261,7 +261,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Library",
     "title": "ResumableFunctions.@yield",
     "category": "Macro",
-    "text": "Macro if used in a @resumable function that returns the expr otherwise throws an error.\n\n\n\n"
+    "text": "Macro if used in a @resumable function that returns the expr otherwise throws an error.\n\n\n\n\n\n"
 },
 
 {
@@ -273,11 +273,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "library.html#Base.IteratorSize-Union{Tuple{Type{T}}, Tuple{T}} where T<:ResumableFunctions.FiniteStateMachineIterator",
+    "location": "library.html#Base.iteratorsize-Union{Tuple{Type{T}}, Tuple{T}} where T<:ResumableFunctions.FiniteStateMachineIterator",
     "page": "Library",
-    "title": "Base.IteratorSize",
+    "title": "Base.iteratorsize",
     "category": "Method",
-    "text": "Implements the iteratorsize method of the iterator interface for a subtype of FiniteStateMachineIterator.\n\n\n\n"
+    "text": "Implements the iteratorsize method of the iterator interface for a subtype of FiniteStateMachineIterator.\n\n\n\n\n\n"
 },
 
 {
@@ -285,7 +285,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Library",
     "title": "ResumableFunctions.BoxedUInt8",
     "category": "Type",
-    "text": "Mutable struct that contains a single UInt8.\n\n\n\n"
+    "text": "Mutable struct that contains a single UInt8.\n\n\n\n\n\n"
 },
 
 {
@@ -293,7 +293,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Library",
     "title": "ResumableFunctions.FiniteStateMachineIterator",
     "category": "Type",
-    "text": "Abstract type used as base type for the type created by the @resumable macro.\n\n\n\n"
+    "text": "Abstract type used as base type for the type created by the @resumable macro.\n\n\n\n\n\n"
 },
 
 {
@@ -301,7 +301,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Library",
     "title": "Base.done",
     "category": "Method",
-    "text": "Implements the done method of the iterator interface for a subtype of FiniteStateMachineIterator.\n\n\n\n"
+    "text": "Implements the done method of the iterator interface for a subtype of FiniteStateMachineIterator.\n\n\n\n\n\n"
 },
 
 {
@@ -309,7 +309,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Library",
     "title": "Base.next",
     "category": "Method",
-    "text": "Implements the next method of the iterator interface for a subtype of FiniteStateMachineIterator.\n\n\n\n"
+    "text": "Implements the next method of the iterator interface for a subtype of FiniteStateMachineIterator.\n\n\n\n\n\n"
 },
 
 {
@@ -317,7 +317,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Library",
     "title": "Base.start",
     "category": "Method",
-    "text": "Implements the start method of the iterator interface for a subtype of FiniteStateMachineIterator.\n\n\n\n"
+    "text": "Implements the start method of the iterator interface for a subtype of FiniteStateMachineIterator.\n\n\n\n\n\n"
 },
 
 {
@@ -325,7 +325,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Library",
     "title": "ResumableFunctions.get_args",
     "category": "Method",
-    "text": "Function returning the arguments of a function definition\n\n\n\n"
+    "text": "Function returning the arguments of a function definition\n\n\n\n\n\n"
 },
 
 {
@@ -333,7 +333,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Library",
     "title": "ResumableFunctions.get_param_name",
     "category": "Method",
-    "text": "Function returning the name of a where parameter\n\n\n\n"
+    "text": "Function returning the name of a where parameter\n\n\n\n\n\n"
 },
 
 {
@@ -341,7 +341,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Library",
     "title": "ResumableFunctions.get_slots",
     "category": "Method",
-    "text": "Function returning the slots of a function definition\n\n\n\n"
+    "text": "Function returning the slots of a function definition\n\n\n\n\n\n"
 },
 
 {
@@ -349,7 +349,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Library",
     "title": "ResumableFunctions.make_arg_any",
     "category": "Method",
-    "text": "Function changing the type of a slot arg of a arg = @yield ret or arg = @yield statement to Any.\n\n\n\n"
+    "text": "Function changing the type of a slot arg of a arg = @yield ret or arg = @yield statement to Any.\n\n\n\n\n\n"
 },
 
 {
@@ -357,7 +357,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Library",
     "title": "ResumableFunctions.make_args",
     "category": "Method",
-    "text": "Function returning the args for the type construction.\n\n\n\n"
+    "text": "Function returning the args for the type construction.\n\n\n\n\n\n"
 },
 
 {
@@ -365,7 +365,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Library",
     "title": "ResumableFunctions.remove_catch_exc",
     "category": "Method",
-    "text": "Function removing the exc symbol of a catch exc statement of a list of slots.\n\n\n\n"
+    "text": "Function removing the exc symbol of a catch exc statement of a list of slots.\n\n\n\n\n\n"
 },
 
 {
@@ -373,7 +373,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Library",
     "title": "ResumableFunctions.transform_arg",
     "category": "Method",
-    "text": "Function that replaces a arg = @yield ret statement by \n\n  @yield ret; \n  arg = arg_\n\nwhere arg_ is the argument of the function containing the expression.\n\n\n\n"
+    "text": "Function that replaces a arg = @yield ret statement by \n\n  @yield ret; \n  arg = arg_\n\nwhere arg_ is the argument of the function containing the expression.\n\n\n\n\n\n"
 },
 
 {
@@ -381,7 +381,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Library",
     "title": "ResumableFunctions.transform_exc",
     "category": "Method",
-    "text": "Function that replaces a @yield ret or @yield statement by \n\n  @yield ret\n  _arg isa Exception && throw(_arg)\n\nto allow that an Exception can be thrown into a @resumable function.\n\n\n\n"
+    "text": "Function that replaces a @yield ret or @yield statement by \n\n  @yield ret\n  _arg isa Exception && throw(_arg)\n\nto allow that an Exception can be thrown into a @resumable function.\n\n\n\n\n\n"
 },
 
 {
@@ -389,7 +389,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Library",
     "title": "ResumableFunctions.transform_for",
     "category": "Method",
-    "text": "Function that replaces a for loop by a corresponding while loop saving explicitely the iterator and its state.\n\n\n\n"
+    "text": "Function that replaces a for loop by a corresponding while loop saving explicitely the iterator and its state.\n\n\n\n\n\n"
 },
 
 {
@@ -397,7 +397,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Library",
     "title": "ResumableFunctions.transform_slots",
     "category": "Method",
-    "text": "Function that replaces a variable x in an expression by _fsmi.x where x is a known slot.\n\n\n\n"
+    "text": "Function that replaces a variable x in an expression by _fsmi.x where x is a known slot.\n\n\n\n\n\n"
 },
 
 {
@@ -405,7 +405,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Library",
     "title": "ResumableFunctions.transform_try",
     "category": "Method",
-    "text": "Function that replaces a try-catch-finally-end expression having a top level @yield statement in the try part\n\n  try\n    before_statements...\n    @yield ret\n    after_statements...\n  catch exc\n    catch_statements...\n  finally\n    finally_statements...\n  end\n\nwith a sequence of try-catch-end expressions:\n\n  try\n    before_statements...\n  catch\n    catch_statements...\n    @goto _TRY_n\n  end\n  @yield ret\n  try\n    after_statements...\n  catch\n    catch_statements...\n  end\n  @label _TRY_n\n  finally_statements...\n\n\n\n"
+    "text": "Function that replaces a try-catch-finally-end expression having a top level @yield statement in the try part\n\n  try\n    before_statements...\n    @yield ret\n    after_statements...\n  catch exc\n    catch_statements...\n  finally\n    finally_statements...\n  end\n\nwith a sequence of try-catch-end expressions:\n\n  try\n    before_statements...\n  catch\n    catch_statements...\n    @goto _TRY_n\n  end\n  @yield ret\n  try\n    after_statements...\n  catch\n    catch_statements...\n  end\n  @label _TRY_n\n  finally_statements...\n\n\n\n\n\n"
 },
 
 {
@@ -413,7 +413,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Library",
     "title": "ResumableFunctions.transform_yield",
     "category": "Method",
-    "text": "Function that replaces a @yield ret or @yield statement with \n\n  _fsmi._state = n\n  return ret\n  @label _STATE_n\n  _fsmi._state = 0xff\n\n\n\n"
+    "text": "Function that replaces a @yield ret or @yield statement with \n\n  _fsmi._state = n\n  return ret\n  @label _STATE_n\n  _fsmi._state = 0xff\n\n\n\n\n\n"
 },
 
 {
@@ -421,7 +421,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Library",
     "title": "ResumableFunctions.transform_yield",
     "category": "Method",
-    "text": "Function that replaces a @yield ret or @yield statement with \n\n  return ret\n\n\n\n"
+    "text": "Function that replaces a @yield ret or @yield statement with \n\n  return ret\n\n\n\n\n\n"
 },
 
 {

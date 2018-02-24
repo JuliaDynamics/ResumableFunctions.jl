@@ -55,12 +55,12 @@ julia&gt; fib_iterator()
 8</code></pre><p>The <code>@resumable function</code> can take arguments and the type of the return value can be specified:</p><pre><code class="language-julia">@resumable function fibonnaci(n) :: Int
   a = 0
   b = 1
-  for i in 1:n-1
+  for i in 1:n
     @yield a
     a, b = b, a + b
   end
   a
-end</code></pre><pre><code class="language-julia-repl">julia&gt; fib_iterator = fibonnaci(4);
+end</code></pre><pre><code class="language-julia-repl">julia&gt; fib_iterator = fibonnaci(3);
 
 julia&gt; fib_iterator()
 0
@@ -101,7 +101,7 @@ julia&gt; catch_me(Cat())
 &quot;You got me!&quot;</code></pre><h2><a class="nav-anchor" id="Iterator-interface-1" href="#Iterator-interface-1">Iterator interface</a></h2><p>The interator interface is implemented for a <code>@resumable function</code>:</p><pre><code class="language-julia">@resumable function fibonnaci(n) :: Int
   a = 0
   b = 1
-  for i in 1:n-1
+  for i in 1:n
     @yield a
     a, b = b, a + b
   end
@@ -117,7 +117,7 @@ end</code></pre><pre><code class="language-julia-repl">julia&gt; for val in fibo
 13
 21
 34</code></pre><h2><a class="nav-anchor" id="Parametric-@resumable-functions-1" href="#Parametric-@resumable-functions-1">Parametric <code>@resumable</code> functions</a></h2><p>Type parameters can be specified with a <code>where</code> clause:</p><pre><code class="language-julia">@resumable function fibonnaci(a::N, b::N=a+one(N)) :: N where {N&lt;:Number}
-  for i in 1:9
+  for i in 1:10
     @yield a
     a, b = b, a + b
    end
