@@ -15,19 +15,25 @@ Implements the `start` method of the *iterator* interface for a subtype of `Fini
 """
 function Base.start(fsm_iter::T) where T<:FiniteStateMachineIterator
   fsm_iter._state  = 0x00
-  fsm_iter()
+  #fsm_iter()
 end
 
 """
 Implements the `next` method of the *iterator* interface for a subtype of `FiniteStateMachineIterator`.
 """
-Base.next(fsm_iter::T, state) where T<:FiniteStateMachineIterator = state, fsm_iter()
+function Base.next(fsm_iter::T, state::UInt8) where T<:FiniteStateMachineIterator
+  fsm_iter._result, fsm_iter._state
+end
 
 """
 Implements the `done` method of the *iterator* interface for a subtype of `FiniteStateMachineIterator`.
 """
-(Base.done(fsm_iter::T, state=nothing) :: Bool) where T<:FiniteStateMachineIterator = fsm_iter._state == 0xff
-
+function (Base.done(fsm_iter::T, state::UInt8=0x00) :: Bool) where T<:FiniteStateMachineIterator
+  try
+    fsm_iter._result = fsm_iter()
+  end
+  fsm_iter._state == 0xff
+end
 """
 Implements the `iteratorsize` method of the *iterator* interface for a subtype of `FiniteStateMachineIterator`.
 """
