@@ -2,7 +2,6 @@
 Macro if used in a `@resumable function` that returns the `expr` otherwise throws an error.
 """
 macro yield(expr=nothing)
-  #esc(:nothing)
   error("@yield macro outside a @resumable function!")
 end
 
@@ -26,8 +25,7 @@ macro resumable(expr::Expr)
   #println(params)
   ui8 = BoxedUInt8(zero(UInt8))
   func_def[:body] = postwalk(x->transform_for(x, ui8), func_def[:body])
-  mod = VERSION >= v"0.7.0-" ? __module__ : current_module()
-  slots = get_slots(copy(func_def), arg_dict, mod)
+  slots = get_slots(copy(func_def), arg_dict, __module__)
   #println(slots)
   type_name = gensym()
   constr_def = copy(func_def)
