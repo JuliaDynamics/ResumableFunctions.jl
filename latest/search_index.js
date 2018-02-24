@@ -21,7 +21,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Home",
     "title": "Example",
     "category": "section",
-    "text": "using ResumableFunctions\n\n@resumable function fibonnaci(n::Int)\n  a = 0\n  b = 1\n  for i in 1:n\n    @yield a\n    a, b = b, a+b\n  end\n  a\nend\n\nfor val in fibonnaci(10) \n  println(val) \nend\n\n# output\n\n0\n1\n1\n2\n3\n5\n8\n13\n21\n34"
+    "text": "using ResumableFunctions\n\n@resumable function fibonnaci(n::Int)\n  a = 0\n  b = 1\n  for i in 1:n\n    @yield a\n    a, b = b, a+b\n  end\nend\n\nfor val in fibonnaci(10) \n  println(val) \nend\n\n# output\n\n0\n1\n1\n2\n3\n5\n8\n13\n21\n34"
 },
 
 {
@@ -85,7 +85,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Manual",
     "title": "Iterator interface",
     "category": "section",
-    "text": "The interator interface is implemented for a @resumable function:DocTestSetup = quote\n  using ResumableFunctions\n\n  @resumable function fibonnaci(n) :: Int\n    a = 0\n    b = 1\n    for i in 1:n\n      @yield a\n      a, b = b, a + b\n    end\n    a\n  end\nend@resumable function fibonnaci(n) :: Int\n  a = 0\n  b = 1\n  for i in 1:n\n    @yield a\n    a, b = b, a + b\n  end\n  a\nendjulia> for val in fibonnaci(10) println(val) end\n0\n1\n1\n2\n3\n5\n8\n13\n21\n34DocTestSetup = nothing"
+    "text": "The interator interface is implemented for a @resumable function:DocTestSetup = quote\n  using ResumableFunctions\n\n  @resumable function fibonnaci(n) :: Int\n    a = 0\n    b = 1\n    for i in 1:n\n      @yield a\n      a, b = b, a + b\n    end\n  end\nend@resumable function fibonnaci(n) :: Int\n  a = 0\n  b = 1\n  for i in 1:n\n    @yield a\n    a, b = b, a + b\n  end\nendjulia> for val in fibonnaci(10) println(val) end\n0\n1\n1\n2\n3\n5\n8\n13\n21\n34DocTestSetup = nothing"
 },
 
 {
@@ -93,7 +93,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Manual",
     "title": "Parametric @resumable functions",
     "category": "section",
-    "text": "Type parameters can be specified with a where clause:DocTestSetup = quote\n  using ResumableFunctions\n\n  @resumable function fibonnaci(a::N, b::N=a+one(N)) :: N where {N<:Number}\n    for i in 1:10\n      @yield a\n      a, b = b, a + b\n    end\n    a\n  end\nend@resumable function fibonnaci(a::N, b::N=a+one(N)) :: N where {N<:Number}\n  for i in 1:10\n    @yield a\n    a, b = b, a + b\n   end\n  a\nendjulia> for val in fibonnaci(0.0) println(val) end\n0.0\n1.0\n1.0\n2.0\n3.0\n5.0\n8.0\n13.0\n21.0\n34.0DocTestSetup = nothing"
+    "text": "Type parameters can be specified with a where clause:DocTestSetup = quote\n  using ResumableFunctions\n\n  @resumable function fibonnaci(a::N, b::N=a+one(N)) :: N where {N<:Number}\n    for i in 1:10\n      @yield a\n      a, b = b, a + b\n    end\n  end\nend@resumable function fibonnaci(a::N, b::N=a+one(N)) :: N where {N<:Number}\n  for i in 1:10\n    @yield a\n    a, b = b, a + b\n   end\nendjulia> for val in fibonnaci(0.0) println(val) end\n0.0\n1.0\n1.0\n2.0\n3.0\n5.0\n8.0\n13.0\n21.0\n34.0DocTestSetup = nothing"
 },
 
 {

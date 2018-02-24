@@ -105,7 +105,6 @@ julia&gt; catch_me(Cat())
     @yield a
     a, b = b, a + b
   end
-  a
 end</code></pre><pre><code class="language-julia-repl">julia&gt; for val in fibonnaci(10) println(val) end
 0
 1
@@ -121,7 +120,6 @@ end</code></pre><pre><code class="language-julia-repl">julia&gt; for val in fibo
     @yield a
     a, b = b, a + b
    end
-  a
 end</code></pre><pre><code class="language-julia-repl">julia&gt; for val in fibonnaci(0.0) println(val) end
 0.0
 1.0
