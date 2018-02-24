@@ -6,7 +6,6 @@ using Base.Test
     @yield a
     a, b = b, a+b
   end
-  a
 end
 
 @testset "test_for" begin
@@ -62,7 +61,6 @@ end #test_try
     @yield a
     a, b = b, a+b
   end
-  a
 end
 
 @resumable function (test_where2(a::N=4; b::N=a + one(N)) :: N) where N
@@ -70,7 +68,6 @@ end
     @yield a
     a, b = b, a+b
   end
-  a
 end
 
 @testset "test_where" begin
