@@ -2,11 +2,10 @@ using ResumableFunctions
 using Test
 
 @resumable function test_for(a::Int=0; b::Int=a+1) :: Int
-  for i in 1:9
+  for i in 1:10
     @yield a
     a, b = b, a+b
   end
-  a
 end
 
 @testset "test_for" begin
@@ -58,19 +57,17 @@ end #test_try
 
 @resumable function (test_where1(a::N) :: N) where {N<:Number}
   b = a + one(N)
-  for i in 1:9
+  for i in 1:10
     @yield a
     a, b = b, a+b
   end
-  a
 end
 
 @resumable function (test_where2(a::N=4; b::N=a + one(N)) :: N) where N
-  for i in 1:9
+  for i in 1:10
     @yield a
     a, b = b, a+b
   end
-  a
 end
 
 @testset "test_where" begin
@@ -80,11 +77,7 @@ end
 
 @resumable function test_varargs(a...)
   for (i, e) in enumerate(a)
-    if i == length(a)
-      return e
-    else
-      @yield e
-    end
+    @yield e
   end
 end
 
