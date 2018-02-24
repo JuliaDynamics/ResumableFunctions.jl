@@ -16,7 +16,6 @@ using ResumableFunctions
     @yield a
     a, b = b, a+b
   end
-  a
 end
 
 for val in fibonnaci(10) 

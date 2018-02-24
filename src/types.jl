@@ -15,7 +15,6 @@ Implements the `start` method of the *iterator* interface for a subtype of `Fini
 """
 function Base.start(fsm_iter::T) where T<:FiniteStateMachineIterator
   fsm_iter._state  = 0x00
-  #fsm_iter()
 end
 
 """
