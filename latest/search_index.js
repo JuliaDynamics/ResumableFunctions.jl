@@ -273,9 +273,9 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "library.html#Base.iteratorsize-Union{Tuple{Type{T}}, Tuple{T}} where T<:ResumableFunctions.FiniteStateMachineIterator",
+    "location": "library.html#Base.IteratorSize-Union{Tuple{Type{T}}, Tuple{T}} where T<:ResumableFunctions.FiniteStateMachineIterator",
     "page": "Library",
-    "title": "Base.iteratorsize",
+    "title": "Base.IteratorSize",
     "category": "Method",
     "text": "Implements the iteratorsize method of the iterator interface for a subtype of FiniteStateMachineIterator.\n\n\n\n\n\n"
 },
