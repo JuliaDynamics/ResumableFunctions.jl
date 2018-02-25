@@ -33,7 +33,6 @@ using ResumableFunctions
     @yield a
     a, b = b, a+b
   end
-  a
 end
 
 for fib in fibonnaci(10)
