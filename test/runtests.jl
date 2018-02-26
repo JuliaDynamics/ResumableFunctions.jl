@@ -83,4 +83,19 @@ end
 
 @testset "test_varargs" begin
 @test collect(test_varargs(1, 2, 3)) == [1, 2, 3]
-end 
+end
+
+@resumable function test_let()
+  for u in [[(1,2),(3,4)], [(5,6),(7,8)]]
+    for i in 1:2
+      let i=i
+        val = [a[i] for a in u]
+      end
+      @yield val
+    end
+  end
+end
+
+@testset "test_let" begin
+@test collect(test_let()) == [[1,3],[2,4],[5,7],[6,8]]
+end

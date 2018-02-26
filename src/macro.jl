@@ -47,15 +47,15 @@ macro resumable(expr::Expr)
   end
   constr_expr = combinedef(constr_def) |> flatten
   #println(constr_expr)
-  type_expr = quote 
+  type_expr = :( 
     mutable struct $struct_name
       _state :: UInt8
       _result
       $((:($slotname :: $slottype) for (slotname, slottype) in slots)...)
       $(constr_expr)
     end
-  end
-  #println(type_expr)
+  )
+  #println(type_expr|>MacroTools.striplines)
   call_def = copy(func_def)
   if isempty(params)
     call_def[:rtype] = :($type_name)
@@ -65,7 +65,7 @@ macro resumable(expr::Expr)
     call_def[:body] = :($type_name{$(params...)}($((:($arg) for arg in args)...)))
   end
   call_expr = combinedef(call_def) |> flatten
-  #println(call_expr)
+  #println(call_expr|>MacroTools.striplines)
   func_def[:kwargs] = []
   if isempty(params)
     func_def[:name] = :((_fsmi::$type_name))
@@ -80,14 +80,14 @@ macro resumable(expr::Expr)
   ui8 = BoxedUInt8(zero(UInt8))
   func_def[:body] = postwalk(x->transform_yield(x, ui8), func_def[:body])
   func_def[:body] = quote
-    _fsmi._state == 0x00 && @goto _STATE_0
+    _fsmi._state == 0x00 && @goto $(Symbol("_STATE_0"))
     $((:(_fsmi._state == $i && @goto $(Symbol("_STATE_",:($i)))) for i in 0x01:ui8.n)...)
     error("@resumable function has stopped!")
-    @label _STATE_0
+    @label $(Symbol("_STATE_0"))
     _fsmi._state = 0xff
     _arg isa Exception && throw(_arg)
     $(func_def[:body])
-  end 
+  end
   func_def[:args] = [Expr(:kw, :(_arg::Any), nothing)]
   func_expr = combinedef(func_def) |> flatten
   #println(func_expr)
