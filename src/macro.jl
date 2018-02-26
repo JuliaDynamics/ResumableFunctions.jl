@@ -48,14 +48,14 @@ macro resumable(expr::Expr)
   end
   constr_expr = combinedef(constr_def) |> flatten
   #println(constr_expr)
-  type_expr = quote 
+  type_expr = :( 
     mutable struct $struct_name
       _state :: UInt8
       _result
       $((:($slotname :: $slottype) for (slotname, slottype) in slots)...)
       $(constr_expr)
     end
-  end
+  )
   #println(type_expr)
   call_def = copy(func_def)
   if isempty(params)

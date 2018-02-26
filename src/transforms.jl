@@ -21,12 +21,37 @@ Function that replaces a variable `x` in an expression by `_fsmi.x` where `x` is
 """
 function transform_slots(expr, symbols::Base.KeyIterator{Dict{Symbol,Any}})
   expr isa Expr || return expr
+  expr.head == :let && return transform_slots_let(expr, symbols)
   for i in 1:length(expr.args)
     expr.head == :kw && i == 1 && continue
     expr.head == Symbol("quote") && continue
     expr.args[i] = expr.args[i] isa Symbol && expr.args[i] in symbols ? :(_fsmi.$(expr.args[i])) : expr.args[i]
   end
   expr
+end
+
+"""
+Function that handles `let` block
+"""
+function transform_slots_let(expr::Expr, symbols::Base.KeyIterator{Dict{Symbol,Any}})
+  @capture(expr, let vars__; body__ end)
+  locals = Set{Symbol}()
+  for var in vars
+    sym = var.args[1].args[2].args[1]
+    push!(locals, sym)
+    var.args[1] = sym
+  end
+  body = postwalk(x->transform_let(x, locals), :(begin $(body...) end))
+  :(let $((:($var) for var in vars)...); $body end)
+end
+
+"""
+Function that replaces a variable `_fsmi.x` in an expression by `x` where `x` is a variable declared in a `let` block.
+"""
+function transform_let(expr, symbols::Set{Symbol})
+  expr isa Expr || return expr
+  expr.head == :. || return expr
+  expr = expr.args[2].args[1] in symbols ? :($(expr.args[2].args[1])) : expr
 end
 
 """
