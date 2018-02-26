@@ -393,11 +393,27 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "library.html#ResumableFunctions.transform_let-Tuple{Any,Set{Symbol}}",
+    "page": "Library",
+    "title": "ResumableFunctions.transform_let",
+    "category": "Method",
+    "text": "Function that replaces a variable _fsmi.x in an expression by x where x is a variable declared in a let block.\n\n\n\n\n\n"
+},
+
+{
     "location": "library.html#ResumableFunctions.transform_slots-Tuple{Any,Base.KeySet{Symbol,Dict{Symbol,Any}}}",
     "page": "Library",
     "title": "ResumableFunctions.transform_slots",
     "category": "Method",
     "text": "Function that replaces a variable x in an expression by _fsmi.x where x is a known slot.\n\n\n\n\n\n"
+},
+
+{
+    "location": "library.html#ResumableFunctions.transform_slots_let-Tuple{Expr,Base.KeySet{Symbol,Dict{Symbol,Any}}}",
+    "page": "Library",
+    "title": "ResumableFunctions.transform_slots_let",
+    "category": "Method",
+    "text": "Function that handles let block\n\n\n\n\n\n"
 },
 
 {
