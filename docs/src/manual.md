@@ -362,6 +362,54 @@ julia> for val in fibonnaci(0.0) println(val) end
 DocTestSetup = nothing
 ```
 
+## `let` blocks
+
+A `let` block allows to exclude variables to persist between calls of a `@resumable function`:
+
+```@meta
+DocTestSetup = quote
+  using ResumableFunctions
+
+  @resumable function special_iterator()
+    for u in [[(1,2),(3,4)], [(5,6),(7,8)]]
+      for i in 1:2
+        let i=i
+          val = [a[i] for a in u]
+        end
+        @yield val
+      end
+    end
+  end
+end
+```
+
+```julia
+@resumable function special_iterator()
+  for u in [[(1,2),(3,4)], [(5,6),(7,8)]]
+    for i in 1:2
+      let i=i
+        val = [a[i] for a in u]
+      end
+      @yield val
+    end
+  end
+end
+```
+
+```jldoctest
+julia> for val in special_iterator() println(val) end
+[1, 3]
+[2, 4]
+[5, 7]
+[6, 8]
+```
+
+```@meta
+DocTestSetup = nothing
+```
+
+This feature is useful to solve performance related (inference) problems.
+
 ## Caveats
 
 - In a `try` block only top level `@yield` statements are allowed.

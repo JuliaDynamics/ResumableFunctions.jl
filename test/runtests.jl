@@ -85,7 +85,7 @@ end
 @test collect(test_varargs(1, 2, 3)) == [1, 2, 3]
 end 
 
-@resumable function test_let()
+@resumable function test_let1()
   for u in [[(1,2),(3,4)], [(5,6),(7,8)]]
     for i in 1:2
       let i=i
@@ -96,6 +96,21 @@ end
   end
 end
 
+@resumable function test_let2(v)
+  for i in 1:3
+    p = 0
+    let iter = v, state
+      state = start(iter)
+      while !done(iter, state)
+        p, state = next(iter, state)
+        p > i && break
+      end
+    end
+    @yield p
+  end
+end
+
 @testset "test_let" begin
-@test collect(test_let()) == [[1,3],[2,4],[5,7],[6,8]]
+@test collect(test_let1()) == [[1,3],[2,4],[5,7],[6,8]]
+@test collect(test_let2([1,2,3,4])) == [2,3,4]
 end

@@ -37,9 +37,13 @@ function transform_slots_let(expr::Expr, symbols::Base.KeyIterator{Dict{Symbol,A
   @capture(expr, let vars__; body__ end)
   locals = Set{Symbol}()
   for var in vars
-    sym = var.args[1].args[2].args[1]
+    if typeof(var) == Symbol
+      sym = var
+    else
+      sym = var.args[1].args[2].args[1]
+      var.args[1] = sym
+    end
     push!(locals, sym)
-    var.args[1] = sym
   end
   body = postwalk(x->transform_let(x, locals), :(begin $(body...) end))
   :(let $((:($var) for var in vars)...); $body end)
