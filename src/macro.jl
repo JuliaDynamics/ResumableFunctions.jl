@@ -20,6 +20,7 @@ Macro that transforms a function definition in a finite-statemachine:
 macro resumable(expr::Expr)
   expr.head != :function && error("Expression is not a function definition!")
   func_def = splitdef(expr)
+  rtype = :rtype in keys(func_def) ? func_def[:rtype] : Any
   args, arg_dict = get_args(func_def)
   #println(arg_dict)
   params = ((get_param_name(param) for param in func_def[:whereparams])...)
@@ -31,10 +32,10 @@ macro resumable(expr::Expr)
   type_name = gensym()
   constr_def = copy(func_def)
   if isempty(params)
-    struct_name = :($type_name <: ResumableFunctions.FiniteStateMachineIterator)
+    struct_name = :($type_name <: ResumableFunctions.FiniteStateMachineIterator{$rtype})
     constr_def[:name] = :($type_name)
   else
-    struct_name = :($type_name{$(func_def[:whereparams]...)} <: ResumableFunctions.FiniteStateMachineIterator)
+    struct_name = :($type_name{$(func_def[:whereparams]...)} <: ResumableFunctions.FiniteStateMachineIterator{$rtype})
     constr_def[:name] = :($type_name{$(params...)})
   end
   constr_def[:args] = make_args(func_def)

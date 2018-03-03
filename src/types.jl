@@ -1,7 +1,7 @@
 """
 Abstract type used as base type for the type created by the `@resumable` macro.
 """
-abstract type FiniteStateMachineIterator end
+abstract type FiniteStateMachineIterator{R} end
 
 """
 Mutable struct that contains a single `UInt8`.
@@ -34,7 +34,13 @@ function (Base.done(fsm_iter::T, state::UInt8=0x00) :: Bool) where T<:FiniteStat
   end
   fsm_iter._state == 0xff
 end
+
 """
 Implements the `iteratorsize` method of the *iterator* interface for a subtype of `FiniteStateMachineIterator`.
 """
 Base.iteratorsize(::Type{T}) where T<:FiniteStateMachineIterator = Base.SizeUnknown()
+
+"""
+Implements the `eltype` method of the *iterator* interface for a subtype of `FiniteStateMachineIterator`.
+"""
+Base.eltype(::Type{T}) where T<:FiniteStateMachineIterator{R} where R = R
