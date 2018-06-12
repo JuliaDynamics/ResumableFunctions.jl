@@ -79,9 +79,10 @@ Function that replaces a `@yield ret` or `@yield` statement by
 to allow that an `Exception` can be thrown into a `@resumable function`.
 """
 function transform_exc(expr)
-  @capture(expr, (@yield ret_) | @yield) || return expr
+  _is_yield(expr) || return expr
+  ret = length(expr.args) > 2 ? expr.args[3:end] : [nothing]
   quote
-    @yield $ret
+    @yield $(ret...)
     _arg isa Exception && throw(_arg)
   end
 end
@@ -124,9 +125,10 @@ function transform_try(expr, ui8::BoxedUInt8)
   segment = []
   handling = handling == nothing ? [] : handling
   for ex in body
-    if @capture(ex, (@yield ret_) | @yield)
+    if _is_yield(expr)
+      ret = length(expr.args) > 2 ? expr.args[3:end] : [nothing]
       exc == nothing ? push!(new_body, :(try $(segment...) catch; $(handling...); @goto $(Symbol("_TRY_", :($(ui8.n)))) end)) : push!(new_body, :(try $(segment...) catch $exc; $(handling...) ; @goto $(Symbol("_TRY_", :($(ui8.n)))) end))
-      push!(new_body, quote @yield $ret end)
+      push!(new_body, quote @yield $(ret...) end)
       segment = []
     else
       push!(segment, ex)
