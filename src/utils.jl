@@ -28,7 +28,7 @@ function get_slots(func_def::Dict, args::Dict{Symbol, Any}, mod::Module) :: Dict
   func_def[:name] = gensym()
   func_def[:args] = (func_def[:args]..., func_def[:kwargs]...)
   func_def[:kwargs] = []
-  func_def[:body] = postwalk(yieldtoreturn, func_def[:body])
+  func_def[:body] = postwalk(transform_yield, func_def[:body])
   func_expr = combinedef(func_def) |> flatten |> MacroTools.striplines
   @eval(mod, @noinline $func_expr)
   code_data_infos = @eval(mod, code_typed($(func_def[:name]); optimize=false))
@@ -46,26 +46,6 @@ function get_slots(func_def::Dict, args::Dict{Symbol, Any}, mod::Module) :: Dict
   delete!(slots, Symbol("#unused#"))
   delete!(slots, Symbol("#self#"))
   slots
-end
-
-"""
-Function returning whether an expression is a `@yield` macro
-"""
-_is_yield(ex) = false
-
-function _is_yield(ex::Expr)
-  return ex.head == :macrocall && ex.args[1] == Symbol("@yield")
-end
-
-"""
-Function to transform a `@yield` statement to a `return` statement
-"""
-function yieldtoreturn(expr)
-  _is_yield(expr) || return expr
-  ret = length(expr.args) > 2 ? expr.args[3:end] : [nothing]
-  quote
-    return $(ret...)
-  end
 end
 
 """
@@ -96,4 +76,14 @@ function make_args(func_def::Dict)
     push!(args, combinearg(arg_def[1], arg_def[2], false, arg_def[4]))
   end
   (args...,)
+end
+
+"""
+Function checking the use of a return statement with value
+"""
+function hasreturnvalue(expr)
+  @capture(expr, return val_) || return expr
+  (val == :nothing || val == nothing) && return expr
+  warn("@resumable functions contains return statement with value!")
+  expr
 end
