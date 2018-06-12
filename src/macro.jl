@@ -15,7 +15,6 @@ Macro that transforms a function definition in a finite-statemachine:
   - continues after the `@yield` statement when called again.
 - Defines a constructor function that respects the calling conventions of the initial function definition and returns an object of the new type.
 """
-
 macro resumable(expr::Expr)
   expr.head != :function && error("Expression is not a function definition!")
   func_def = splitdef(expr)

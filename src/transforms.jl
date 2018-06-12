@@ -150,11 +150,12 @@ Function that replaces a `@yield ret` or `@yield` statement with
 ```
 """
 function transform_yield(expr, ui8::BoxedUInt8)
-  @capture(expr, (@yield ret_) | @yield) || return expr
+  _is_yield(expr) || return expr
+  ret = length(expr.args) > 2 ? expr.args[3:end] : [nothing]
   ui8.n += one(UInt8)
   quote
     _fsmi._state = $(ui8.n)
-    return $ret
+    return $(ret...)
     @label $(Symbol("_STATE_", :($(ui8.n))))
     _fsmi._state = 0xff
   end
@@ -167,8 +168,18 @@ Function that replaces a `@yield ret` or `@yield` statement with
 ```
 """
 function transform_yield(expr)
-  @capture(expr, (@yield ret_) | @yield) || return expr
+  _is_yield(expr) || return expr
+  ret = length(expr.args) > 2 ? expr.args[3:end] : [nothing]
   quote
-    return $ret
+    return $(ret...)
   end
+end
+
+"""
+Function returning whether an expression is a `@yield` macro
+"""
+_is_yield(ex) = false
+
+function _is_yield(ex::Expr)
+  ex.head == :macrocall && ex.args[1] == Symbol("@yield")
 end
