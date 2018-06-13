@@ -63,7 +63,9 @@ Function that replaces a `arg = @yield ret` statement by
 where `arg_` is the argument of the function containing the expression.
 """
 function transform_arg(expr)
-  @capture(expr, (arg_ = @yield ret_) | (arg_ = @yield)) || return expr
+  @capture(expr, arg_ = ex_) || return expr
+  _is_yield(ex) || return expr
+  ret = length(ex.args) > 2 ? ex.args[3:end] : [nothing]
   quote
     @yield $ret
     $arg = _arg

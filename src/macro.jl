@@ -91,6 +91,6 @@ macro resumable(expr::Expr)
   end
   func_def[:args] = [Expr(:kw, :(_arg::Any), nothing)]
   func_expr = combinedef(func_def) |> flatten
-  println(func_expr)
+  #println(func_expr|>MacroTools.striplines)
   esc(:($type_expr; $func_expr; $call_expr))
 end
