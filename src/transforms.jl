@@ -125,8 +125,8 @@ function transform_try(expr, ui8::BoxedUInt8)
   segment = []
   handling = handling == nothing ? [] : handling
   for ex in body
-    if _is_yield(expr)
-      ret = length(expr.args) > 2 ? expr.args[3:end] : [nothing]
+    if _is_yield(ex)
+      ret = length(ex.args) > 2 ? ex.args[3:end] : [nothing]
       exc == nothing ? push!(new_body, :(try $(segment...) catch; $(handling...); @goto $(Symbol("_TRY_", :($(ui8.n)))) end)) : push!(new_body, :(try $(segment...) catch $exc; $(handling...) ; @goto $(Symbol("_TRY_", :($(ui8.n)))) end))
       push!(new_body, quote @yield $(ret...) end)
       segment = []
