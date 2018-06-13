@@ -59,6 +59,8 @@ end
 ## Release notes
 
 * 2018: v0.3 is Julia v0.7 compatible.
+  * introduction of `let` block to allow variables not te be persisted between `@resumable function` calls (EXPERIMENTAL)
+  * the `eltype` of a `@resumable function` based iterator is its return type if specified, otherwise `Any`
 
 * 2018: v0.2 the iterator now behaves as a Python generator: only values that are explicitely yielded are generated; the return value is ignored and a warning is generated.
 

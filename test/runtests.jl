@@ -99,3 +99,11 @@ end
 @testset "test_let" begin
 @test collect(test_let()) == [[1,3],[2,4],[5,7],[6,8]]
 end
+
+@resumable function test_return_value()
+  return 1
+end
+
+@testset "test_return_value" begin
+  @test collect(test_return_value()) == []
+end

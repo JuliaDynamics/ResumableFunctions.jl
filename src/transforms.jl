@@ -67,7 +67,7 @@ function transform_arg(expr)
   _is_yield(ex) || return expr
   ret = length(ex.args) > 2 ? ex.args[3:end] : [nothing]
   quote
-    @yield $ret
+    @yield $(ret...)
     $arg = _arg
   end
 end

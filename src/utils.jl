@@ -60,7 +60,8 @@ end
 Function changing the type of a slot `arg` of a `arg = @yield ret` or `arg = @yield` statement to `Any`.
 """
 function make_arg_any(expr, slots::Dict{Symbol, Any})
-  @capture(expr, (arg_ = @yield ret_) | (arg_ = @yield)) || return expr
+  @capture(expr, arg_ = ex_) || return expr
+  _is_yield(ex) || return expr
   slots[arg] = Any
   expr
 end
@@ -84,6 +85,6 @@ Function checking the use of a return statement with value
 function hasreturnvalue(expr)
   @capture(expr, return val_) || return expr
   (val == :nothing || val == nothing) && return expr
-  warn("@resumable functions contains return statement with value!")
+  @warn "@resumable function contains return statement with value!"
   expr
 end
