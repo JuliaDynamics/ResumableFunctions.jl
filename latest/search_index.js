@@ -305,6 +305,14 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "library.html#Base.eltype-Union{Tuple{Type{T}}, Tuple{T}, Tuple{R}} where T<:ResumableFunctions.FiniteStateMachineIterator{R} where R",
+    "page": "Library",
+    "title": "Base.eltype",
+    "category": "method",
+    "text": "Implements the eltype method of the iterator interface for a subtype of FiniteStateMachineIterator.\n\n\n\n\n\n"
+},
+
+{
     "location": "library.html#Base.next-Union{Tuple{T}, Tuple{T,UInt8}} where T<:ResumableFunctions.FiniteStateMachineIterator",
     "page": "Library",
     "title": "Base.next",
@@ -318,6 +326,14 @@ var documenterSearchIndex = {"docs": [
     "title": "Base.start",
     "category": "method",
     "text": "Implements the start method of the iterator interface for a subtype of FiniteStateMachineIterator.\n\n\n\n\n\n"
+},
+
+{
+    "location": "library.html#ResumableFunctions._is_yield-Tuple{Any}",
+    "page": "Library",
+    "title": "ResumableFunctions._is_yield",
+    "category": "method",
+    "text": "Function returning whether an expression is a @yield macro\n\n\n\n\n\n"
 },
 
 {
@@ -342,6 +358,14 @@ var documenterSearchIndex = {"docs": [
     "title": "ResumableFunctions.get_slots",
     "category": "method",
     "text": "Function returning the slots of a function definition\n\n\n\n\n\n"
+},
+
+{
+    "location": "library.html#ResumableFunctions.hasreturnvalue-Tuple{Any}",
+    "page": "Library",
+    "title": "ResumableFunctions.hasreturnvalue",
+    "category": "method",
+    "text": "Function checking the use of a return statement with value\n\n\n\n\n\n"
 },
 
 {
