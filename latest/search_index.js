@@ -97,6 +97,14 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "manual.html#Let-block-1",
+    "page": "Manual",
+    "title": "Let block",
+    "category": "section",
+    "text": "A let block allows a variable not to be saved in between calls to a @resumable function:DocTestSetup = quote\n  using ResumableFunctions\n\n  @resumable function test_let()\n    for u in [[(1,2),(3,4)], [(5,6),(7,8)]]\n      for i in 1:2\n        let i=i\n          val = [a[i] for a in u]\n        end\n        @yield val\n      end\n    end\n  end@resumable function arrays_of_tuples()\n  for u in [[(1,2),(3,4)], [(5,6),(7,8)]]\n    for i in 1:2\n      let i=i\n        val = [a[i] for a in u]\n      end\n      @yield val\n    end\n  end\nendjulia> for array in arrays_of_tuple println(array) end\n[1, 3]\n[2, 4]\n[5, 7]\n[6, 8]DocTestSetup = nothing"
+},
+
+{
     "location": "manual.html#Caveats-1",
     "page": "Manual",
     "title": "Caveats",
