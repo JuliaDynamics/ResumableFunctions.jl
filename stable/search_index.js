@@ -305,35 +305,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "library.html#Base.done-Union{Tuple{T}, Tuple{T}, Tuple{T,UInt8}} where T<:ResumableFunctions.FiniteStateMachineIterator",
-    "page": "Library",
-    "title": "Base.done",
-    "category": "method",
-    "text": "Implements the done method of the iterator interface for a subtype of FiniteStateMachineIterator.\n\n\n\n\n\n"
-},
-
-{
     "location": "library.html#Base.eltype-Union{Tuple{Type{T}}, Tuple{T}, Tuple{R}} where T<:ResumableFunctions.FiniteStateMachineIterator{R} where R",
     "page": "Library",
     "title": "Base.eltype",
     "category": "method",
     "text": "Implements the eltype method of the iterator interface for a subtype of FiniteStateMachineIterator.\n\n\n\n\n\n"
-},
-
-{
-    "location": "library.html#Base.next-Union{Tuple{T}, Tuple{T,UInt8}} where T<:ResumableFunctions.FiniteStateMachineIterator",
-    "page": "Library",
-    "title": "Base.next",
-    "category": "method",
-    "text": "Implements the next method of the iterator interface for a subtype of FiniteStateMachineIterator.\n\n\n\n\n\n"
-},
-
-{
-    "location": "library.html#Base.start-Union{Tuple{T}, Tuple{T}} where T<:ResumableFunctions.FiniteStateMachineIterator",
-    "page": "Library",
-    "title": "Base.start",
-    "category": "method",
-    "text": "Implements the start method of the iterator interface for a subtype of FiniteStateMachineIterator.\n\n\n\n\n\n"
 },
 
 {
