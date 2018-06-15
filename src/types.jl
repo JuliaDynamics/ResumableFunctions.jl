@@ -11,30 +11,6 @@ mutable struct BoxedUInt8
 end
 
 """
-Implements the `start` method of the *iterator* interface for a subtype of `FiniteStateMachineIterator`.
-"""
-function Base.start(fsm_iter::T) where T<:FiniteStateMachineIterator
-  fsm_iter._state  = 0x00
-end
-
-"""
-Implements the `next` method of the *iterator* interface for a subtype of `FiniteStateMachineIterator`.
-"""
-function Base.next(fsm_iter::T, state::UInt8) where T<:FiniteStateMachineIterator
-  fsm_iter._result, fsm_iter._state
-end
-
-"""
-Implements the `done` method of the *iterator* interface for a subtype of `FiniteStateMachineIterator`.
-"""
-function (Base.done(fsm_iter::T, state::UInt8=0x00) :: Bool) where T<:FiniteStateMachineIterator
-  try
-    fsm_iter._result = fsm_iter()
-  end
-  fsm_iter._state == 0xff
-end
-
-"""
 Implements the `iteratorsize` method of the *iterator* interface for a subtype of `FiniteStateMachineIterator`.
 """
 Base.IteratorSize(::Type{T}) where T<:FiniteStateMachineIterator = Base.SizeUnknown()
@@ -43,3 +19,13 @@ Base.IteratorSize(::Type{T}) where T<:FiniteStateMachineIterator = Base.SizeUnkn
 Implements the `eltype` method of the *iterator* interface for a subtype of `FiniteStateMachineIterator`.
 """
 Base.eltype(::Type{T}) where T<:FiniteStateMachineIterator{R} where R = R
+
+function Base.iterate(fsm_iter::T, state::UInt8=0x00) where T<:FiniteStateMachineIterator
+  fsm_iter._state = state
+  #try
+    #fsm_iter._result = fsm_iter()
+  #end
+  result = fsm_iter()
+  fsm_iter._state == 0xff && return nothing
+  result, fsm_iter._state
+end

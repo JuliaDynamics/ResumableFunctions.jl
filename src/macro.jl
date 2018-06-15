@@ -73,6 +73,7 @@ macro resumable(expr::Expr)
   else
     func_def[:name] = :((_fsmi::$type_name{$(params...)}))
   end
+  func_def[:rtype] = :(Union{$rtype, Nothing})
   func_def[:body] = postwalk(x->transform_slots(x, keys(slots)), func_def[:body])
   func_def[:body] = postwalk(transform_arg, func_def[:body])
   func_def[:body] = postwalk(transform_exc, func_def[:body]) |> flatten
