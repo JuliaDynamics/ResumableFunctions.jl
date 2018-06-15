@@ -37,41 +37,6 @@ end
 println("ResumableFunctions: ")
 @btime test_resumable()
 
-function my_produce(v)
-  ct = current_task()
-  consumer = ct.consumers
-  ct.consumers = nothing
-  Base.schedule_and_wait(consumer, v)
-  return consumer.result
-end
-
-function my_consume(producer::Task, values...)
-  istaskdone(producer) && return producer.value
-  ct = current_task()
-  ct.result = length(values)==1 ? values[1] : values
-  producer.consumers = ct
-  Base.schedule_and_wait(producer)
-end
-
-function fibonnaci_produce()
-  a = zero(Int)
-  b = a + one(a)
-  while true
-    my_produce(a)
-    a, b = b, a + b
-  end
-end
-
-function test_produce()
-  fib_produce = @task fibonnaci_produce()
-  for i in 1:n 
-    my_consume(fib_produce) 
-  end
-end
-
-println("Produce/consume: ")
-@btime test_produce()
-
 function fibonnaci_channel(ch::Channel)
   a = zero(Int)
   b = a + one(a)
@@ -120,7 +85,7 @@ println("Closure: ")
 function fibonnaci_closure_opt()
   a = Ref(zero(Int))
   b = Ref(a[] + one(Int))
-  function()
+  @noinline function()
     tmp = a[]
     a[], b[] = b[], a[] + b[]
     tmp
@@ -141,7 +106,7 @@ function fibonnaci_closure_stm()
   a = Ref(zero(Int))
   b = Ref(a[] + one(Int))
   _state = Ref(zero(UInt8))
-  (_arg::Any=nothing)->begin
+  function(_arg::Any=nothing)
     _state[] == 0x00 && @goto _STATE_0
     _state[] == 0x01 && @goto _STATE_1
     error("@resumable function has stopped!")
