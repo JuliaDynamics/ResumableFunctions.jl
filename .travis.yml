@@ -4,18 +4,15 @@ os:
   - linux
   - osx
 julia:
-  #- 0.6
   - 0.7
   - nightly
 notifications:
   email: false
 git:
   depth: 99999999
-
-#matrix:
-#  allow_failures:
-  #- julia: 0.6
-
+matrix:
+  allow_failures:
+  - julia: nightly
 after_success:
   # push coverage results to Coveralls
   - julia -e 'cd(Pkg.dir("ResumableFunctions")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'

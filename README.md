@@ -58,9 +58,13 @@ end
 
 ## Release notes
 
+* 2018: v0.3.1 uses the new iteration protocol.
+  * the new iteration protocol is used for a `@resumable function` based iterator.
+  * the `for` loop transformation implements also the new iteration protocol.
+
 * 2018: v0.3 is Julia v0.7 compatible.
-  * introduction of `let` block to allow variables not te be persisted between `@resumable function` calls (EXPERIMENTAL)
-  * the `eltype` of a `@resumable function` based iterator is its return type if specified, otherwise `Any`
+  * introduction of `let` block to allow variables not te be persisted between `@resumable function` calls (EXPERIMENTAL).
+  * the `eltype` of a `@resumable function` based iterator is its return type if specified, otherwise `Any`.
 
 * 2018: v0.2 the iterator now behaves as a Python generator: only values that are explicitely yielded are generated; the return value is ignored and a warning is generated.
 
