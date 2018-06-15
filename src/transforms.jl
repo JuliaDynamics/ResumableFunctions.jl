@@ -4,14 +4,14 @@ Function that replaces a `for` loop by a corresponding `while` loop saving expli
 function transform_for(expr, ui8::BoxedUInt8)
   @capture(expr, for element_ in iterator_ body__ end) || return expr
   ui8.n += one(UInt8)
-  iter = Symbol("_iterator_", ui8.n)
+  next = Symbol("_iteratornext_", ui8.n)
   state = Symbol("_iterstate_", ui8.n)
   quote 
-    $iter = $iterator
-    $state = start($iter)
-    while !done($iter, $state)
-      $element, $state = next($iter, $state)
+    $next = iterate($iterator)
+    while $next !== nothing
+      ($element, $state) = $next
       $(body...)
+      $next = iterate($iterator, $state)
     end
   end
 end
