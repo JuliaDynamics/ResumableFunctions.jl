@@ -51,7 +51,6 @@ macro resumable(expr::Expr)
   type_expr = :( 
     mutable struct $struct_name
       _state :: UInt8
-      _result
       $((:($slotname :: $slottype) for (slotname, slottype) in slots)...)
       $(constr_expr)
     end
