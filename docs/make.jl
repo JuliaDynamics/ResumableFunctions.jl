@@ -14,7 +14,7 @@ makedocs(
 )
 
 deploydocs(
-  julia = "nightly",
+  julia = "0.7",
   repo = "github.com/BenLauwens/ResumableFunctions.jl",
   target = "build",
   deps   = nothing,
