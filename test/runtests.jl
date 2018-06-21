@@ -26,7 +26,6 @@ end
   finally
     println(io,"Always")
   end
-  a
 end
 
 struct SpecialException <: Exception end
@@ -35,14 +34,14 @@ io = IOBuffer()
 try_me = test_try(io)
 try_me()
 try_me(SpecialException())
-@test try_me("hello") == 1
+@test try_me("hello") == nothing
 @test String(take!(copy(io))) == "SpecialException()\nhello\nAlways\n"
 
 io = IOBuffer()
 try_me = test_try(io)
 try_me()
 try_me()
-@test try_me("hello") == 2
+@test try_me("hello") == nothing
 @test String(take!(copy(io))) == "hello\nAlways\n"
 
 io = IOBuffer()
@@ -50,7 +49,7 @@ try_me = test_try(io)
 try_me()
 try_me()
 try_me(SpecialException())
-@test try_me("hello") == 2
+@test try_me("hello") == nothing
 @test_throws ErrorException try_me()
 @test String(take!(copy(io))) == "SpecialException()\nhello\nAlways\n"
 end #test_try

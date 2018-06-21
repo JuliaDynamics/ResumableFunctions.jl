@@ -28,6 +28,7 @@ function get_slots(func_def::Dict, args::Dict{Symbol, Any}, mod::Module) :: Dict
   func_def[:name] = gensym()
   func_def[:args] = (func_def[:args]..., func_def[:kwargs]...)
   func_def[:kwargs] = []
+  body = func_def[:body]
   func_def[:body] = postwalk(transform_yield, func_def[:body])
   func_expr = combinedef(func_def) |> flatten |> MacroTools.striplines
   @eval(mod, @noinline $func_expr)
@@ -41,7 +42,7 @@ function get_slots(func_def::Dict, args::Dict{Symbol, Any}, mod::Module) :: Dict
     slots[argname] = argtype
   end
   postwalk(x->remove_catch_exc(x, slots), func_def[:body])
-  postwalk(x->make_arg_any(x, slots), func_def[:body])
+  postwalk(x->make_arg_any(x, slots), body)
   delete!(slots, Symbol("#temp#"))
   delete!(slots, Symbol("#unused#"))
   delete!(slots, Symbol("#self#"))

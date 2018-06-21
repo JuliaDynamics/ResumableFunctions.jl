@@ -121,7 +121,7 @@ with a sequence of `try`-`catch`-`end` expressions:
 ```
 """
 function transform_try(expr, ui8::BoxedUInt8)
-  @capture(expr, (try body__ end) | (try body__ catch exc_; handling__ end) | (try body__ catch exc_; handling__ finally always__ end)) || return expr
+  @capture(expr, (try body__ catch exc_; handling__ end) | (try body__ catch exc_; handling__ finally always__ end)) || return expr
   ui8.n += one(UInt8)
   new_body = []
   segment = []
