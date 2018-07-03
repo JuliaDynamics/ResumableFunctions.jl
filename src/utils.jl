@@ -32,10 +32,10 @@ function get_slots(func_def::Dict, args::Dict{Symbol, Any}, mod::Module) :: Dict
   func_def[:body] = postwalk(transform_yield, func_def[:body])
   func_expr = combinedef(func_def) |> flatten |> MacroTools.striplines
   @eval(mod, @noinline $func_expr)
-  code_data_infos = @eval(mod, code_typed($(func_def[:name]); optimize=false))
-  for (code_info, data_type) in code_data_infos
+  code_data_infos = @eval(mod, ResumableFunctions.my_code_typed($(func_def[:name]); optimize=false))
+  for (code_info, slottypes) in code_data_infos
     for (i, slotname) in enumerate(code_info.slotnames)
-      slots[slotname] = code_info.slottypes[i]
+      slots[slotname] = slottypes[i]
     end
   end
   for (argname, argtype) in args
@@ -47,6 +47,41 @@ function get_slots(func_def::Dict, args::Dict{Symbol, Any}, mod::Module) :: Dict
   delete!(slots, Symbol("#unused#"))
   delete!(slots, Symbol("#self#"))
   slots
+end
+
+function my_code_typed(@nospecialize(f), @nospecialize(types=Tuple); optimize=true)
+  ccall(:jl_is_in_pure_context, Bool, ()) && error("code reflection cannot be used from generated functions")
+  if isa(f, Core.Builtin)
+      throw(ArgumentError("argument is not a generic function"))
+  end
+  types = Core.Compiler.to_tuple_type(types)
+  asts = []
+  world = ccall(:jl_get_world_counter, UInt, ())
+  params = Core.Compiler.Params(world)
+  for x in Core.Compiler._methods(f, types, -1, world)
+      meth = Core.Compiler.func_for_method_checked(x[3], types)
+      (code, slottypes) = my_typeinf_code(meth, x[1], x[2], optimize, params)
+      code === nothing && error("inference not successful") # inference disabled?
+      push!(asts, code => slottypes)
+  end
+  return asts
+end
+
+function my_typeinf_code(method::Method, @nospecialize(atypes), sparams::Core.Compiler.SimpleVector, run_optimizer::Bool, params::Core.Compiler.Params)
+  code = Core.Compiler.code_for_method(method, atypes, sparams, params.world)
+  code === nothing && return (nothing, Any)
+  ccall(:jl_typeinf_begin, Cvoid, ())
+  result = Core.Compiler.InferenceResult(code)
+  frame = Core.Compiler.InferenceState(result, false, params)
+  frame === nothing && return (nothing, Any)
+  if Core.Compiler.typeinf(frame) && run_optimizer
+      opt = Core.Compiler.OptimizationState(frame)
+      Core.Compiler.optimize(opt, result.result)
+      opt.src.inferred = true
+  end
+  ccall(:jl_typeinf_end, Cvoid, ())
+  frame.inferred || return (nothing, Any)
+  return (frame.src, frame.slottypes)
 end
 
 """
