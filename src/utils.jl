@@ -43,6 +43,11 @@ function get_slots(func_def::Dict, args::Dict{Symbol, Any}, mod::Module) :: Dict
   end
   postwalk(x->remove_catch_exc(x, slots), func_def[:body])
   postwalk(x->make_arg_any(x, slots), body)
+  for (key, val) in slots
+    if val == Union{}
+      slots[key] = Any
+    end
+  end
   delete!(slots, Symbol("#temp#"))
   delete!(slots, Symbol("#unused#"))
   delete!(slots, Symbol("#self#"))
