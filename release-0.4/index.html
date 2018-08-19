@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Home · ResumableFunctions</title><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js" data-main="assets/documenter.js"></script><script src="siteinfo.js"></script><script src="../versions.js"></script><link href="assets/documenter.css" rel="stylesheet" type="text/css"/></head><body><nav class="toc"><h1>ResumableFunctions</h1><select id="version-selector" onChange="window.location.href=this.value" style="visibility: hidden"></select><form class="search" id="search-form" action="search.html"><input id="search-query" name="q" type="text" placeholder="Search docs"/></form><ul><li class="current"><a class="toctext" href="index.html">Home</a><ul class="internal"><li><a class="toctext" href="#Example-1">Example</a></li><li><a class="toctext" href="#Installation-1">Installation</a></li><li><a class="toctext" href="#Authors-1">Authors</a></li><li><a class="toctext" href="#License-1">License</a></li></ul></li><li><a class="toctext" href="manual.html">Manual</a></li><li><a class="toctext" href="internals.html">Internals</a></li><li><a class="toctext" href="library.html">Library</a></li></ul></nav><article id="docs"><header><nav><ul><li><a href="index.html">Home</a></li></ul><a class="edit-page" href="https://github.com/BenLauwens/ResumableFunctions.jl/blob/master/docs/src/index.md"><span class="fa"></span> Edit on GitHub</a></nav><hr/><div id="topbar"><span>Home</span><a class="fa fa-bars" href="#"></a></div></header><h1><a class="nav-anchor" id="ResumableFunctions-1" href="#ResumableFunctions-1">ResumableFunctions</a></h1><p>C# sharp style generators a.k.a. semi-coroutines for Julia.</p><p>C# has a convenient way to create iterators using the <code>yield return</code> statement. The package <code>ResumableFunctions</code> provides the same functionality for the Julia language by introducing the <code>@resumable</code> and the <code>@yield</code> macros. These macros can be used to replace the <code>Task</code> switching functions <code>produce</code> and <code>consume</code> which were deprecated in Julia v0.6. <code>Channels</code> are the preferred way for inter-task communication in julia v0.6+, but their performance is subpar for iterator applications.</p><h2><a class="nav-anchor" id="Example-1" href="#Example-1">Example</a></h2><pre><code class="language-julia">using ResumableFunctions
+
+@resumable function fibonnaci(n::Int)
+  a = 0
+  b = 1
+  for i in 1:n
+    @yield a
+    a, b = b, a+b
+  end
+end
+
+for val in fibonnaci(10) 
+  println(val) 
+end
+
+# output
+
+0
+1
+1
+2
+3
+5
+8
+13
+21
+34</code></pre><h2><a class="nav-anchor" id="Installation-1" href="#Installation-1">Installation</a></h2><p><code>ResumableFunctions</code> is a registered package and can be installed by running:</p><pre><code class="language-julia">Pkg.add(&quot;ResumableFunctions&quot;)</code></pre><h2><a class="nav-anchor" id="Authors-1" href="#Authors-1">Authors</a></h2><ul><li>Ben Lauwens, Royal Military Academy, Brussels, Belgium.</li></ul><h2><a class="nav-anchor" id="License-1" href="#License-1">License</a></h2><p><code>ResumableFunctions</code> is licensed under the MIT &quot;Expat&quot; License.</p><footer><hr/><a class="next" href="manual.html"><span class="direction">Next</span><span class="title">Manual</span></a></footer></article></body></html>
