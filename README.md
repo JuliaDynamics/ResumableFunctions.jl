@@ -58,6 +58,8 @@ end
 
 ## Release notes
 
+* 2018: v0.4.0 is Julia v1.0 compatible.
+
 * 2018: v0.3.1 uses the new iteration protocol.
   * the new iteration protocol is used for a `@resumable function` based iterator.
   * the `for` loop transformation implements also the new iteration protocol.
