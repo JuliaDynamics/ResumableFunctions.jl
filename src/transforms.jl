@@ -6,12 +6,14 @@ function transform_for(expr, ui8::BoxedUInt8)
   ui8.n += one(UInt8)
   next = Symbol("_iteratornext_", ui8.n)
   state = Symbol("_iterstate_", ui8.n)
+  iterator_value = Symbol("_iterator_", ui8.n)
   quote 
-    $next = iterate($iterator)
+    $iterator_value = $iterator
+    $next = iterate($iterator_value)
     while $next !== nothing
       ($element, $state) = $next
       $(body...)
-      $next = iterate($iterator, $state)
+      $next = iterate($iterator_value, $state)
     end
   end
 end
