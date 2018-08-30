@@ -13,6 +13,7 @@
 
 [![ResumableFunctions](http://pkg.julialang.org/badges/ResumableFunctions_0.6.svg)](http://pkg.julialang.org/detail/ResumableFunctions)
 [![ResumableFunctions](http://pkg.julialang.org/badges/ResumableFunctions_0.7.svg)](http://pkg.julialang.org/detail/ResumableFunctions)
+[![ResumableFunctions](http://pkg.julialang.org/badges/ResumableFunctions_1.0.svg)](http://pkg.julialang.org/detail/ResumableFunctions)
 
 `ResumableFunctions` is a [registered package](http://pkg.julialang.org) and can be installed by running:
 ```julia
