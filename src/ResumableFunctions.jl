@@ -1,6 +1,3 @@
-__precompile__()
-
-
 """
 Main module for ResumableFunctions.jl – C# style generators a.k.a. semi-coroutines for Julia
 """
