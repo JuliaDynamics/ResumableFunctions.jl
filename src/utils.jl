@@ -30,7 +30,7 @@ function get_slots(func_def::Dict, args::Dict{Symbol, Any}, mod::Module) :: Dict
   func_def[:kwargs] = []
   body = func_def[:body]
   func_def[:body] = postwalk(transform_yield, func_def[:body])
-  func_expr = combinedef(func_def) |> flatten 
+  func_expr = combinedef(func_def) |> flatten
   @eval(mod, @noinline $func_expr)
   code_data_infos = @eval(mod, begin using ResumableFunctions; ResumableFunctions.my_code_typed($(func_def[:name])) end )
   for (code_info, slottypes) in code_data_infos

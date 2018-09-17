@@ -127,7 +127,7 @@ function transform_try(expr, ui8::BoxedUInt8)
   ui8.n += one(UInt8)
   new_body = []
   segment = []
-  handling = handling == nothing ? [] : handling
+  handling = handling == nothing ? [nothing] : handling
   for ex in body
     if _is_yield(ex)
       ret = length(ex.args) > 2 ? ex.args[3:end] : [nothing]
