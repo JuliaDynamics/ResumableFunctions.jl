@@ -20,4 +20,4 @@ after_success:
   # push coverage results to Codecov
   - julia -e 'cd(Pkg.dir("ResumableFunctions")); Pkg.add("Coverage"); using Coverage; Codecov.submit(Codecov.process_folder())'
   # generate documentation
-  - julia -e 'cd(Pkg.dir("ResumableFunctions")); Pkg.add("Documenter"); include(joinpath("docs", "make.jl"))'
+  - julia -e 'cd(Pkg.dir("ResumableFunctions")); ps=Pkg.PackageSpec(name="Documenter", version="0.19"); Pkg.add(ps); Pkg.pin(ps); include(joinpath("docs", "make.jl"))'
