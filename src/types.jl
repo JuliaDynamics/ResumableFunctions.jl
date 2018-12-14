@@ -22,9 +22,6 @@ Base.eltype(::Type{T}) where T<:FiniteStateMachineIterator{R} where R = R
 
 function Base.iterate(fsm_iter::T, state::UInt8=0x00) where T<:FiniteStateMachineIterator
   fsm_iter._state = state
-  #try
-    #fsm_iter._result = fsm_iter()
-  #end
   result = fsm_iter()
   fsm_iter._state == 0xff && return nothing
   result, fsm_iter._state
