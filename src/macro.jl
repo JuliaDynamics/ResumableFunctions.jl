@@ -52,6 +52,7 @@ macro resumable(expr::Expr)
     mutable struct $struct_name
       _state :: UInt8
       $((:($slotname :: $slottype) for (slotname, slottype) in slots)...)
+      #$((:($slotname) for (slotname, slottype) in slots)...)
       $(constr_expr)
     end
   )
