@@ -21,8 +21,6 @@ end
     println(io,c)
   catch except
     println(io,except)
-    d = @yield
-    println(io,d)
   finally
     println(io,"Always")
   end
@@ -34,24 +32,22 @@ io = IOBuffer()
 try_me = test_try(io)
 try_me()
 try_me(SpecialException())
-@test try_me("hello") == nothing
-@test String(take!(copy(io))) == "SpecialException()\nhello\nAlways\n"
+@test String(take!(copy(io))) == "SpecialException()\nAlways\n"
 
 io = IOBuffer()
 try_me = test_try(io)
 try_me()
 try_me()
-@test try_me("hello") == nothing
-@test String(take!(copy(io))) == "hello\nAlways\n"
+try_me("Hello")
+@test String(take!(copy(io))) == "Hello\nAlways\n"
 
 io = IOBuffer()
 try_me = test_try(io)
 try_me()
 try_me()
 try_me(SpecialException())
-@test try_me("hello") == nothing
 @test_throws ErrorException try_me()
-@test String(take!(copy(io))) == "SpecialException()\nhello\nAlways\n"
+@test String(take!(copy(io))) == "SpecialException()\nAlways\n"
 end #test_try
 
 @resumable function (test_where1(a::N) :: N) where {N<:Number}
