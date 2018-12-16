@@ -59,6 +59,10 @@ end
 
 ## Release notes
 
+* 2018: v0.4.2 prepare for Julia v1.1
+  * better inference caused a problem;).
+  * iterator with a specified `rtype` is fixed.
+
 * 2018: v0.4.0 is Julia v1.0 compatible.
 
 * 2018: v0.3.1 uses the new iteration protocol.
