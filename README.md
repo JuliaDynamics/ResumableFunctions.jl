@@ -17,6 +17,7 @@
 
 `ResumableFunctions` is a [registered package](http://pkg.julialang.org) and can be installed by running:
 ```julia
+using Pkg
 Pkg.add("ResumableFunctions")
 ```
 
