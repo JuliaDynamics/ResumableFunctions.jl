@@ -47,25 +47,25 @@ end
 The following block is the result of running `julia --project=. benchmark/benchmarks.jl` on a computer with the processor: `Intel(R) Core(TM) i5-5300U CPU @ 2.30GHz`. Julia version 1.1.1 was used.
 
 ```
-Direct: 
+Direct:
   49.724 ns (0 allocations: 0 bytes)
-ResumableFunctions: 
+ResumableFunctions:
   10.230 μs (281 allocations: 8.83 KiB)
-Channels csize=0: 
+Channels csize=0:
   305.877 μs (465 allocations: 8.84 KiB)
-Channels csize=1: 
+Channels csize=1:
   504.438 μs (379 allocations: 7.33 KiB)
-Channels csize=20: 
+Channels csize=20:
   87.889 μs (206 allocations: 5.06 KiB)
-Channels csize=100: 
+Channels csize=100:
   67.911 μs (198 allocations: 6.44 KiB)
-Closure: 
+Closure:
   2.437 μs (83 allocations: 1.31 KiB)
-Closure optimised: 
+Closure optimised:
   245.676 ns (3 allocations: 64 bytes)
-Closure statemachine: 
+Closure statemachine:
   40.149 ns (0 allocations: 0 bytes)
-Iteration protocol: 
+Iteration protocol:
   63.635 ns (0 allocations: 0 bytes)
 ```
 
@@ -85,6 +85,8 @@ Iteration protocol:
 * To contribute, make a pull request. Contributions should include tests for any new features/bug fixes.
 
 ## Release notes
+
+* 2019: v0.5.0 is Julia v1.2 compatible
 
 * 2018: v0.4.2 prepare for Julia v1.1
   * better inference caused a problem;).
