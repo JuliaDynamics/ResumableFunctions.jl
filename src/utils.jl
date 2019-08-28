@@ -12,12 +12,18 @@ Function returning the arguments of a function definition
 function get_args(func_def::Dict)
   arg_dict = Dict{Symbol, Any}()
   arg_list = Vector{Symbol}()
-  for arg in (func_def[:args]..., func_def[:kwargs]...)
+  kwarg_list = Vector{Symbol}()
+  for arg in (func_def[:args]...,)
     arg_def = splitarg(arg)
     push!(arg_list, arg_def[1])
-    arg_dict[arg_def[1]] = arg_def[3] ? Tuple : arg_dict[arg_def[1]] = arg_def[2]
+    arg_dict[arg_def[1]] = arg_def[3] ? Any : arg_dict[arg_def[1]] = arg_def[2]
   end
-  arg_list, arg_dict
+  for arg in (func_def[:kwargs]...,)
+    arg_def = splitarg(arg)
+    push!(kwarg_list, arg_def[1])
+    arg_dict[arg_def[1]] = arg_def[3] ? Any : arg_dict[arg_def[1]] = arg_def[2]
+  end
+  arg_list, kwarg_list, arg_dict
 end
 
 """
@@ -54,28 +60,34 @@ function get_slots(func_def::Dict, args::Dict{Symbol, Any}, mod::Module) :: Dict
   slots
 end
 
-function my_code_typed(@nospecialize(f), @nospecialize(types=Tuple))
+function my_code_typed(@nospecialize(f), @nospecialize(types=Tuple); world = Base.get_world_counter(), params = Core.Compiler.Params(world))
+  ccall(:jl_is_in_pure_context, Bool, ()) && error("code reflection cannot be used from generated functions")
+  if isa(f, Core.Builtin)
+      throw(ArgumentError("argument is not a generic function"))
+  end
   types = Core.Compiler.to_tuple_type(types)
   asts = []
-  world = ccall(:jl_get_world_counter, UInt, ())
-  params = Core.Compiler.Params(world)
   for x in Core.Compiler._methods(f, types, -1, world)
-      meth = Core.Compiler.func_for_method_checked(x[3], types)
-      (code, slottypes) = my_typeinf_code(meth, x[1], x[2], params)
+      meth = Core.Compiler.func_for_method_checked(x[3], types, x[2])
+      (code, slottypes) = my_typeinf_code(meth, x[1], x[2], false, params)
       code === nothing && error("inference not successful")
+      Base.remove_linenums!(code)
       push!(asts, code => slottypes)
   end
   return asts
 end
 
-function my_typeinf_code(method::Method, @nospecialize(atypes), sparams::Core.Compiler.SimpleVector, params::Core.Compiler.Params)
-  code = Core.Compiler.code_for_method(method, atypes, sparams, params.world)
-  code === nothing && return (nothing, Any)
+function my_typeinf_code(method::Method, @nospecialize(atypes), sparams::Core.Compiler.SimpleVector, run_optimizer::Bool, params::Core.Compiler.Params)
+  mi = Core.Compiler.specialize_method(method, atypes, sparams)::Core.Compiler.MethodInstance
   ccall(:jl_typeinf_begin, Cvoid, ())
-  result = Core.Compiler.InferenceResult(code)
+  result = Core.Compiler.InferenceResult(mi)
   frame = Core.Compiler.InferenceState(result, false, params)
   frame === nothing && return (nothing, Any)
-  Core.Compiler.typeinf(frame)
+  if Core.Compiler.typeinf(frame) && run_optimizer
+      opt = Core.Compiler.OptimizationState(frame)
+      optimize(opt, result.result)
+      opt.src.inferred = true
+  end
   ccall(:jl_typeinf_end, Cvoid, ())
   frame.inferred || return (nothing, Any)
   return (frame.src, frame.slottypes)
@@ -99,7 +111,6 @@ function make_arg_any(expr, slots::Dict{Symbol, Any})
   expr
 end
 
-
 """
 Function returning the args for the type construction.
 """
@@ -111,6 +122,8 @@ function make_args(func_def::Dict)
   end
   (args...,)
 end
+
+
 
 """
 Function checking the use of a return statement with value

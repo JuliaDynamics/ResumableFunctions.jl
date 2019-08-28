@@ -71,7 +71,7 @@ end
 end
 
 @resumable function test_varargs(a...)
-  for (i, e) in enumerate(a)
+  for (i, e) in enumerate(a...)
     @yield e
   end
 end

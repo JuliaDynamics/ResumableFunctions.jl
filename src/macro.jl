@@ -19,7 +19,7 @@ macro resumable(expr::Expr)
   expr.head != :function && error("Expression is not a function definition!")
   func_def = splitdef(expr)
   rtype = :rtype in keys(func_def) ? func_def[:rtype] : Any
-  args, arg_dict = get_args(func_def)
+  args, kwargs, arg_dict = get_args(func_def)
   #println(arg_dict)
   params = ((get_param_name(param) for param in func_def[:whereparams])...,)
   #println(params)
@@ -37,18 +37,20 @@ macro resumable(expr::Expr)
     struct_name = :($type_name{$(func_def[:whereparams]...)} <: ResumableFunctions.FiniteStateMachineIterator{$rtype})
     constr_def[:name] = :($type_name{$(params...)})
   end
-  constr_def[:args] = make_args(func_def)#(func_def[:args]..., func_def[:kwargs]...)
-  constr_def[:kwargs] = []
+  constr_def[:args] = (func_def[:args]..., )
+  #constr_def[:args] = make_args(func_def)
+  constr_def[:kwargs] = (func_def[:kwargs]..., )
   constr_def[:rtype] = constr_def[:name]
   constr_def[:body] = quote
     fsmi = new()
     fsmi._state = 0x00
     $((:(fsmi.$arg = $arg) for arg in args)...)
+    $((:(fsmi.$arg = $arg) for arg in kwargs)...)
     fsmi
   end
   constr_expr = combinedef(constr_def) |> flatten
   #println(constr_expr)
-  type_expr = :( 
+  type_expr = :(
     mutable struct $struct_name
       _state :: UInt8
       $((:($slotname :: $slottype) for (slotname, slottype) in slots)...)
@@ -60,14 +62,13 @@ macro resumable(expr::Expr)
   call_def = copy(func_def)
   if isempty(params)
     call_def[:rtype] = :($type_name)
-    call_def[:body] = :($type_name($((:($arg) for arg in args)...)))
+    call_def[:body] = :($type_name($((:($arg) for arg in args)...); $((:($arg = $arg) for arg in kwargs)...)))
   else
     call_def[:rtype] = :($type_name{$(params...)})
-    call_def[:body] = :($type_name{$(params...)}($((:($arg) for arg in args)...)))
+    call_def[:body] = :($type_name{$(params...)}($((:($arg) for arg in args)...); $((:($arg = $arg) for arg in kwargs)...)))
   end
   call_expr = combinedef(call_def) |> flatten
   #println(call_expr|>MacroTools.striplines)
-  func_def[:kwargs] = []
   if isempty(params)
     func_def[:name] = :((_fsmi::$type_name))
   else
@@ -91,6 +92,7 @@ macro resumable(expr::Expr)
     $(func_def[:body])
   end
   func_def[:args] = [Expr(:kw, :(_arg::Any), nothing)]
+  func_def[:kwargs] = []
   func_expr = combinedef(func_def) |> flatten
   #println(func_expr|>MacroTools.striplines)
   esc(:($type_expr; $func_expr; $call_expr))
