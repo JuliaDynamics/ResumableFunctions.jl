@@ -1,11 +1,11 @@
 name = "ResumableFunctions"
 uuid = "c5292f4c-5179-55e1-98c5-05642aab7184"
-repo = "https://github.com/BenLauwens/ResumableFunctions.jl.git"
-authors = ["Ben Lauwens <ben.lauwens@gmail.com>"]
 keywords = ["generator", "semi-coroutine", "resumable function"]
 license = "MIT"
 desc = "C# sharp style generators a.k.a. semi-coroutines for Julia."
-version = "0.5.1"
+authors = ["Ben Lauwens <ben.lauwens@gmail.com>"]
+repo = "https://github.com/BenLauwens/ResumableFunctions.jl.git"
+version = "0.5.2"
 
 [deps]
 MacroTools = "1914dd2f-81c6-5fcd-8719-6d5c9610ff09"
