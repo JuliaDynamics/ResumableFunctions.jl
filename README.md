@@ -86,6 +86,9 @@ Iteration protocol:
 
 ## Release notes
 
+* 2019: v0.5.1
+  * inference problem solved: force iterator next value to be of type `Union` of `Tuple` and `Nothing`.
+
 * 2019: v0.5.0 is Julia v1.2 compatible
 
 * 2018: v0.4.2 prepare for Julia v1.1
