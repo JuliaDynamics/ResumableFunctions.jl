@@ -1,66 +1,51 @@
-using BenchmarkTools, Compat
+using BenchmarkTools, ResumableFunctions
 using ResumableFunctions
 
 const n = 93
 
-@noinline function fibonnaci_direct(a::Int, b::Int)
-  b, a+b
-end
-
-function test_direct()
+function direct_fib(n)
   a = zero(Int)
   b = a + one(a)
-  for i in 1:n 
-    a, b = fibonnaci_direct(a, b)
-  end
-end
+  for i in 1:n-1
+    a, b = b, a+b
+  end#for
+  a
+end#function
 
-println("Direct: ")
-@btime test_direct()
-
-@resumable function fibonnaci_resumable()
+@resumable function fibonnaci_resumable(n)
   a = zero(Int)
   b = a + one(a)
-  while true
+  for i in 1:n
     @yield a
     a, b = b, a + b
   end
 end
 
-function test_resumable()
-  fib_resumable = fibonnaci_resumable()
-  for i in 1:n 
-    fib_resumable() 
-  end
+function test_resumable(n)
+  a = 0
+  for i in fibonnaci_resumable(n)
+    a = i
+  end#for
+  a
 end
 
-println("ResumableFunctions: ")
-@btime test_resumable()
-
-function fibonnaci_channel(ch::Channel)
+function fibonnaci_channel(n, ch::Channel)
   a = zero(Int)
   b = a + one(a)
-  while true
+  for i in 1:n
     put!(ch, a)
     a, b = b, a + b
   end
 end
 
-function test_channel(csize::Int)
-  fib_channel = Channel(fibonnaci_channel; ctype=Int, csize=csize)
-  for i in 1:n 
-    take!(fib_channel) 
-  end
+function test_channel(n, csize::Int)
+  fib_channel = Channel(c -> fibonnaci_channel(n, c); ctype=Int, csize=csize)
+  a = 0
+  for i in fib_channel
+    a = i
+  end#for
+  a
 end
-
-println("Channels csize=0: ")
-@btime test_channel(0)
-
-println("Channels csize=20: ")
-@btime test_channel(20)
-
-println("Channels csize=100: ")
-@btime test_channel(100)
 
 function fibonnaci_closure()
   a = zero(Int)
@@ -72,15 +57,14 @@ function fibonnaci_closure()
   end
 end
 
-function test_closure()
+function test_closure(n)
   fib_closure = fibonnaci_closure()
-  for i in 1:n 
-    fib_closure() 
+  a = 0
+  for i in 1:n
+    a = fib_closure()
   end
+  a
 end
-
-println("Closure: ")
-@btime test_closure()
 
 function fibonnaci_closure_opt()
   a = Ref(zero(Int))
@@ -92,15 +76,14 @@ function fibonnaci_closure_opt()
   end
 end
 
-function test_closure_opt()
+function test_closure_opt(n)
   fib_closure = fibonnaci_closure_opt()
+  a = 0
   for i in 1:n 
-    fib_closure() 
+    a = fib_closure() 
   end
+  a
 end
-
-println("Closure optimised: ")
-@btime test_closure_opt()
 
 function fibonnaci_closure_stm()
   a = Ref(zero(Int))
@@ -124,12 +107,72 @@ function fibonnaci_closure_stm()
   end
 end
 
-function test_closure_stm()
+function test_closure_stm(n)
   fib_closure = fibonnaci_closure_stm()
+  a = 0
   for i in 1:n 
-    fib_closure() 
+    a = fib_closure() 
   end
+  a
 end
 
-println("Closure statemachine: ")
-@btime test_closure_stm()
+struct FibN
+  n::Int
+end
+
+function Base.iterate(f::FibN, state::NTuple{3,Int}=(0, 1, 1))
+  @inbounds state[3] >= f.n && return nothing
+  a, b, iters = state
+  @inbounds b, (b, a + b, iters + 1)
+end
+
+function test_iteration_protocol(n)
+  fib = FibN(n)
+  a = 0
+  for i in fib
+    a = i
+  end
+  a
+end
+
+isinteractive() || begin
+  println("Direct: ")
+  @btime direct_fib($n)
+  @assert direct_fib(n) == 7540113804746346429
+
+  println("ResumableFunctions: ")
+  @btime test_resumable($n)
+  @assert direct_fib(n) == 7540113804746346429
+
+  println("Channels csize=0: ")
+  @btime test_channel($n, $0)
+  @assert test_channel(n, 0) == 7540113804746346429
+
+  println("Channels csize=1: ")
+  @btime test_channel($n, $1)
+  @assert test_channel(n, 1) == 7540113804746346429
+
+  println("Channels csize=20: ")
+  @btime test_channel($n, $20)
+  @assert test_channel(n, 20) == 7540113804746346429
+
+  println("Channels csize=100: ")
+  @btime test_channel($n, $100)
+  @assert test_channel(n, 100) == 7540113804746346429
+
+  println("Closure: ")
+  @btime test_closure($n)
+  @assert test_closure(n) == 7540113804746346429
+
+  println("Closure optimised: ")
+  @btime test_closure_opt($n)
+  @assert test_closure_opt(n) == 7540113804746346429
+
+  println("Closure statemachine: ")
+  @btime test_closure_stm($n)
+  @assert test_closure_stm(n) == 7540113804746346429
+
+  println("Iteration protocol: ")
+  @btime test_iteration_protocol($n)
+  @assert test_iteration_protocol(n) == 7540113804746346429
+end

@@ -1,6 +1,6 @@
 # ResumableFunctions
 
-[C#](https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/) has a convenient way to create iterators using the `yield return` statement. The package `ResumableFunctions` provides the same functionality for the [Julia language](https://julialang.org) by introducing the `@resumable` and the `@yield` macros. These macros can be used to replace the `Task` switching functions `produce` and `consume` which were deprecated in Julia v0.6. `Channels` are the preferred way for inter-task communication in julia v0.6+, but their performance is subpar for iterator applications.
+[C#](https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/) has a convenient way to create iterators using the `yield return` statement. The package `ResumableFunctions` provides the same functionality for the [Julia language](https://julialang.org) by introducing the `@resumable` and the `@yield` macros. These macros can be used to replace the `Task` switching functions `produce` and `consume` which were deprecated in Julia v0.6. `Channels` are the preferred way for inter-task communication in julia v0.6+, but their performance is subpar for iterator applications. See [the benchmarks section below](#Benchmarks).
 
 ## Build Status & Coverage
 
@@ -17,6 +17,7 @@
 
 `ResumableFunctions` is a [registered package](http://pkg.julialang.org) and can be installed by running:
 ```julia
+using Pkg
 Pkg.add("ResumableFunctions")
 ```
 
@@ -40,6 +41,32 @@ end
 for fib in fibonnaci(10)
   println(fib)
 end
+```
+
+## Benchmarks
+The following block is the result of running `julia --project=. benchmark/benchmarks.jl` on a computer with the processor: `Intel(R) Core(TM) i5-5300U CPU @ 2.30GHz`. Julia version 1.1.1 was used.
+
+```
+Direct: 
+  49.724 ns (0 allocations: 0 bytes)
+ResumableFunctions: 
+  10.230 μs (281 allocations: 8.83 KiB)
+Channels csize=0: 
+  305.877 μs (465 allocations: 8.84 KiB)
+Channels csize=1: 
+  504.438 μs (379 allocations: 7.33 KiB)
+Channels csize=20: 
+  87.889 μs (206 allocations: 5.06 KiB)
+Channels csize=100: 
+  67.911 μs (198 allocations: 6.44 KiB)
+Closure: 
+  2.437 μs (83 allocations: 1.31 KiB)
+Closure optimised: 
+  245.676 ns (3 allocations: 64 bytes)
+Closure statemachine: 
+  40.149 ns (0 allocations: 0 bytes)
+Iteration protocol: 
+  63.635 ns (0 allocations: 0 bytes)
 ```
 
 ## Licence & References
