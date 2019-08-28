@@ -7,8 +7,9 @@ function transform_for(expr, ui8::BoxedUInt8)
   next = Symbol("_iteratornext_", ui8.n)
   state = Symbol("_iterstate_", ui8.n)
   iterator_value = Symbol("_iterator_", ui8.n)
-  quote 
+  quote
     $iterator_value = $iterator
+    $next = nothing
     $next = iterate($iterator_value)
     while $next !== nothing
       ($element, $state) = $next
@@ -57,11 +58,11 @@ function transform_let(expr, symbols::Set{Symbol})
 end
 
 """
-Function that replaces a `arg = @yield ret` statement by 
-```julia 
-  @yield ret; 
+Function that replaces a `arg = @yield ret` statement by
+```julia
+  @yield ret;
   arg = arg_
-``` 
+```
 where `arg_` is the argument of the function containing the expression.
 """
 function transform_arg(expr)
@@ -75,7 +76,7 @@ function transform_arg(expr)
 end
 
 """
-Function that replaces a `@yield ret` or `@yield` statement by 
+Function that replaces a `@yield ret` or `@yield` statement by
 ```julia
   @yield ret
   _arg isa Exception && throw(_arg)
@@ -147,7 +148,7 @@ function transform_try(expr, ui8::BoxedUInt8)
 end
 
 """
-Function that replaces a `@yield ret` or `@yield` statement with 
+Function that replaces a `@yield ret` or `@yield` statement with
 ```julia
   _fsmi._state = n
   return ret
@@ -168,7 +169,7 @@ function transform_yield(expr, ui8::BoxedUInt8)
 end
 
 """
-Function that replaces a `@yield ret` or `@yield` statement with 
+Function that replaces a `@yield ret` or `@yield` statement with
 ```julia
   return ret
 ```
