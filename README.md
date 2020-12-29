@@ -11,10 +11,6 @@
 
 ## Installation
 
-[![ResumableFunctions](http://pkg.julialang.org/badges/ResumableFunctions_0.6.svg)](http://pkg.julialang.org/detail/ResumableFunctions)
-[![ResumableFunctions](http://pkg.julialang.org/badges/ResumableFunctions_0.7.svg)](http://pkg.julialang.org/detail/ResumableFunctions)
-[![ResumableFunctions](http://pkg.julialang.org/badges/ResumableFunctions_1.0.svg)](http://pkg.julialang.org/detail/ResumableFunctions)
-
 `ResumableFunctions` is a [registered package](http://pkg.julialang.org) and can be installed by running:
 ```julia
 using Pkg
@@ -85,6 +81,8 @@ Iteration protocol:
 * To contribute, make a pull request. Contributions should include tests for any new features/bug fixes.
 
 ## Release notes
+
+* 2020: v0.5.2 is Julia v1.6 compatible
 
 * 2019: v0.5.1
   * inference problem solved: force iterator next value to be of type `Union` of `Tuple` and `Nothing`.
