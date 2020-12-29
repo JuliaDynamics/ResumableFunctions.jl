@@ -38,10 +38,10 @@ function get_slots(func_def::Dict, args::Dict{Symbol, Any}, mod::Module) :: Dict
   func_def[:body] = postwalk(transform_yield, func_def[:body])
   func_expr = combinedef(func_def) |> flatten
   @eval(mod, @noinline $func_expr)
-  code_data_infos = @eval(mod, begin using ResumableFunctions; ResumableFunctions.my_code_typed($(func_def[:name])) end )
-  for (code_info, slottypes) in code_data_infos
-    for (i, slotname) in enumerate(code_info.slotnames)
-      slots[slotname] = slottypes[i]
+  codeinfos = @eval(mod, code_typed($(func_def[:name])))
+  for codeinfo in codeinfos
+    for (name, type) in collect(zip(codeinfo.first.slotnames, codeinfo.first.slottypes))
+      slots[name] = type
     end
   end
   for (argname, argtype) in args
@@ -58,39 +58,6 @@ function get_slots(func_def::Dict, args::Dict{Symbol, Any}, mod::Module) :: Dict
   delete!(slots, Symbol("#unused#"))
   delete!(slots, Symbol("#self#"))
   slots
-end
-
-function my_code_typed(@nospecialize(f), @nospecialize(types=Tuple); world = Base.get_world_counter(), params = Core.Compiler.Params(world))
-  ccall(:jl_is_in_pure_context, Bool, ()) && error("code reflection cannot be used from generated functions")
-  if isa(f, Core.Builtin)
-      throw(ArgumentError("argument is not a generic function"))
-  end
-  types = Core.Compiler.to_tuple_type(types)
-  asts = []
-  for x in Core.Compiler._methods(f, types, -1, world)
-      meth = Core.Compiler.func_for_method_checked(x[3], types, x[2])
-      (code, slottypes) = my_typeinf_code(meth, x[1], x[2], false, params)
-      code === nothing && error("inference not successful")
-      Base.remove_linenums!(code)
-      push!(asts, code => slottypes)
-  end
-  return asts
-end
-
-function my_typeinf_code(method::Method, @nospecialize(atypes), sparams::Core.Compiler.SimpleVector, run_optimizer::Bool, params::Core.Compiler.Params)
-  mi = Core.Compiler.specialize_method(method, atypes, sparams)::Core.Compiler.MethodInstance
-  ccall(:jl_typeinf_begin, Cvoid, ())
-  result = Core.Compiler.InferenceResult(mi)
-  frame = Core.Compiler.InferenceState(result, false, params)
-  frame === nothing && return (nothing, Any)
-  if Core.Compiler.typeinf(frame) && run_optimizer
-      opt = Core.Compiler.OptimizationState(frame)
-      optimize(opt, result.result)
-      opt.src.inferred = true
-  end
-  ccall(:jl_typeinf_end, Cvoid, ())
-  frame.inferred || return (nothing, Any)
-  return (frame.src, frame.slottypes)
 end
 
 """
@@ -122,8 +89,6 @@ function make_args(func_def::Dict)
   end
   (args...,)
 end
-
-
 
 """
 Function checking the use of a return statement with value
