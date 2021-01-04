@@ -71,7 +71,7 @@ end
 end
 
 @resumable function test_varargs(a...)
-  for (i, e) in enumerate(a...)
+  for (i, e) in enumerate(a)
     @yield e
   end
 end
@@ -93,6 +93,17 @@ end
 
 @testset "test_let" begin
 @test collect(test_let()) == [[1,3],[2,4],[5,7],[6,8]]
+end
+
+@resumable function test_nosave()
+  for i in 65:74
+    @nosave tmp = Char(i)
+    @yield tmp
+  end
+end
+
+@testset "test_nosave" begin
+@test collect(test_nosave()) == ['A', 'B', 'C', 'D', 'E',  'F', 'G', 'H', 'I', 'J']
 end
 
 @resumable function test_return_value()

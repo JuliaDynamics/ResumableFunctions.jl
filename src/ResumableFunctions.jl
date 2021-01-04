@@ -6,7 +6,7 @@ module ResumableFunctions
   using MacroTools
   using MacroTools: combinedef, combinearg, flatten, postwalk
 
-  export @resumable, @yield
+  export @resumable, @yield, @nosave
 
   include("types.jl")
   include("transforms.jl")

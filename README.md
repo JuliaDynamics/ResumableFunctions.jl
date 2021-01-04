@@ -40,29 +40,30 @@ end
 ```
 
 ## Benchmarks
-The following block is the result of running `julia --project=. benchmark/benchmarks.jl` on a computer with the processor: `Intel(R) Core(TM) i5-5300U CPU @ 2.30GHz`. Julia version 1.1.1 was used.
+The following block is the result of running `julia --project=. benchmark/benchmarks.jl` on a computer with the processor: `2,4 GHz 8-Core Intel Core i9`. Julia version 1.5.3 was used.
 
 ```
-Direct:
-  49.724 ns (0 allocations: 0 bytes)
-ResumableFunctions:
-  10.230 μs (281 allocations: 8.83 KiB)
-Channels csize=0:
-  305.877 μs (465 allocations: 8.84 KiB)
-Channels csize=1:
-  504.438 μs (379 allocations: 7.33 KiB)
-Channels csize=20:
-  87.889 μs (206 allocations: 5.06 KiB)
-Channels csize=100:
-  67.911 μs (198 allocations: 6.44 KiB)
-Closure:
-  2.437 μs (83 allocations: 1.31 KiB)
-Closure optimised:
-  245.676 ns (3 allocations: 64 bytes)
-Closure statemachine:
-  40.149 ns (0 allocations: 0 bytes)
-Iteration protocol:
-  63.635 ns (0 allocations: 0 bytes)
+
+Direct: 
+  27.162 ns (0 allocations: 0 bytes)
+ResumableFunctions: 
+  27.476 ns (0 allocations: 0 bytes)
+Channels csize=0: 
+  2.421 ms (101 allocations: 3.08 KiB)
+Channels csize=1: 
+  2.502 ms (23 allocations: 1.88 KiB)
+Channels csize=20: 
+  138.977 μs (26 allocations: 2.36 KiB)
+Channels csize=100: 
+  34.843 μs (28 allocations: 3.95 KiB)
+Closure: 
+  1.831 μs (82 allocations: 1.28 KiB)
+Closure optimised: 
+  21.537 ns (0 allocations: 0 bytes)
+Closure statemachine: 
+  27.486 ns (0 allocations: 0 bytes)
+Iteration protocol: 
+  40.306 ns (0 allocations: 0 bytes)
 ```
 
 ## Licence & References
@@ -82,12 +83,16 @@ Iteration protocol:
 
 ## Release notes
 
-* 2020: v0.5.2 is Julia v1.6 compatible
+* 2021: v0.6.0
+  * introduction of `@nosave` to keep a variable out of the saved structure.
+  * optimized `for` loop.
+
+* 2020: v0.5.2 is Julia v1.6 compatible.
 
 * 2019: v0.5.1
   * inference problem solved: force iterator next value to be of type `Union` of `Tuple` and `Nothing`.
 
-* 2019: v0.5.0 is Julia v1.2 compatible
+* 2019: v0.5.0 is Julia v1.2 compatible.
 
 * 2018: v0.4.2 prepare for Julia v1.1
   * better inference caused a problem;).

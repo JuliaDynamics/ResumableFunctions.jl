@@ -36,12 +36,14 @@ function get_slots(func_def::Dict, args::Dict{Symbol, Any}, mod::Module) :: Dict
   func_def[:kwargs] = []
   body = func_def[:body]
   func_def[:body] = postwalk(transform_yield, func_def[:body])
+  nosaves = Set{Symbol}()
+  func_def[:body] = postwalk(x->transform_nosave(x, nosaves), func_def[:body])
   func_expr = combinedef(func_def) |> flatten
   @eval(mod, @noinline $func_expr)
   codeinfos = @eval(mod, code_typed($(func_def[:name])))
   for codeinfo in codeinfos
     for (name, type) in collect(zip(codeinfo.first.slotnames, codeinfo.first.slottypes))
-      slots[name] = type
+      name ∉ nosaves && (slots[name] = type)
     end
   end
   for (argname, argtype) in args
@@ -50,11 +52,13 @@ function get_slots(func_def::Dict, args::Dict{Symbol, Any}, mod::Module) :: Dict
   postwalk(x->remove_catch_exc(x, slots), func_def[:body])
   postwalk(x->make_arg_any(x, slots), body)
   for (key, val) in slots
-    if val == Union{}
+    if val === Union{}
       slots[key] = Any
     end
   end
   delete!(slots, Symbol("#temp#"))
+  delete!(slots, Symbol("_"))
+  delete!(slots, Symbol(""))
   delete!(slots, Symbol("#unused#"))
   delete!(slots, Symbol("#self#"))
   slots
@@ -95,7 +99,7 @@ Function checking the use of a return statement with value
 """
 function hasreturnvalue(expr)
   @capture(expr, return val_) || return expr
-  (val == :nothing || val == nothing) && return expr
+  (val === :nothing || val === nothing) && return expr
   @warn "@resumable function contains return statement with value!"
   expr
 end

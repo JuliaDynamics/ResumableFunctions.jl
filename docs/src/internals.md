@@ -71,10 +71,9 @@ mutable struct ##123 <: ResumableFunctions.FiniteStateMachineIterator
       _iterstate :: Int64
       i :: Int64 
 
-      function ##123(n::Int64)
+      function ##123()
         fsmi = new()
         fsmi._state = 0x00
-        fsmi.n = n
         fsmi
       end
     end
@@ -86,7 +85,9 @@ A call function is constructed that creates the previously defined composite typ
 
 ```julia
 function fibonnaci(n::Int)
-  ##123(n)
+  fsmi = ##123(n)
+  fsmi.n = n
+  fsmi
 end
 ```
 

@@ -6,6 +6,13 @@ macro yield(expr=nothing)
 end
 
 """
+Macro if used in a `@resumable function` that creates a not saved variable otherwise throws an error.
+"""
+macro nosave(expr=nothing)
+  error("@nosave macro outside a @resumable function!")
+end
+
+"""
 Macro that transforms a function definition in a finite-statemachine:
 
 - Defines a new `mutable struct` that implements the iterator interface and is used to store the internal state.
@@ -16,7 +23,7 @@ Macro that transforms a function definition in a finite-statemachine:
 - Defines a constructor function that respects the calling conventions of the initial function definition and returns an object of the new type.
 """
 macro resumable(expr::Expr)
-  expr.head != :function && error("Expression is not a function definition!")
+  expr.head !== :function && error("Expression is not a function definition!")
   func_def = splitdef(expr)
   rtype = :rtype in keys(func_def) ? func_def[:rtype] : Any
   args, kwargs, arg_dict = get_args(func_def)
@@ -37,15 +44,14 @@ macro resumable(expr::Expr)
     struct_name = :($type_name{$(func_def[:whereparams]...)} <: ResumableFunctions.FiniteStateMachineIterator{$rtype})
     constr_def[:name] = :($type_name{$(params...)})
   end
-  constr_def[:args] = (func_def[:args]..., )
-  #constr_def[:args] = make_args(func_def)
-  constr_def[:kwargs] = (func_def[:kwargs]..., )
-  constr_def[:rtype] = constr_def[:name]
+  constr_def[:args] = tuple()#(func_def[:args]..., )
+  constr_def[:kwargs] = tuple()#(func_def[:kwargs]..., )
+  constr_def[:rtype] = nothing#constr_def[:name]
   constr_def[:body] = quote
     fsmi = new()
     fsmi._state = 0x00
-    $((:(fsmi.$arg = $arg) for arg in args)...)
-    $((:(fsmi.$arg = $arg) for arg in kwargs)...)
+    #$((arg !== Symbol("_") ? :(fsmi.$arg = $arg) : nothing for arg in args)...)
+    #$((:(fsmi.$arg = $arg) for arg in kwargs)...)
     fsmi
   end
   constr_expr = combinedef(constr_def) |> flatten
@@ -54,18 +60,29 @@ macro resumable(expr::Expr)
     mutable struct $struct_name
       _state :: UInt8
       $((:($slotname :: $slottype) for (slotname, slottype) in slots)...)
-      #$((:($slotname) for (slotname, slottype) in slots)...)
       $(constr_expr)
     end
   )
   #println(type_expr|>MacroTools.striplines)
   call_def = copy(func_def)
   if isempty(params)
-    call_def[:rtype] = :($type_name)
-    call_def[:body] = :($type_name($((:($arg) for arg in args)...); $((:($arg = $arg) for arg in kwargs)...)))
+    call_def[:rtype] = nothing#:($type_name)
+    call_def[:body] = quote
+      fsmi = $type_name()
+      $((arg !== Symbol("_") ? :(fsmi.$arg = $arg) : nothing for arg in args)...)
+      $((:(fsmi.$arg = $arg) for arg in kwargs)...)
+      fsmi
+    end
+    #call_def[:body] = :($type_name($((:($arg) for arg in args)...); $((:($arg = $arg) for arg in kwargs)...)))
   else
-    call_def[:rtype] = :($type_name{$(params...)})
-    call_def[:body] = :($type_name{$(params...)}($((:($arg) for arg in args)...); $((:($arg = $arg) for arg in kwargs)...)))
+    call_def[:rtype] = nothing#:($type_name{$(params...)})
+    call_def[:body] = quote
+      fsmi = $type_name{$(params...)}()
+      $((arg !== Symbol("_") ? :(fsmi.$arg = $arg) : nothing for arg in args)...)
+      $((:(fsmi.$arg = $arg) for arg in kwargs)...)
+      fsmi
+    end
+    #call_def[:body] = :($type_name{$(params...)}($((:($arg) for arg in args)...); $((:($arg = $arg) for arg in kwargs)...)))
   end
   call_expr = combinedef(call_def) |> flatten
   #println(call_expr|>MacroTools.striplines)
@@ -74,7 +91,7 @@ macro resumable(expr::Expr)
   else
     func_def[:name] = :((_fsmi::$type_name{$(params...)}))
   end
-  func_def[:rtype] = :(Union{$rtype, Nothing, Bool})
+  func_def[:rtype] = nothing#:(Union{$rtype, Nothing})
   func_def[:body] = postwalk(x->transform_slots(x, keys(slots)), func_def[:body])
   func_def[:body] = postwalk(transform_arg, func_def[:body])
   func_def[:body] = postwalk(transform_exc, func_def[:body]) |> flatten
@@ -82,9 +99,10 @@ macro resumable(expr::Expr)
   func_def[:body] = postwalk(x->transform_try(x, ui8), func_def[:body])
   ui8 = BoxedUInt8(zero(UInt8))
   func_def[:body] = postwalk(x->transform_yield(x, ui8), func_def[:body])
+  func_def[:body] = postwalk(x->transform_nosave(x, Set{Symbol}()), func_def[:body])
   func_def[:body] = quote
-    _fsmi._state == 0x00 && @goto $(Symbol("_STATE_0"))
-    $((:(_fsmi._state == $i && @goto $(Symbol("_STATE_",:($i)))) for i in 0x01:ui8.n)...)
+    _fsmi._state === 0x00 && @goto $(Symbol("_STATE_0"))
+    $((:(_fsmi._state === $i && @goto $(Symbol("_STATE_",:($i)))) for i in 0x01:ui8.n)...)
     error("@resumable function has stopped!")
     @label $(Symbol("_STATE_0"))
     _fsmi._state = 0xff

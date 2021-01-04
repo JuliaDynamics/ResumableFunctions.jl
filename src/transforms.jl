@@ -1,4 +1,13 @@
 """
+Function that replaces a variable 
+"""
+function transform_nosave(expr, nosaves::Set{Symbol})
+  @capture(expr, @nosave var_ = body_) || return expr
+  push!(nosaves, var)
+  :($var = $body)
+end
+
+"""
 Function that replaces a `for` loop by a corresponding `while` loop saving explicitely the *iterator* and its *state*.
 """
 function transform_for(expr, ui8::BoxedUInt8)
@@ -9,8 +18,8 @@ function transform_for(expr, ui8::BoxedUInt8)
   iterator_value = Symbol("_iterator_", ui8.n)
   quote
     $iterator_value = $iterator
-    $next = nothing
-    $next = iterate($iterator_value)
+    #$next = nothing
+    @nosave $next = iterate($iterator_value)
     while $next !== nothing
       ($element, $state) = $next
       $(body...)
@@ -24,10 +33,10 @@ Function that replaces a variable `x` in an expression by `_fsmi.x` where `x` is
 """
 function transform_slots(expr, symbols::Base.KeySet{Symbol, Dict{Symbol,Any}})
   expr isa Expr || return expr
-  expr.head == :let && return transform_slots_let(expr, symbols)
+  expr.head === :let && return transform_slots_let(expr, symbols)
   for i in 1:length(expr.args)
-    expr.head == :kw && i == 1 && continue
-    expr.head == Symbol("quote") && continue
+    expr.head === :kw && i === 1 && continue
+    expr.head === Symbol("quote") && continue
     expr.args[i] = expr.args[i] isa Symbol && expr.args[i] in symbols ? :(_fsmi.$(expr.args[i])) : expr.args[i]
   end
   expr
@@ -53,7 +62,7 @@ Function that replaces a variable `_fsmi.x` in an expression by `x` where `x` is
 """
 function transform_let(expr, symbols::Set{Symbol})
   expr isa Expr || return expr
-  expr.head == :. || return expr
+  expr.head === :. || return expr
   expr = expr.args[2].value in symbols ? :($(expr.args[2].value)) : expr
 end
 
@@ -128,11 +137,11 @@ function transform_try(expr, ui8::BoxedUInt8)
   ui8.n += one(UInt8)
   new_body = []
   segment = []
-  handling = handling == nothing ? [nothing] : handling
+  handling = handling === nothing ? [nothing] : handling
   for ex in body
     if _is_yield(ex)
       ret = length(ex.args) > 2 ? ex.args[3:end] : [nothing]
-      exc == nothing ? push!(new_body, :(try $(segment...) catch; $(handling...); @goto $(Symbol("_TRY_", :($(ui8.n)))) end)) : push!(new_body, :(try $(segment...) catch $exc; $(handling...) ; @goto $(Symbol("_TRY_", :($(ui8.n)))) end))
+      exc === nothing ? push!(new_body, :(try $(segment...) catch; $(handling...); @goto $(Symbol("_TRY_", :($(ui8.n)))) end)) : push!(new_body, :(try $(segment...) catch $exc; $(handling...) ; @goto $(Symbol("_TRY_", :($(ui8.n)))) end))
       push!(new_body, quote @yield $(ret...) end)
       segment = []
     else
@@ -140,10 +149,10 @@ function transform_try(expr, ui8::BoxedUInt8)
     end
   end
   if segment != []
-    exc == nothing ? push!(new_body, :(try $(segment...) catch; $(handling...) end)) : push!(new_body, :(try $(segment...) catch $exc; $(handling...) end))
+    exc === nothing ? push!(new_body, :(try $(segment...) catch; $(handling...) end)) : push!(new_body, :(try $(segment...) catch $exc; $(handling...) end))
   end
   push!(new_body, :(@label $(Symbol("_TRY_", :($(ui8.n))))))
-  always == nothing || push!(new_body, quote $(always...) end)
+  always === nothing || push!(new_body, quote $(always...) end)
   quote $(new_body...) end
 end
 
@@ -188,5 +197,5 @@ Function returning whether an expression is a `@yield` macro
 _is_yield(ex) = false
 
 function _is_yield(ex::Expr)
-  ex.head == :macrocall && ex.args[1] == Symbol("@yield")
+  ex.head === :macrocall && ex.args[1] === Symbol("@yield")
 end

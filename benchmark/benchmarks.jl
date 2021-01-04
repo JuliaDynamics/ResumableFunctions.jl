@@ -3,53 +3,53 @@ using ResumableFunctions
 
 const n = 93
 
-function direct_fib(n)
-  a = zero(Int)
-  b = a + one(a)
-  for i in 1:n-1
-    a, b = b, a+b
-  end#for
-  a
-end#function
+function direct(a::Int, b::Int)
+  b, a+b
+end
 
-@resumable function fibonnaci_resumable(n)
-  a = zero(Int)
-  b = a + one(a)
-  for i in 1:n
+function test_direct(n::Int)
+  a, b = zero(Int), one(Int)
+  for _ in 1:n-1
+    a, b = direct(a, b)
+  end
+  a
+end
+
+@resumable function fibonnaci_resumable(n::Int)
+  a, b = zero(Int), one(Int)
+  for _ in 1:n
     @yield a
     a, b = b, a + b
   end
 end
 
-function test_resumable(n)
+@noinline function test_resumable(n::Int)
   a = 0
-  for i in fibonnaci_resumable(n)
-    a = i
-  end#for
+  for v in fibonnaci_resumable(n)
+    a = v
+  end
   a
 end
 
-function fibonnaci_channel(n, ch::Channel)
-  a = zero(Int)
-  b = a + one(a)
-  for i in 1:n
+function fibonnaci_channel(n::Int, ch::Channel)
+  a, b = zero(Int), one(Int)
+  for _ in 1:n
     put!(ch, a)
     a, b = b, a + b
   end
 end
 
-function test_channel(n, csize::Int)
+@noinline function test_channel(n::Int, csize::Int)
   fib_channel = Channel(c -> fibonnaci_channel(n, c); ctype=Int, csize=csize)
   a = 0
-  for i in fib_channel
-    a = i
-  end#for
+  for v in fib_channel
+    a = v
+  end
   a
 end
 
 function fibonnaci_closure()
-  a = zero(Int)
-  b = a + one(Int)
+  a, b = zero(Int), one(Int)
   function()
     tmp = a
     a, b = b, a + b
@@ -57,10 +57,10 @@ function fibonnaci_closure()
   end
 end
 
-function test_closure(n)
+@noinline function test_closure(n::Int)
   fib_closure = fibonnaci_closure()
   a = 0
-  for i in 1:n
+  for _ in 1:n
     a = fib_closure()
   end
   a
@@ -68,50 +68,66 @@ end
 
 function fibonnaci_closure_opt()
   a = Ref(zero(Int))
-  b = Ref(a[] + one(Int))
-  @noinline function()
+  b = Ref(one(Int))
+  function()
     tmp = a[]
     a[], b[] = b[], a[] + b[]
     tmp
   end
 end
 
-function test_closure_opt(n)
+@noinline function test_closure_opt(n::Int)
   fib_closure = fibonnaci_closure_opt()
   a = 0
-  for i in 1:n 
+  for _ in 1:n 
     a = fib_closure() 
   end
   a
 end
 
-function fibonnaci_closure_stm()
-  a = Ref(zero(Int))
-  b = Ref(a[] + one(Int))
-  _state = Ref(zero(UInt8))
+function fibonnaci_closure_stm(n::Int)
+  _state = Ref(0x00)
+  a = Ref{Int}()
+  b = Ref{Int}()
+  _iterstate_1 = Ref{Int}()
+  _iterator_1 = Ref{UnitRange{Int}}()
+
   function(_arg::Any=nothing)
-    _state[] == 0x00 && @goto _STATE_0
-    _state[] == 0x01 && @goto _STATE_1
+    _state[] === 0x00 && @goto _STATE_0
+    _state[] === 0x01 && @goto _STATE_1
     error("@resumable function has stopped!")
     @label _STATE_0
     _state[] = 0xff
     _arg isa Exception && throw(_arg)
-    while true
+    a[], b[] = zero(Int), one(Int)
+    _iterator_1[] = 1:n
+    _iteratornext_1 = iterate(_iterator_1[])
+    while _iteratornext_1 !== nothing
+      (_, _iterstate_1[]) = _iteratornext_1
       _state[] = 0x01
       return a[]
       @label _STATE_1
       _state[] = 0xff
       _arg isa Exception && throw(_arg)
-      a[], b[] = b[], a[] + b[]
+      (a[], b[]) = (b[], a[] + b[])
+      _iteratornext_1 = iterate(_iterator_1[], _iterstate_1[])
     end
   end
 end
 
-function test_closure_stm(n)
-  fib_closure = fibonnaci_closure_stm()
+fib_clo_stm = fibonnaci_closure_stm(n)
+
+function Base.iterate(f::typeof(fib_clo_stm), state=nothing)
+  a = f()
+  f._state[] === 0xff && return nothing
+  a, nothing
+end
+
+@noinline function test_closure_stm(n::Int)
+  fib_closure = fibonnaci_closure_stm(n)
   a = 0
-  for i in 1:n 
-    a = fib_closure() 
+  for v in fibonnaci_closure_stm(n)
+    a = v
   end
   a
 end
@@ -121,28 +137,27 @@ struct FibN
 end
 
 function Base.iterate(f::FibN, state::NTuple{3,Int}=(0, 1, 1))
-  @inbounds state[3] >= f.n && return nothing
   a, b, iters = state
-  @inbounds b, (b, a + b, iters + 1)
+  iters > f.n && return nothing
+  a, (b, a + b, iters + 1)
 end
 
-function test_iteration_protocol(n)
-  fib = FibN(n)
+@noinline function test_iteration_protocol(n::Int)
   a = 0
-  for i in fib
-    a = i
+  for v in FibN(n)
+    a = v
   end
   a
 end
 
 isinteractive() || begin
   println("Direct: ")
-  @btime direct_fib($n)
-  @assert direct_fib(n) == 7540113804746346429
+  @btime test_direct($n)
+  @assert test_direct(n) == 7540113804746346429
 
   println("ResumableFunctions: ")
   @btime test_resumable($n)
-  @assert direct_fib(n) == 7540113804746346429
+  @assert test_resumable(n) == 7540113804746346429
 
   println("Channels csize=0: ")
   @btime test_channel($n, $0)
