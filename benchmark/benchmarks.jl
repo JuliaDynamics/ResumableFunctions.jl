@@ -15,7 +15,7 @@ function test_direct(n::Int)
   a
 end
 
-@resumable function fibonnaci_resumable(n::Int)
+@resumable function fibonacci_resumable(n::Int)
   a, b = zero(Int), one(Int)
   for _ in 1:n
     @yield a
@@ -25,13 +25,13 @@ end
 
 @noinline function test_resumable(n::Int)
   a = 0
-  for v in fibonnaci_resumable(n)
+  for v in fibonacci_resumable(n)
     a = v
   end
   a
 end
 
-function fibonnaci_channel(n::Int, ch::Channel)
+function fibonacci_channel(n::Int, ch::Channel)
   a, b = zero(Int), one(Int)
   for _ in 1:n
     put!(ch, a)
@@ -40,7 +40,7 @@ function fibonnaci_channel(n::Int, ch::Channel)
 end
 
 @noinline function test_channel(n::Int, csize::Int)
-  fib_channel = Channel(c -> fibonnaci_channel(n, c); ctype=Int, csize=csize)
+  fib_channel = Channel(c -> fibonacci_channel(n, c); ctype=Int, csize=csize)
   a = 0
   for v in fib_channel
     a = v
@@ -48,7 +48,7 @@ end
   a
 end
 
-function fibonnaci_closure()
+function fibonacci_closure()
   a, b = zero(Int), one(Int)
   function()
     tmp = a
@@ -58,7 +58,7 @@ function fibonnaci_closure()
 end
 
 @noinline function test_closure(n::Int)
-  fib_closure = fibonnaci_closure()
+  fib_closure = fibonacci_closure()
   a = 0
   for _ in 1:n
     a = fib_closure()
@@ -66,7 +66,7 @@ end
   a
 end
 
-function fibonnaci_closure_opt()
+function fibonacci_closure_opt()
   a = Ref(zero(Int))
   b = Ref(one(Int))
   function()
@@ -77,7 +77,7 @@ function fibonnaci_closure_opt()
 end
 
 @noinline function test_closure_opt(n::Int)
-  fib_closure = fibonnaci_closure_opt()
+  fib_closure = fibonacci_closure_opt()
   a = 0
   for _ in 1:n 
     a = fib_closure() 
@@ -85,7 +85,7 @@ end
   a
 end
 
-function fibonnaci_closure_stm(n::Int)
+function fibonacci_closure_stm(n::Int)
   _state = Ref(0x00)
   a = Ref{Int}()
   b = Ref{Int}()
@@ -115,7 +115,7 @@ function fibonnaci_closure_stm(n::Int)
   end
 end
 
-fib_clo_stm = fibonnaci_closure_stm(n)
+fib_clo_stm = fibonacci_closure_stm(n)
 
 function Base.iterate(f::typeof(fib_clo_stm), state=nothing)
   a = f()
@@ -124,9 +124,9 @@ function Base.iterate(f::typeof(fib_clo_stm), state=nothing)
 end
 
 @noinline function test_closure_stm(n::Int)
-  fib_closure = fibonnaci_closure_stm(n)
+  fib_closure = fibonacci_closure_stm(n)
   a = 0
-  for v in fibonnaci_closure_stm(n)
+  for v in fibonacci_closure_stm(n)
     a = v
   end
   a

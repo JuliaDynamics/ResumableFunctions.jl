@@ -79,12 +79,12 @@ julia> basic_iterator()
 DocTestSetup = nothing
 ```
 
-The famous Fibonnaci sequence can easily be generated:
+The famous fibonacci sequence can easily be generated:
 ```@meta
 DocTestSetup = quote
   using ResumableFunctions
 
-  @resumable function fibonnaci()
+  @resumable function fibonacci()
     a = 0
     b = 1
     while true
@@ -96,7 +96,7 @@ end
 ```
 
 ```julia
-@resumable function fibonnaci()
+@resumable function fibonacci()
   a = 0
   b = 1
   while true
@@ -107,7 +107,7 @@ end
 ```
 
 ```jldoctest
-julia> fib_iterator = fibonnaci();
+julia> fib_iterator = fibonacci();
 
 julia> fib_iterator()
 0
@@ -141,7 +141,7 @@ The `@resumable function` can take arguments and the type of the return value ca
 DocTestSetup = quote
   using ResumableFunctions
 
-  @resumable function fibonnaci(n) :: Int
+  @resumable function fibonacci(n) :: Int
     a = 0
     b = 1
     for i in 1:n
@@ -153,7 +153,7 @@ end
 ```
 
 ```julia
-@resumable function fibonnaci(n) :: Int
+@resumable function fibonacci(n) :: Int
   a = 0
   b = 1
   for i in 1:n
@@ -164,7 +164,7 @@ end
 ```
 
 ```jldoctest
-julia> fib_iterator = fibonnaci(4);
+julia> fib_iterator = fibonacci(4);
 
 julia> fib_iterator()
 0
@@ -278,7 +278,7 @@ The interator interface is implemented for a `@resumable function`:
 DocTestSetup = quote
   using ResumableFunctions
 
-  @resumable function fibonnaci(n) :: Int
+  @resumable function fibonacci(n) :: Int
     a = 0
     b = 1
     for i in 1:n
@@ -290,7 +290,7 @@ end
 ```
 
 ```julia
-@resumable function fibonnaci(n) :: Int
+@resumable function fibonacci(n) :: Int
   a = 0
   b = 1
   for i in 1:n
@@ -301,7 +301,7 @@ end
 ```
 
 ```jldoctest
-julia> for val in fibonnaci(10) println(val) end
+julia> for val in fibonacci(10) println(val) end
 0
 1
 1
@@ -326,7 +326,7 @@ Type parameters can be specified with a `where` clause:
 DocTestSetup = quote
   using ResumableFunctions
 
-  @resumable function fibonnaci(a::N, b::N=a+one(N)) :: N where {N<:Number}
+  @resumable function fibonacci(a::N, b::N=a+one(N)) :: N where {N<:Number}
     for i in 1:10
       @yield a
       a, b = b, a + b
@@ -336,7 +336,7 @@ end
 ```
 
 ```julia
-@resumable function fibonnaci(a::N, b::N=a+one(N)) :: N where {N<:Number}
+@resumable function fibonacci(a::N, b::N=a+one(N)) :: N where {N<:Number}
   for i in 1:10
     @yield a
     a, b = b, a + b
@@ -345,7 +345,7 @@ end
 ```
 
 ```jldoctest
-julia> for val in fibonnaci(0.0) println(val) end
+julia> for val in fibonacci(0.0) println(val) end
 0.0
 1.0
 1.0

@@ -24,7 +24,7 @@ Pkg.add("ResumableFunctions")
 ```julia
 using ResumableFunctions
 
-@resumable function fibonnaci(n::Int) :: Int
+@resumable function fibonacci(n::Int) :: Int
   a = 0
   b = 1
   for i in 1:n
@@ -33,13 +33,13 @@ using ResumableFunctions
   end
 end
 
-for fib in fibonnaci(10)
+for fib in fibonacci(10)
   println(fib)
 end
 ```
 
 ## Benchmarks
-The following block is the result of running `julia --project=. benchmark/benchmarks.jl` on a computer with the processor: `2,4 GHz 8-Core Intel Core i9`. Julia version 1.5.3 was used.
+The following block is the result of running `julia --project=. benchmark/benchmarks.jl` on a Macbook Pro with following processor: `Intel Core i9 2,4 GHz 8-Core`. Julia version 1.5.3 was used.
 
 ```
 

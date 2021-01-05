@@ -10,7 +10,7 @@ The two last transformations are needed to overcome the limitations of the non l
 The complete procedure is explained using the following example:
 
 ```julia
-@resumable function fibonnaci(n::Int)
+@resumable function fibonacci(n::Int)
   a = 0
   b = 1
   for i in 1:n-1
@@ -84,7 +84,7 @@ mutable struct ##123 <: ResumableFunctions.FiniteStateMachineIterator
 A call function is constructed that creates the previously defined composite type. This function satisfy the calling convention of the original function definition and is returned from the macro:
 
 ```julia
-function fibonnaci(n::Int)
+function fibonacci(n::Int)
   fsmi = ##123(n)
   fsmi.n = n
   fsmi
