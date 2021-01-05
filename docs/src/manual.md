@@ -164,7 +164,7 @@ end
 ```
 
 ```jldoctest
-julia> fib_iterator = fibonnaci(3);
+julia> fib_iterator = fibonnaci(4);
 
 julia> fib_iterator()
 0
@@ -177,6 +177,8 @@ julia> fib_iterator()
 
 julia> fib_iterator()
 2
+
+julia> fib_iterator()
 
 julia> fib_iterator()
 ERROR: @resumable function has stopped!
@@ -368,7 +370,7 @@ A `let` block allows a variable not to be saved in between calls to a `@resumabl
 DocTestSetup = quote
   using ResumableFunctions
 
-  @resumable function test_let()
+  @resumable function arrays_of_tuples()
     for u in [[(1,2),(3,4)], [(5,6),(7,8)]]
       for i in 1:2
         let i=i
@@ -378,6 +380,7 @@ DocTestSetup = quote
       end
     end
   end
+end
 ```
 
 ```julia
@@ -394,7 +397,7 @@ end
 ```
 
 ```jldoctest
-julia> for array in arrays_of_tuple println(array) end
+julia> for array in arrays_of_tuples() println(array) end
 [1, 3]
 [2, 4]
 [5, 7]
