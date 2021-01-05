@@ -5,7 +5,6 @@
 ## Build Status & Coverage
 
 [![Build Status](https://github.com/benlauwens/ResumableFunctions.jl/workflows/CI/badge.svg)](https://github.com/benlauwens/ResumableFunctions.jl/actions?query=workflow%3ACI+branch%3Amaster)
-[![Coverage Status](https://coveralls.io/repos/github/BenLauwens/ResumableFunctions.jl/badge.svg?branch=master)](https://coveralls.io/github/BenLauwens/ResumableFunctions.jl?branch=master)
 [![codecov.io](http://codecov.io/github/benlauwens/ResumableFunctions.jl/coverage.svg?branch=master)](http://codecov.io/github/benlauwens/ResumableFunctions.jl?branch=master)
 
 ## Installation
