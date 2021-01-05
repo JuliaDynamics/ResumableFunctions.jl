@@ -41,7 +41,6 @@ end
 The following block is the result of running `julia --project=. benchmark/benchmarks.jl` on a Macbook Pro with following processor: `Intel Core i9 2,4 GHz 8-Core`. Julia version 1.5.3 was used.
 
 ```
-
 Direct: 
   27.162 ns (0 allocations: 0 bytes)
 ResumableFunctions: 
