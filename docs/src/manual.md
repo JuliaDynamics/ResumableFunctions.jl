@@ -148,7 +148,6 @@ DocTestSetup = quote
       @yield a
       a, b = b, a + b
     end
-    a
   end
 end
 ```
@@ -161,7 +160,6 @@ end
     @yield a
     a, b = b, a + b
   end
-  a
 end
 ```
 
