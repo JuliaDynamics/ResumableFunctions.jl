@@ -57,7 +57,7 @@ macro resumable(expr::Expr)
       $(constr_expr)
     end
   )
-  @info type_expr|>MacroTools.striplines
+  @debug type_expr|>MacroTools.striplines
   call_def = copy(func_def)
   if isempty(params)
     call_def[:rtype] = nothing
@@ -77,7 +77,7 @@ macro resumable(expr::Expr)
     end
   end
   call_expr = combinedef(call_def) |> flatten
-  @info call_expr|>MacroTools.striplines
+  @debug call_expr|>MacroTools.striplines
   if isempty(params)
     func_def[:name] = :((_fsmi::$type_name))
   else
@@ -104,6 +104,6 @@ macro resumable(expr::Expr)
   func_def[:args] = [Expr(:kw, :(_arg::Any), nothing)]
   func_def[:kwargs] = []
   func_expr = combinedef(func_def) |> flatten
-  @info func_expr|>MacroTools.striplines
+  @debug func_expr|>MacroTools.striplines
   esc(:($type_expr; $func_expr; $call_expr))
 end
