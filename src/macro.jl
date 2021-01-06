@@ -27,14 +27,11 @@ macro resumable(expr::Expr)
   func_def = splitdef(expr)
   rtype = :rtype in keys(func_def) ? func_def[:rtype] : Any
   args, kwargs, arg_dict = get_args(func_def)
-  #println(arg_dict)
   params = ((get_param_name(param) for param in func_def[:whereparams])...,)
-  #println(params)
   ui8 = BoxedUInt8(zero(UInt8))
   postwalk(x->hasreturnvalue(x), func_def[:body])
   func_def[:body] = postwalk(x->transform_for(x, ui8), func_def[:body])
   slots = get_slots(copy(func_def), arg_dict, __module__)
-  #println(slots)
   type_name = gensym()
   constr_def = copy(func_def)
   if isempty(params)
@@ -53,7 +50,6 @@ macro resumable(expr::Expr)
     fsmi
   end
   constr_expr = combinedef(constr_def) |> flatten
-  #println(constr_expr)
   type_expr = :(
     mutable struct $struct_name
       _state :: UInt8
@@ -61,7 +57,7 @@ macro resumable(expr::Expr)
       $(constr_expr)
     end
   )
-  #println(type_expr|>MacroTools.striplines)
+  @info type_expr|>MacroTools.striplines
   call_def = copy(func_def)
   if isempty(params)
     call_def[:rtype] = nothing
@@ -81,7 +77,7 @@ macro resumable(expr::Expr)
     end
   end
   call_expr = combinedef(call_def) |> flatten
-  #println(call_expr|>MacroTools.striplines)
+  @info call_expr|>MacroTools.striplines
   if isempty(params)
     func_def[:name] = :((_fsmi::$type_name))
   else
@@ -108,6 +104,6 @@ macro resumable(expr::Expr)
   func_def[:args] = [Expr(:kw, :(_arg::Any), nothing)]
   func_def[:kwargs] = []
   func_expr = combinedef(func_def) |> flatten
-  #println(func_expr|>MacroTools.striplines)
+  @info func_expr|>MacroTools.striplines
   esc(:($type_expr; $func_expr; $call_expr))
 end
