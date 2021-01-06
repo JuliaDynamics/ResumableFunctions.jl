@@ -40,27 +40,58 @@ end
 ## Benchmarks
 The following block is the result of running `julia --project=. benchmark/benchmarks.jl` on a Macbook Pro with following processor: `Intel Core i9 2,4 GHz 8-Core`. Julia version 1.5.3 was used.
 
+Fibonacci with `Int` values:
+
 ```
 Direct: 
-  27.162 ns (0 allocations: 0 bytes)
+  27.184 ns (0 allocations: 0 bytes)
 ResumableFunctions: 
-  27.476 ns (0 allocations: 0 bytes)
+  27.503 ns (0 allocations: 0 bytes)
 Channels csize=0: 
-  2.421 ms (101 allocations: 3.08 KiB)
+  2.438 ms (101 allocations: 3.08 KiB)
 Channels csize=1: 
-  2.502 ms (23 allocations: 1.88 KiB)
+  2.546 ms (23 allocations: 1.88 KiB)
 Channels csize=20: 
-  138.977 μs (26 allocations: 2.36 KiB)
+  138.681 μs (26 allocations: 2.36 KiB)
 Channels csize=100: 
-  34.843 μs (28 allocations: 3.95 KiB)
+  35.071 μs (28 allocations: 3.95 KiB)
+Task scheduling
+  17.726 μs (86 allocations: 3.31 KiB)
 Closure: 
-  1.831 μs (82 allocations: 1.28 KiB)
+  1.948 μs (82 allocations: 1.28 KiB)
 Closure optimised: 
-  21.537 ns (0 allocations: 0 bytes)
+  25.910 ns (0 allocations: 0 bytes)
 Closure statemachine: 
-  27.486 ns (0 allocations: 0 bytes)
+  28.048 ns (0 allocations: 0 bytes)
 Iteration protocol: 
-  40.306 ns (0 allocations: 0 bytes)
+  41.143 ns (0 allocations: 0 bytes)
+```
+
+Fibonacci with `BigInt` values:
+
+```
+Direct: 
+  5.747 μs (188 allocations: 4.39 KiB)
+ResumableFunctions: 
+  5.984 μs (191 allocations: 4.50 KiB)
+Channels csize=0: 
+  2.508 ms (306 allocations: 7.75 KiB)
+Channels csize=1: 
+  2.629 ms (306 allocations: 7.77 KiB)
+Channels csize=20: 
+  150.274 μs (309 allocations: 8.25 KiB)
+Channels csize=100: 
+  44.592 μs (311 allocations: 9.84 KiB)
+Task scheduling
+  24.802 μs (198 allocations: 6.61 KiB)
+Closure: 
+  7.064 μs (192 allocations: 4.47 KiB)
+Closure optimised: 
+  5.809 μs (190 allocations: 4.44 KiB)
+Closure statemachine: 
+  5.826 μs (190 allocations: 4.44 KiB)
+Iteration protocol: 
+  5.822 μs (190 allocations: 4.44 KiB)
 ```
 
 ## Licence & References
