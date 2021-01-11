@@ -17,7 +17,7 @@ Pkg.add("ResumableFunctions")
 
 ##  Documentation
 
-[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://benlauwens.github.io/ResumableFunctions.jl/stable)
+[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://benlauwens.github.io/ResumableFunctions.jl/v0.6.0-docs)
 [![](https://img.shields.io/badge/docs-latest-blue.svg)](https://benlauwens.github.io/ResumableFunctions.jl/dev)
 
 ```julia
