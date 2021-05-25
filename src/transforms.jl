@@ -16,16 +16,27 @@ function transform_for(expr, ui8::BoxedUInt8)
   next = Symbol("_iteratornext_", ui8.n)
   state = Symbol("_iterstate_", ui8.n)
   iterator_value = Symbol("_iterator_", ui8.n)
+  label = Symbol("_iteratorlabel_", ui8.n)
+  body = postwalk(x->transform_continue(x, label), :(begin $(body...) end))
   quote
     $iterator_value = $iterator
-    #$next = nothing
     @nosave $next = iterate($iterator_value)
     while $next !== nothing
       ($element, $state) = $next
-      $(body...)
+      $body
+      @label $label
       $next = iterate($iterator_value, $state)
     end
   end
+end
+
+
+"""
+Function that replaces a `continue` statement by a corresponding `@goto` with as label the correct location for the next iteration.
+"""
+function transform_continue(expr, label::Symbol)
+  @capture(expr, continue) || return expr
+  :(@goto $label)
 end
 
 """

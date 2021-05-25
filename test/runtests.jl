@@ -48,7 +48,7 @@ try_me()
 try_me(SpecialException())
 @test_throws ErrorException try_me()
 @test String(take!(copy(io))) == "SpecialException()\nAlways\n"
-end #test_try
+end
 
 @resumable function (test_where1(a::N) :: N) where {N<:Number}
   b = a + one(N)
@@ -112,4 +112,32 @@ end
 
 @testset "test_return_value" begin
   @test collect(test_return_value()) == []
+end
+
+@resumable function test_continue()
+  for i in 1:10
+    if i === 2
+      continue
+    end
+    @yield i
+  end
+end
+
+@resumable function test_continue_double()
+  for i in 1:3
+    if i === 2
+      continue
+    end
+    for j in 1:3
+      if j === 2
+        continue
+      end
+      @yield j
+    end
+  end
+end
+
+@testset "test_continue" begin
+  @test collect(test_continue()) == [1, 3, 4, 5, 6, 7, 8, 9, 10]
+  @test collect(test_continue_double()) == [1, 3, 1, 3]
 end
