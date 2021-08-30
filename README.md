@@ -111,6 +111,9 @@ Iteration protocol:
 
 ## Release notes
 
+* 2021: v0.6.1
+  * `continu` in loop works
+
 * 2021: v0.6.0
   * introduction of `@nosave` to keep a variable out of the saved structure.
   * optimized `for` loop.
