@@ -141,3 +141,22 @@ end
   @test collect(test_continue()) == [1, 3, 4, 5, 6, 7, 8, 9, 10]
   @test collect(test_continue_double()) == [1, 3, 1, 3]
 end
+
+@resumable function test_yield_from_inner(n)
+  for i in 1:n
+    @yield i^2
+  end
+  42, n
+end
+
+@resumable function test_yield_from(n)
+  @yield_from [42, 314]   
+  m, n = @yield_from test_yield_from_inner(n)
+  @test m == 42
+  @yield n
+  @yield_from test_yield_from_inner(n+1)
+end
+
+@testset "test_yield_from" begin
+@test collect(test_yield_from(4)) == [42, 314, 1, 4, 9, 16, 4, 1, 4, 9, 16, 25]
+end
