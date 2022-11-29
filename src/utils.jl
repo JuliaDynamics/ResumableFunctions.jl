@@ -81,13 +81,3 @@ function make_arg_any(expr, slots::Dict{Symbol, Any})
   slots[arg] = Any
   expr
 end
-
-"""
-Function checking the use of a return statement with value
-"""
-function hasreturnvalue(expr)
-  @capture(expr, return val_) || return expr
-  (val === :nothing || val === nothing) && return expr
-  @warn "@resumable function contains return statement with value!"
-  expr
-end
