@@ -6,6 +6,13 @@ macro yield(expr=nothing)
 end
 
 """
+Macro if used in a `@resumable function` that delegates to `expr` otherwise throws an error.
+"""
+macro yield_from(expr=nothing)
+  error("@yield_from macro outside a @resumable function!")
+end
+
+"""
 Macro if used in a `@resumable function` that creates a not saved variable otherwise throws an error.
 """
 macro nosave(expr=nothing)
