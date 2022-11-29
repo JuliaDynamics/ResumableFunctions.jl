@@ -8,6 +8,61 @@ function transform_nosave(expr, nosaves::Set{Symbol})
 end
 
 """
+Function that replaces a `@yield_from iter` statement with
+```julia
+  for _element_ in iter
+    @yield _element_
+  end
+```
+"""
+function transform_yield_from(expr)
+  _is_yield_from(expr) || return expr
+  iter = length(expr.args) > 2 ? expr.args[3:end] : [nothing]
+  quote
+    for _element_ in $(iter...)
+      @yield _element_
+    end
+  end
+end
+
+"""
+Function that replaces an `arg = @yield_from iter` statement by
+```julia
+  _other_ = iter
+  _ret_ = _other_()
+  while _other_._state !== 0xff
+    @yield _ret_
+    _ret_ = _other_()
+  end
+  arg = _ret_
+```
+"""
+function transform_arg_yield_from(expr)
+  @capture(expr, arg_ = ex_) || return expr
+  _is_yield_from(ex) || return expr
+  iter = length(ex.args) > 2 ? ex.args[3:end] : [nothing]
+  quote
+    _other_ = $(iter...)
+    _ret_ = _other_()
+    while _other_._state !== 0xff
+      @yield _ret_
+      _ret_ = _other_()
+    end
+    $arg = _ret_
+  end
+end
+
+"""
+Function returning whether an expression is a `@yield_from` macro
+"""
+_is_yield_from(ex) = false
+
+function _is_yield_from(ex::Expr)
+  ex.head === :macrocall && ex.args[1] === Symbol("@yield_from")
+end
+
+
+"""
 Function that replaces a `for` loop by a corresponding `while` loop saving explicitely the *iterator* and its *state*.
 """
 function transform_for(expr, ui8::BoxedUInt8)
