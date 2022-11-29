@@ -19,8 +19,17 @@ function transform_yield_from(expr)
   _is_yield_from(expr) || return expr
   iter = length(expr.args) > 2 ? expr.args[3:end] : [nothing]
   quote
-    for _element_ in $(iter...)
-      @yield _element_
+    _other_ = $(iter...)
+    if _other_ isa $FiniteStateMachineIterator
+      _ret_ = _other_()
+      while _other_._state !== 0xff
+        _x_ = @yield _ret_
+        _ret_ = _other_(_x_)
+      end
+    else
+      for _element_ in _other_
+        @yield _element_
+      end
     end
   end
 end
@@ -45,8 +54,8 @@ function transform_arg_yield_from(expr)
     _other_ = $(iter...)
     _ret_ = _other_()
     while _other_._state !== 0xff
-      @yield _ret_
-      _ret_ = _other_()
+      x = @yield _ret_
+      _ret_ = _other_(x)
     end
     $arg = _ret_
   end
