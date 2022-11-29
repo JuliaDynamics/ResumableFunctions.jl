@@ -81,3 +81,27 @@ function make_arg_any(expr, slots::Dict{Symbol, Any})
   slots[arg] = Any
   expr
 end
+
+struct IteratorReturn{T}
+  value :: T
+  IteratorReturn(value) = new{typeof(value)}(value)
+end
+
+@inline function generate(fsm_iter::FiniteStateMachineIterator, send, state=nothing)
+  #fsm_iter._state = state
+  result = fsm_iter(send)
+  fsm_iter._state === 0xff && return IteratorReturn(result)
+  result, nothing
+end
+
+@inline function generate(iter, _)
+  ret = iterate(iter)
+  isnothing(ret) && return IteratorReturn(nothing)
+  ret
+end
+
+@inline function generate(iter, _, state)
+  ret = iterate(iter, state)
+  isnothing(ret) && return IteratorReturn(nothing)
+  ret
+end

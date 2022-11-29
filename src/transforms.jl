@@ -10,9 +10,14 @@ end
 """
 Function that replaces a `@yield_from iter` statement with
 ```julia
-  for _element_ in iter
-    @yield _element_
+  _other_ = iter...
+  _ret_ = generate(_other_, nothing)
+  while !(_ret_ isa IteratorReturn)
+    _value_, _state_ = _ret_
+    _newvalue_ = @yield _value_
+    _ret_ = generate(_other_, _newvalue_, _state_)
   end
+  _
 ```
 """
 function transform_yield_from(expr)
@@ -20,16 +25,11 @@ function transform_yield_from(expr)
   iter = length(expr.args) > 2 ? expr.args[3:end] : [nothing]
   quote
     _other_ = $(iter...)
-    if _other_ isa $FiniteStateMachineIterator
-      _ret_ = _other_()
-      while _other_._state !== 0xff
-        _x_ = @yield _ret_
-        _ret_ = _other_(_x_)
-      end
-    else
-      for _element_ in _other_
-        @yield _element_
-      end
+    _ret_ = $generate(_other_, nothing)
+    while !(_ret_ isa $IteratorReturn)
+      _value_, _state_ = _ret_
+      _newvalue_ = @yield _value_
+      _ret_ = $generate(_other_, _newvalue_, _state_)
     end
   end
 end
@@ -37,13 +37,8 @@ end
 """
 Function that replaces an `arg = @yield_from iter` statement by
 ```julia
-  _other_ = iter
-  _ret_ = _other_()
-  while _other_._state !== 0xff
-    @yield _ret_
-    _ret_ = _other_()
-  end
-  arg = _ret_
+  @yield_from iter
+  arg = _ret_.value
 ```
 """
 function transform_arg_yield_from(expr)
@@ -51,13 +46,8 @@ function transform_arg_yield_from(expr)
   _is_yield_from(ex) || return expr
   iter = length(ex.args) > 2 ? ex.args[3:end] : [nothing]
   quote
-    _other_ = $(iter...)
-    _ret_ = _other_()
-    while _other_._state !== 0xff
-      x = @yield _ret_
-      _ret_ = _other_(x)
-    end
-    $arg = _ret_
+    @yield_from $(iter...)
+    $arg = _ret_.value
   end
 end
 
