@@ -141,3 +141,21 @@ end
   @test collect(test_continue()) == [1, 3, 4, 5, 6, 7, 8, 9, 10]
   @test collect(test_continue_double()) == [1, 3, 1, 3]
 end
+
+@resumable function test_type_parameters(::Type{Int64}, start::Int64)
+  for i in start:start+3
+    @yield i
+  end
+end
+
+@resumable function test_type_parameters(::Type{Float64}, start::Int64)
+  for i in start:start+3
+    @yield float(i)
+  end
+end
+
+@testset "test_type_parameters" begin
+  @test collect(test_type_parameters(Int64, 1)) == [1, 2, 3, 4]
+  @test collect(test_type_parameters(Float64, 1)) == [1.0, 2.0, 3.0, 4.0]
+end
+

@@ -15,8 +15,10 @@ function get_args(func_def::Dict)
   kwarg_list = Vector{Symbol}()
   for arg in (func_def[:args]...,)
     arg_def = splitarg(arg)
-    push!(arg_list, arg_def[1])
-    arg_dict[arg_def[1]] = arg_def[3] ? Any : arg_dict[arg_def[1]] = arg_def[2]
+    if arg_def[1] != nothing
+      push!(arg_list, arg_def[1])
+      arg_dict[arg_def[1]] = arg_def[3] ? Any : arg_dict[arg_def[1]] = arg_def[2]
+    end
   end
   for arg in (func_def[:kwargs]...,)
     arg_def = splitarg(arg)
