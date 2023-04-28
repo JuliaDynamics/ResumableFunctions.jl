@@ -1,9 +1,9 @@
 using Documenter
-using ResumableFunctions
+using Semicoroutines
 
 makedocs(
-  sitename = "ResumableFunctions",
-  authors = "Ben Lauwens",
+  sitename = "Semicoroutines",
+  authors = "Semicoroutines contributors",
   pages = [
     "Home" => "index.md",
     "Manual" => "manual.md",
@@ -13,5 +13,5 @@ makedocs(
 )
 
 deploydocs(
-  repo = "github.com/BenLauwens/ResumableFunctions.jl"
+  repo = "github.com/QuantumSavory/Semicoroutines.jl"
 )

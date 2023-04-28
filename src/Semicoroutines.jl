@@ -1,7 +1,7 @@
 """
-Main module for ResumableFunctions.jl – C# style generators a.k.a. semi-coroutines for Julia
+Main module for Semicoroutines.jl – C# style generators a.k.a. semi-coroutines for Julia
 """
-module ResumableFunctions
+module Semicoroutines
 
   using MacroTools
   using MacroTools: combinedef, combinearg, flatten, postwalk

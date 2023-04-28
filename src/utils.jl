@@ -40,7 +40,7 @@ function get_slots(func_def::Dict, args::Dict{Symbol, Any}, mod::Module) :: Dict
   func_def[:body] = postwalk(x->transform_nosave(x, nosaves), func_def[:body])
   func_expr = combinedef(func_def) |> flatten
   @eval(mod, @noinline $func_expr)
-  codeinfos = @eval(mod, code_typed($(func_def[:name])))
+  codeinfos = @eval(mod, code_typed($(func_def[:name]), Tuple; optimize=false))
   for codeinfo in codeinfos
     for (name, type) in collect(zip(codeinfo.first.slotnames, codeinfo.first.slottypes))
       name ∉ nosaves && (slots[name] = type)

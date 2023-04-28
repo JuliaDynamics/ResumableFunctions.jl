@@ -62,7 +62,7 @@ i :: Int64
 A `mutable struct` is defined containing the state and the slots:
 
 ```julia
-mutable struct ##123 <: ResumableFunctions.FiniteStateMachineIterator
+mutable struct ##123 <: Semicoroutines.FiniteStateMachineIterator
       _state :: UInt8
       n :: Int64
       a :: Int64
