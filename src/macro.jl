@@ -43,10 +43,10 @@ macro resumable(expr::Expr)
   type_name = gensym()
   constr_def = copy(func_def)
   if isempty(params)
-    struct_name = :($type_name <: ResumableFunctions.FiniteStateMachineIterator{$rtype})
+    struct_name = :($type_name <: Semicoroutines.FiniteStateMachineIterator{$rtype})
     constr_def[:name] = :($type_name)
   else
-    struct_name = :($type_name{$(func_def[:whereparams]...)} <: ResumableFunctions.FiniteStateMachineIterator{$rtype})
+    struct_name = :($type_name{$(func_def[:whereparams]...)} <: Semicoroutines.FiniteStateMachineIterator{$rtype})
     constr_def[:name] = :($type_name{$(params...)})
   end
   constr_def[:args] = tuple()

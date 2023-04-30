@@ -1,4 +1,4 @@
-using ResumableFunctions
+using Semicoroutines
 using Test
 
 @resumable function test_for(a::Int=0; b::Int=a+1) :: Int
@@ -176,9 +176,9 @@ end
 end
 
 @testset "test_yield_from_twoway" begin
-forward = test_forward()
-@test forward() == 0
-for i in 1:5
-  @test forward(i) == i
-end
+  forward = test_forward()
+  @test forward() == 0
+  for i in 1:5
+    @test forward(i) == i
+  end
 end

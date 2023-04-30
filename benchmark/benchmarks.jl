@@ -1,5 +1,5 @@
-using BenchmarkTools, ResumableFunctions
-using ResumableFunctions
+using BenchmarkTools, Semicoroutines
+using Semicoroutines
 
 const n = 93
 
@@ -121,8 +121,8 @@ end
 @noinline function test_closure_opt(n::Int)
   fib_closure = fibonacci_closure_opt()
   a = 0
-  for _ in 1:n 
-    a = fib_closure() 
+  for _ in 1:n
+    a = fib_closure()
   end
   a
 end
@@ -197,7 +197,7 @@ isinteractive() || begin
   @btime test_direct($n)
   @assert test_direct(n) == 7540113804746346429
 
-  println("ResumableFunctions: ")
+  println("Semicoroutines: ")
   @btime test_resumable($n)
   @assert test_resumable(n) == 7540113804746346429
 

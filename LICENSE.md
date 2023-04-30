@@ -1,6 +1,7 @@
-The ResumableFunctions.jl package is licensed under the MIT "Expat" License:
+The Semicoroutines.jl package is licensed under the MIT "Expat" License:
 
-> Copyright (c) 2017: Ben Lauwens.
+> Copyright (c) 2017: Ben Lauwens
+> Copyright (c) 2023: Stefan Krastanov
 > 
 > Permission is hereby granted, free of charge, to any person obtaining a copy
 > of this software and associated documentation files (the "Software"), to deal
