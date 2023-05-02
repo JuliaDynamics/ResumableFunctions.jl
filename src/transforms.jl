@@ -1,5 +1,5 @@
 """
-Function that replaces a variable 
+Function that replaces a variable
 """
 function transform_nosave(expr, nosaves::Set{Symbol})
   @capture(expr, @nosave var_ = body_) || return expr
@@ -159,7 +159,7 @@ function transform_try(expr, ui8::BoxedUInt8)
       push!(segment, ex)
     end
   end
-  if segment != []
+  if (segment != [])::Bool # JET reports this as uninfered
     exc === nothing ? push!(new_body, :(try $(segment...) catch; $(handling...) end)) : push!(new_body, :(try $(segment...) catch $exc; $(handling...) end))
   end
   push!(new_body, :(@label $(Symbol("_TRY_", :($(ui8.n))))))
