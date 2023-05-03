@@ -27,5 +27,6 @@ end
 println("Starting tests with $(Threads.nthreads()) threads out of `Sys.CPU_THREADS = $(Sys.CPU_THREADS)`...")
 
 @doset "main"
+@doset "yieldfrom"
 VERSION >= v"1.8" && @doset "aqua"
 get(ENV,"JET_TEST","")=="true" && @doset "jet"
