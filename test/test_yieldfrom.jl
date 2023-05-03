@@ -1,11 +1,6 @@
 using Test
 using Semicoroutines
 
-@testset "test_continue" begin
-  @test collect(test_continue()) == [1, 3, 4, 5, 6, 7, 8, 9, 10]
-  @test collect(test_continue_double()) == [1, 3, 1, 3]
-end
-
 @resumable function test_yield_from_inner(n)
   for i in 1:n
     @yield i^2
