@@ -41,3 +41,7 @@ end
     @test forward(i) == i
   end
 end
+
+@testset "test_yieldfrom_nonresumable" begin
+  @test_throws LoadError eval(:(@yieldfrom [1,2,3]))
+end
