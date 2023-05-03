@@ -1,4 +1,4 @@
-using test
+using Test
 using Semicoroutines
 
 @testset "test_continue" begin
