@@ -8,7 +8,7 @@ function transform_nosave(expr, nosaves::Set{Symbol})
 end
 
 """
-Function that replaces a `@yield_from iter` statement with
+Function that replaces a `@yieldfrom iter` statement with
 ```julia
   _other_ = iter...
   _ret_ = generate(_other_, nothing)
@@ -20,8 +20,8 @@ Function that replaces a `@yield_from iter` statement with
   _
 ```
 """
-function transform_yield_from(expr)
-  _is_yield_from(expr) || return expr
+function transform_yieldfrom(expr)
+  _is_yieldfrom(expr) || return expr
   iter = length(expr.args) > 2 ? expr.args[3:end] : [nothing]
   quote
     _other_ = $(iter...)
@@ -35,29 +35,29 @@ function transform_yield_from(expr)
 end
 
 """
-Function that replaces an `arg = @yield_from iter` statement by
+Function that replaces an `arg = @yieldfrom iter` statement by
 ```julia
-  @yield_from iter
+  @yieldfrom iter
   arg = _ret_.value
 ```
 """
-function transform_arg_yield_from(expr)
+function transform_arg_yieldfrom(expr)
   @capture(expr, arg_ = ex_) || return expr
-  _is_yield_from(ex) || return expr
+  _is_yieldfrom(ex) || return expr
   iter = length(ex.args) > 2 ? ex.args[3:end] : [nothing]
   quote
-    @yield_from $(iter...)
+    @yieldfrom $(iter...)
     $arg = _ret_.value
   end
 end
 
 """
-Function returning whether an expression is a `@yield_from` macro
+Function returning whether an expression is a `@yieldfrom` macro
 """
-_is_yield_from(ex) = false
+_is_yieldfrom(ex) = false
 
-function _is_yield_from(ex::Expr)
-  ex.head === :macrocall && ex.args[1] === Symbol("@yield_from")
+function _is_yieldfrom(ex::Expr)
+  ex.head === :macrocall && ex.args[1] === Symbol("@yieldfrom")
 end
 
 

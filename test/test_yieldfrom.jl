@@ -1,23 +1,23 @@
 using Test
 using Semicoroutines
 
-@resumable function test_yield_from_inner(n)
+@resumable function test_yieldfrom_inner(n)
   for i in 1:n
     @yield i^2
   end
   42, n
 end
 
-@resumable function test_yield_from(n)
-  @yield_from [42, 314]   
-  m, n = @yield_from test_yield_from_inner(n)
+@resumable function test_yieldfrom(n)
+  @yieldfrom [42, 314]   
+  m, n = @yieldfrom test_yieldfrom_inner(n)
   @test m == 42
   @yield n
-  @yield_from test_yield_from_inner(n+1)
+  @yieldfrom test_yieldfrom_inner(n+1)
 end
 
-@testset "test_yield_from" begin
-@test collect(test_yield_from(4)) == [42, 314, 1, 4, 9, 16, 4, 1, 4, 9, 16, 25]
+@testset "test_yieldfrom" begin
+@test collect(test_yieldfrom(4)) == [42, 314, 1, 4, 9, 16, 4, 1, 4, 9, 16, 25]
 end
 
 @resumable function test_echo()
@@ -29,12 +29,12 @@ end
 end
 
 @resumable function test_forward()
-  ret = @yield_from test_echo()
+  ret = @yieldfrom test_echo()
   @test ret == "Done"
-  @yield_from test_echo()
+  @yieldfrom test_echo()
 end
 
-@testset "test_yield_from_twoway" begin
+@testset "test_yieldfrom_twoway" begin
   forward = test_forward()
   @test forward() == 0
   for i in 1:5

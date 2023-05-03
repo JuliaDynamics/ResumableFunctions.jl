@@ -6,7 +6,7 @@ module Semicoroutines
   using MacroTools
   using MacroTools: combinedef, combinearg, flatten, postwalk
 
-  export @resumable, @yield, @nosave, @yield_from 
+  export @resumable, @yield, @nosave, @yieldfrom 
 
   include("types.jl")
   include("transforms.jl")
