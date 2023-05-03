@@ -45,3 +45,11 @@ end
 @testset "test_yieldfrom_nonresumable" begin
   @test_throws LoadError eval(:(@yieldfrom [1,2,3]))
 end
+
+
+@testset "test_yieldfrom_noargs" begin
+  test_f = :(@resumable function test_yieldfrom_noargs()
+    @yieldfrom
+  end)
+  @test_throws LoadError eval(test_f)
+end

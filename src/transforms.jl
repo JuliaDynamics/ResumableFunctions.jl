@@ -22,7 +22,7 @@ Function that replaces a `@yieldfrom iter` statement with
 """
 function transform_yieldfrom(expr)
   _is_yieldfrom(expr) || return expr
-  iter = length(expr.args) > 2 ? expr.args[3:end] : [nothing]
+  iter = expr.args[3:end]
   quote
     _other_ = $(iter...)
     _ret_ = $generate(_other_, nothing)
@@ -44,7 +44,7 @@ Function that replaces an `arg = @yieldfrom iter` statement by
 function transform_arg_yieldfrom(expr)
   @capture(expr, arg_ = ex_) || return expr
   _is_yieldfrom(ex) || return expr
-  iter = length(ex.args) > 2 ? ex.args[3:end] : [nothing]
+  iter = ex.args[3:end]
   quote
     @yieldfrom $(iter...)
     $arg = _ret_.value
@@ -57,7 +57,11 @@ Function returning whether an expression is a `@yieldfrom` macro
 _is_yieldfrom(ex) = false
 
 function _is_yieldfrom(ex::Expr)
-  ex.head === :macrocall && ex.args[1] === Symbol("@yieldfrom")
+  is_ = ex.head === :macrocall && ex.args[1] === Symbol("@yieldfrom")
+  if is_ && length(ex.args) < 3
+    error("@yieldfrom without arguments!")
+  end
+  return is_
 end
 
 
