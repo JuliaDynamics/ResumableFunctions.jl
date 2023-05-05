@@ -111,6 +111,8 @@ Iteration protocol:
 
 ## Release notes
 
+* 2023: v0.7.0 is Julia v1.10 compatible.
+
 * 2021: v0.6.1
   * `continu` in loop works
 
