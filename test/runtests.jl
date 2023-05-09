@@ -27,6 +27,7 @@ end
 println("Starting tests with $(Threads.nthreads()) threads out of `Sys.CPU_THREADS = $(Sys.CPU_THREADS)`...")
 
 @doset "main"
+@doset "yieldfrom"
 @doset "typeparams"
 VERSION >= v"1.8" && @doset "doctests"
 VERSION >= v"1.8" && @doset "aqua"

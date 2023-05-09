@@ -1,5 +1,5 @@
 using Test
-using Semicoroutines
+using ResumableFunctions
 
 @resumable function test_yieldfrom_inner(n)
   for i in 1:n
