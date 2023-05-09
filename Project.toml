@@ -5,17 +5,11 @@ license = "MIT"
 desc = "C# sharp style generators a.k.a. semi-coroutines for Julia."
 authors = ["Ben Lauwens <ben.lauwens@gmail.com>"]
 repo = "https://github.com/BenLauwens/ResumableFunctions.jl.git"
-version = "0.6.1"
+version = "0.6.2"
 
 [deps]
 MacroTools = "1914dd2f-81c6-5fcd-8719-6d5c9610ff09"
 
 [compat]
-julia = "^1.2"
-MacroTools = "^0.5"
-
-[extras]
-Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
-
-[targets]
-test = ["Test"]
+MacroTools = "0.5"
+julia = "1.2"

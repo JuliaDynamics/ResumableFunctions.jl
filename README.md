@@ -111,6 +111,10 @@ Iteration protocol:
 
 ## Release notes
 
+* 2023: v0.6.2 
+  * Julia v1.10 compatibility fix
+  * resumable functions can now dispatch on types
+
 * 2021: v0.6.1
   * `continu` in loop works
 

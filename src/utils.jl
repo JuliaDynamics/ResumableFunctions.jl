@@ -15,8 +15,10 @@ function get_args(func_def::Dict)
   kwarg_list = Vector{Symbol}()
   for arg in (func_def[:args]...,)
     arg_def = splitarg(arg)
-    push!(arg_list, arg_def[1])
-    arg_dict[arg_def[1]] = arg_def[3] ? Any : arg_dict[arg_def[1]] = arg_def[2]
+    if arg_def[1] != nothing
+      push!(arg_list, arg_def[1])
+      arg_dict[arg_def[1]] = arg_def[3] ? Any : arg_dict[arg_def[1]] = arg_def[2]
+    end
   end
   for arg in (func_def[:kwargs]...,)
     arg_def = splitarg(arg)
@@ -40,7 +42,7 @@ function get_slots(func_def::Dict, args::Dict{Symbol, Any}, mod::Module) :: Dict
   func_def[:body] = postwalk(x->transform_nosave(x, nosaves), func_def[:body])
   func_expr = combinedef(func_def) |> flatten
   @eval(mod, @noinline $func_expr)
-  codeinfos = @eval(mod, code_typed($(func_def[:name])))
+  codeinfos = @eval(mod, code_typed($(func_def[:name]), Tuple; optimize=false))
   for codeinfo in codeinfos
     for (name, type) in collect(zip(codeinfo.first.slotnames, codeinfo.first.slottypes))
       name ∉ nosaves && (slots[name] = type)
