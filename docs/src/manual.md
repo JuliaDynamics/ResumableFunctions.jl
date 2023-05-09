@@ -6,7 +6,7 @@ When a `@resumable function` is called, it continues where it left during the pr
 
 ```@meta
 DocTestSetup = quote
-  using Semicoroutines
+  using ResumableFunctions
 
   @resumable function basic_example()
     @yield "Initial call"
@@ -45,7 +45,7 @@ The `@yield` can also be used without a return argument:
 
 ```@meta
 DocTestSetup = quote
-  using Semicoroutines
+  using ResumableFunctions
 
   @resumable function basic_example()
     @yield "Initial call"
@@ -82,7 +82,7 @@ DocTestSetup = nothing
 The famous fibonacci sequence can easily be generated:
 ```@meta
 DocTestSetup = quote
-  using Semicoroutines
+  using ResumableFunctions
 
   @resumable function fibonacci()
     a = 0
@@ -139,7 +139,7 @@ The `@resumable function` can take arguments and the type of the return value ca
 
 ```@meta
 DocTestSetup = quote
-  using Semicoroutines
+  using ResumableFunctions
 
   @resumable function fibonacci(n) :: Int
     a = 0
@@ -196,7 +196,7 @@ The caller can transmit a variable to the `@resumable function` by assigning a `
 
 ```@meta
 DocTestSetup = quote
-  using Semicoroutines
+  using ResumableFunctions
 
   @resumable function two_way()
     name = @yield "Who are you?"
@@ -230,7 +230,7 @@ When an `Exception` is passed to the `@resumable function`, it is thrown at the 
 
 ```@meta
 DocTestSetup = quote
-  using Semicoroutines
+  using ResumableFunctions
 
   @resumable function mouse()
     try
@@ -276,7 +276,7 @@ The interator interface is implemented for a `@resumable function`:
 
 ```@meta
 DocTestSetup = quote
-  using Semicoroutines
+  using ResumableFunctions
 
   @resumable function fibonacci(n) :: Int
     a = 0
@@ -324,7 +324,7 @@ Type parameters can be specified with a `where` clause:
 
 ```@meta
 DocTestSetup = quote
-  using Semicoroutines
+  using ResumableFunctions
 
   @resumable function fibonacci(a::N, b::N=a+one(N)) :: N where {N<:Number}
     for i in 1:10
@@ -368,7 +368,7 @@ A `let` block allows a variable not to be saved in between calls to a `@resumabl
 
 ```@meta
 DocTestSetup = quote
-  using Semicoroutines
+  using ResumableFunctions
 
   @resumable function arrays_of_tuples()
     for u in [[(1,2),(3,4)], [(5,6),(7,8)]]

@@ -7,7 +7,7 @@
    and inspired by the Julia version of Luiz M. Faria
 =#
 
-using Semicoroutines
+using ResumableFunctions
 
 using Base.GMP.MPZ: add_ui!, mul_ui!, add!, tdiv_q!
 const mpz_t = Ref{BigInt}

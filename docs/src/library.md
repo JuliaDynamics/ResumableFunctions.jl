@@ -3,13 +3,13 @@
 ## Public interface
 
 ```@autodocs
-Modules = [Semicoroutines]
+Modules = [ResumableFunctions]
 Private = false
 ```
 
 ## Internals
 
 ```@autodocs
-Modules = [Semicoroutines]
+Modules = [ResumableFunctions]
 Public = false
 ```
