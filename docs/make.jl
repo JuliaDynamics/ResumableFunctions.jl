@@ -3,7 +3,7 @@ using ResumableFunctions
 
 makedocs(
   sitename = "ResumableFunctions",
-  authors = "Ben Lauwens",
+  authors = "Ben Lauwens and volunteers from JuliaDynamics and QuantumSavory",
   pages = [
     "Home" => "index.md",
     "Manual" => "manual.md",
@@ -13,5 +13,5 @@ makedocs(
 )
 
 deploydocs(
-  repo = "github.com/BenLauwens/ResumableFunctions.jl"
+  repo = "github.com/JuliaDynamics/ResumableFunctions.jl"
 )
