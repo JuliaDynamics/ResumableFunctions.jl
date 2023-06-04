@@ -6,6 +6,13 @@ macro yield(expr=nothing)
 end
 
 """
+Macro if used in a `@resumable function` that delegates to `expr` otherwise throws an error.
+"""
+macro yieldfrom(expr=nothing)
+  error("@yieldfrom macro outside a @resumable function!")
+end
+
+"""
 Macro if used in a `@resumable function` that creates a not saved variable otherwise throws an error.
 """
 macro nosave(expr=nothing)
@@ -29,7 +36,8 @@ macro resumable(expr::Expr)
   args, kwargs, arg_dict = get_args(func_def)
   params = ((get_param_name(param) for param in func_def[:whereparams])...,)
   ui8 = BoxedUInt8(zero(UInt8))
-  postwalk(x->hasreturnvalue(x), func_def[:body])
+  func_def[:body] = postwalk(transform_arg_yieldfrom, func_def[:body])
+  func_def[:body] = postwalk(transform_yieldfrom, func_def[:body])
   func_def[:body] = postwalk(x->transform_for(x, ui8), func_def[:body])
   slots = get_slots(copy(func_def), arg_dict, __module__)
   type_name = gensym()

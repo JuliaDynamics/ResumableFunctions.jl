@@ -20,9 +20,14 @@ Implements the `eltype` method of the *iterator* interface for a subtype of `Fin
 """
 Base.eltype(::Type{T}) where T<:FiniteStateMachineIterator{R} where R = R
 
-function Base.iterate(fsm_iter::T, state=nothing) where T<:FiniteStateMachineIterator
-  #fsm_iter._state = state
-  result = fsm_iter()
-  fsm_iter._state === 0xff && return nothing
-  result, nothing
+function Base.iterate(fsm_iter::FiniteStateMachineIterator)
+  ret = generate(fsm_iter, nothing)
+  ret isa IteratorReturn && return nothing
+  ret
+end
+
+function Base.iterate(fsm_iter::FiniteStateMachineIterator, state)
+  ret = generate(fsm_iter, nothing, state)
+  ret isa IteratorReturn && return nothing
+  ret
 end

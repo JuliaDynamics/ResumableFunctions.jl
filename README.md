@@ -133,6 +133,11 @@ Iteration protocol:
 
 ## Release notes
 
+* 2023: v0.6.3
+  * Julia 1.6 or newer is required
+  * introduction of `@yieldfrom` to delegate to another resumable function or iterator (similar to [Python's `yield from`](https://peps.python.org/pep-0380/))
+  * resumable functions are now allowed to return values, so that `r = @yieldfrom f` also stores the return value of `f` in `r`
+
 * 2023: v0.6.2 
   * Julia v1.10 compatibility fix
   * resumable functions can now dispatch on types

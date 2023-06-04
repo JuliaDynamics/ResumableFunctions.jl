@@ -8,6 +8,64 @@ function transform_nosave(expr, nosaves::Set{Symbol})
 end
 
 """
+Function that replaces a `@yieldfrom iter` statement with
+```julia
+  _other_ = iter...
+  _ret_ = generate(_other_, nothing)
+  while !(_ret_ isa IteratorReturn)
+    _value_, _state_ = _ret_
+    _newvalue_ = @yield _value_
+    _ret_ = generate(_other_, _newvalue_, _state_)
+  end
+  _
+```
+"""
+function transform_yieldfrom(expr)
+  _is_yieldfrom(expr) || return expr
+  iter = expr.args[3:end]
+  quote
+    _other_ = $(iter...)
+    _ret_ = $generate(_other_, nothing)
+    while !(_ret_ isa $IteratorReturn)
+      _value_, _state_ = _ret_
+      _newvalue_ = @yield _value_
+      _ret_ = $generate(_other_, _newvalue_, _state_)
+    end
+  end
+end
+
+"""
+Function that replaces an `arg = @yieldfrom iter` statement by
+```julia
+  @yieldfrom iter
+  arg = _ret_.value
+```
+"""
+function transform_arg_yieldfrom(expr)
+  @capture(expr, arg_ = ex_) || return expr
+  _is_yieldfrom(ex) || return expr
+  iter = ex.args[3:end]
+  quote
+    @yieldfrom $(iter...)
+    $arg = _ret_.value
+  end
+end
+
+"""
+Function returning whether an expression is a `@yieldfrom` macro
+"""
+_is_yieldfrom(ex) = false
+
+function _is_yieldfrom(ex::Expr)
+  is_ = ex.head === :macrocall && ex.args[1] === Symbol("@yieldfrom")
+  if is_ && length(ex.args) < 3
+    error("@yieldfrom without arguments!")
+  end
+  return is_
+end
+
+
+"""
 Function that replaces a `for` loop by a corresponding `while` loop saving explicitely the *iterator* and its *state*.
 """
 function transform_for(expr, ui8::BoxedUInt8)
