@@ -1,11 +1,35 @@
 # ResumableFunctions
 
+<table>
+    <tr>
+        <td>Documentation</td>
+        <td>
+            <a href="https://juliadynamics.github.io/ResumableFunctions.jl/stable"><img src="https://img.shields.io/badge/docs-stable-blue.svg" alt="Documentation of latest stable version"></a>
+            <a href="https://juliadynamics.github.io/ResumableFunctions.jl/dev"><img src="https://img.shields.io/badge/docs-dev-blue.svg" alt="Documentation of dev version"></a>
+        </td>
+    </tr><tr></tr>
+    <tr>
+        <td>Continuous integration</td>
+        <td>
+            <a href="https://github.com/JuliaDynamics/ResumableFunctions.jl/actions?query=workflow%3ACI+branch%3Amaster"><img src="https://img.shields.io/github/actions/workflow/status/JuliaDynamics/ResumableFunctions.jl/ci.yml?branch=master" alt="GitHub Workflow Status"></a>
+        </td>
+    </tr><tr></tr>
+    <tr>
+        <td>Code coverage</td>
+        <td>
+            <a href="https://codecov.io/gh/JuliaDynamics/ResumableFunctions.jl"><img src="https://img.shields.io/codecov/c/gh/JuliaDynamics/ResumableFunctions.jl?label=codecov" alt="Test coverage from codecov"></a>
+        </td>
+    </tr><tr></tr>
+    <tr>
+        <td>Static analysis with</td>
+        <td>
+            <a href="https://github.com/aviatesk/JET.jl"><img src="https://img.shields.io/badge/JET.jl-%E2%9C%88%EF%B8%8F-9cf" alt="JET static analysis"></a>
+            <a href="https://github.com/JuliaTesting/Aqua.jl"><img src="https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg" alt="Aqua QA"></a>
+        </td>
+    </tr>
+</table>
+
 [C#](https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/) has a convenient way to create iterators using the `yield return` statement. The package `ResumableFunctions` provides the same functionality for the [Julia language](https://julialang.org) by introducing the `@resumable` and the `@yield` macros. These macros can be used to replace the `Task` switching functions `produce` and `consume` which were deprecated in Julia v0.6. `Channels` are the preferred way for inter-task communication in julia v0.6+, but their performance is subpar for iterator applications. See [the benchmarks section below](#Benchmarks).
-
-## Build Status & Coverage
-
-[![Build Status](https://github.com/benlauwens/ResumableFunctions.jl/workflows/CI/badge.svg)](https://github.com/benlauwens/ResumableFunctions.jl/actions?query=workflow%3ACI+branch%3Amaster)
-[![codecov.io](http://codecov.io/github/benlauwens/ResumableFunctions.jl/coverage.svg?branch=master)](http://codecov.io/github/benlauwens/ResumableFunctions.jl?branch=master)
 
 ## Installation
 
@@ -15,10 +39,7 @@ using Pkg
 Pkg.add("ResumableFunctions")
 ```
 
-##  Documentation
-
-[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://benlauwens.github.io/ResumableFunctions.jl/v0.6.0-docs)
-[![](https://img.shields.io/badge/docs-latest-blue.svg)](https://benlauwens.github.io/ResumableFunctions.jl/dev)
+##  Example
 
 ```julia
 using ResumableFunctions
@@ -38,7 +59,7 @@ end
 ```
 
 ## Benchmarks
-The following block is the result of running `julia --project=. benchmark/benchmarks.jl` on a Macbook Pro with following processor: `Intel Core i9 2,4 GHz 8-Core`. Julia version 1.5.3 was used.
+The following block is the result of running `julia --project=. benchmark/benchmarks.jl` on a Macbook Pro with following processor: `Intel Core i9 2.4 GHz 8-Core`. Julia version 1.5.3 was used.
 
 Fibonacci with `Int` values:
 
@@ -103,6 +124,7 @@ Iteration protocol:
 ## Authors
 
 * Ben Lauwens, [Royal Military Academy](http://www.rma.ac.be), Brussels, Belgium.
+* JuliaDynamics and QuantumSavory volunteers.
 
 ## Contributing
 
@@ -116,7 +138,7 @@ Iteration protocol:
   * resumable functions can now dispatch on types
 
 * 2021: v0.6.1
-  * `continu` in loop works
+  * `continue` in loop works
 
 * 2021: v0.6.0
   * introduction of `@nosave` to keep a variable out of the saved structure.
