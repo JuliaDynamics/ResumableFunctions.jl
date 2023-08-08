@@ -113,5 +113,9 @@ macro resumable(expr::Expr)
   func_def[:kwargs] = []
   func_expr = combinedef(func_def) |> flatten
   @debug func_expr|>MacroTools.striplines
-  esc(:($type_expr; $func_expr; $call_expr))
+  esc(quote
+    $type_expr
+    $func_expr
+    Base.@__doc__($call_expr)
+  end)
 end
