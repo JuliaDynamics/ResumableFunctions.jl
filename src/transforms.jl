@@ -1,5 +1,5 @@
 """
-Function that replaces a variable 
+Function that replaces a variable
 """
 function transform_nosave(expr, nosaves::Set{Symbol})
   @capture(expr, @nosave var_ = body_) || return expr
@@ -69,13 +69,13 @@ end
 Function that replaces a `for` loop by a corresponding `while` loop saving explicitely the *iterator* and its *state*.
 """
 function transform_for(expr, ui8::BoxedUInt8)
-  @capture(expr, for element_ in iterator_ body__ end) || return expr
+  @capture(expr, for element_ in iterator_ body_ end) || return expr
   ui8.n += one(UInt8)
   next = Symbol("_iteratornext_", ui8.n)
   state = Symbol("_iterstate_", ui8.n)
   iterator_value = Symbol("_iterator_", ui8.n)
   label = Symbol("_iteratorlabel_", ui8.n)
-  body = postwalk(x->transform_continue(x, label), :(begin $(body...) end))
+  body = postwalk(x->transform_continue(x, label), :(begin $(body) end))
   quote
     $iterator_value = $iterator
     @nosave $next = iterate($iterator_value)
@@ -115,15 +115,14 @@ end
 Function that handles `let` block
 """
 function transform_slots_let(expr::Expr, symbols::Base.KeySet{Symbol, Dict{Symbol,Any}})
-  @capture(expr, let vars__; body__ end)
+  @capture(expr, let vars_; body_ end)
   locals = Set{Symbol}()
-  for var in vars
-    sym = var.args[1].args[2].value
-    push!(locals, sym)
-    var.args[1] = sym
-  end
-  body = postwalk(x->transform_let(x, locals), :(begin $(body...) end))
-  :(let $((:($var) for var in vars)...); $body end)
+  (isa(vars, Expr) && vars.head==:(=))  || error("@resumable currently supports only single variable declarations in let blocks, i.e. only let blocks exactly of the form `let i=j; ...; end`. If you need multiple variables, please submit an issue on the issue tracker and consider contributing a patch.")
+  sym = vars.args[1].args[2].value
+  push!(locals, sym)
+  vars.args[1] = sym
+  body = postwalk(x->transform_let(x, locals), :(begin $(body) end))
+  :(let $vars; $body end)
 end
 
 """
@@ -202,15 +201,14 @@ with a sequence of `try`-`catch`-`end` expressions:
 ```
 """
 function transform_try(expr, ui8::BoxedUInt8)
-  @capture(expr, (try body__ catch exc_; handling__ end) | (try body__ catch exc_; handling__ finally always__ end)) || return expr
+  @capture(expr, (try body_ catch exc_; handling_ end) | (try body_ catch exc_; handling_ finally always_ end)) || return expr
   ui8.n += one(UInt8)
   new_body = []
   segment = []
-  handling = handling === nothing ? [nothing] : handling
-  for ex in body
+  for ex in body.args
     if _is_yield(ex)
       ret = length(ex.args) > 2 ? ex.args[3:end] : [nothing]
-      exc === nothing ? push!(new_body, :(try $(segment...) catch; $(handling...); @goto $(Symbol("_TRY_", :($(ui8.n)))) end)) : push!(new_body, :(try $(segment...) catch $exc; $(handling...) ; @goto $(Symbol("_TRY_", :($(ui8.n)))) end))
+      exc === nothing ? push!(new_body, :(try $(segment...) catch; $(handling); @goto $(Symbol("_TRY_", :($(ui8.n)))) end)) : push!(new_body, :(try $(segment...) catch $exc; $(handling) ; @goto $(Symbol("_TRY_", :($(ui8.n)))) end))
       push!(new_body, quote @yield $(ret...) end)
       segment = []
     else
@@ -218,10 +216,10 @@ function transform_try(expr, ui8::BoxedUInt8)
     end
   end
   if segment != []
-    exc === nothing ? push!(new_body, :(try $(segment...) catch; $(handling...) end)) : push!(new_body, :(try $(segment...) catch $exc; $(handling...) end))
+    exc === nothing ? push!(new_body, :(try $(segment...) catch; $(handling) end)) : push!(new_body, :(try $(segment...) catch $exc; $(handling) end))
   end
   push!(new_body, :(@label $(Symbol("_TRY_", :($(ui8.n))))))
-  always === nothing || push!(new_body, quote $(always...) end)
+  always === nothing || push!(new_body, quote $(always) end)
   quote $(new_body...) end
 end
 
