@@ -3,7 +3,7 @@ using ResumableFunctions
 
 const n = 93
 
-const N = BigInt
+const N = Int
 
 function direct(a::N, b::N)
   b, a+b
@@ -121,8 +121,8 @@ end
 @noinline function test_closure_opt(n::Int)
   fib_closure = fibonacci_closure_opt()
   a = 0
-  for _ in 1:n 
-    a = fib_closure() 
+  for _ in 1:n
+    a = fib_closure()
   end
   a
 end

@@ -40,7 +40,7 @@ macro resumable(expr::Expr)
   func_def[:body] = postwalk(transform_yieldfrom, func_def[:body])
   func_def[:body] = postwalk(x->transform_for(x, ui8), func_def[:body])
   slots = get_slots(copy(func_def), arg_dict, __module__)
-  type_name = gensym()
+  type_name = gensym(Symbol(func_def[:name], :_FSMI))
   constr_def = copy(func_def)
   if isempty(params)
     struct_name = :($type_name <: ResumableFunctions.FiniteStateMachineIterator{$rtype})
@@ -113,5 +113,9 @@ macro resumable(expr::Expr)
   func_def[:kwargs] = []
   func_expr = combinedef(func_def) |> flatten
   @debug func_expr|>MacroTools.striplines
-  esc(:($type_expr; $func_expr; $call_expr))
+  esc(quote
+    $type_expr
+    $func_expr
+    Base.@__doc__($call_expr)
+  end)
 end

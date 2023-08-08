@@ -95,6 +95,67 @@ end
 @test collect(test_let()) == [[1,3],[2,4],[5,7],[6,8]]
 end
 
+if VERSION >= v"1.8"
+
+q_test_let2 = quote
+@resumable function test_let2()
+  for u in [[(1,2),(3,4)], [(5,6),(7,8)]]
+    for i in 1:2
+      let i=i, j=i
+        val = [(a[i],a[j]) for a in u]
+      end
+      @yield val
+    end
+  end
+end
+end
+
+@testset "test_let2" begin
+#@test collect(test_let2()) == ...
+@test_throws "@resumable currently supports only single" eval(q_test_let2)
+@test_broken false # the test above throws an error when it should not -- it happens because we do not support variables without assignments in let blocks -- see issues #69 and #70
+end
+
+q_test_let_noassignment = quote
+@resumable function test_let_noassignment()
+  for u in [[(1,2),(3,4)], [(5,6),(7,8)]]
+    for i in 1:2
+      let i
+        val = [a[1] for a in u]
+      end
+      @yield val
+    end
+  end
+end
+end
+
+@testset "test_let_noassignment" begin
+#@test collect(test_let_noassignment()) == ...
+@test_throws "@resumable currently supports only single" eval(q_test_let_noassignment)
+@test_broken false # the test above throws an error when it should not -- it happens because we do not support variables without assignments in let blocks -- see issues #69 and #70
+end
+
+q_test_let_multipleargs = quote
+@resumable function test_let_multipleargs()
+  for u in [[(1,2),(3,4)], [(5,6),(7,8)]]
+    for i in 1:2
+      let i=i, j
+        val = [a[i] for a in u]
+      end
+      @yield val
+    end
+  end
+end
+end
+
+@testset "test_let_multipleargs" begin
+#@test collect(test_let_multipleargs()) == ...
+@test_throws "@resumable currently supports only single" eval(q_test_let_noassignment)
+@test_broken false # the test above throws an error when it should not -- it happens because we do not support variables without assignments in let blocks -- see issues #69 and #70
+end
+
+end # VERSION >= v"1.8"
+
 @resumable function test_nosave()
   for i in 65:74
     @nosave tmp = Char(i)
@@ -140,4 +201,18 @@ end
 @testset "test_continue" begin
   @test collect(test_continue()) == [1, 3, 4, 5, 6, 7, 8, 9, 10]
   @test collect(test_continue_double()) == [1, 3, 1, 3]
+end
+
+"""docstring"""
+@resumable function fwithdoc()
+    @yield 1
+end
+
+"""docstring"""
+function gwithdoc()
+    return 1
+end
+
+@testset "test_docstring" begin
+@test (@doc fwithdoc) == (@doc gwithdoc)
 end
