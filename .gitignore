@@ -3,3 +3,4 @@
 *.jl.mem
 examples/.ipynb_checkpoints
 docs/build
+Manifest.toml

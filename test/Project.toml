@@ -2,6 +2,7 @@
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
+MacroTools = "1914dd2f-81c6-5fcd-8719-6d5c9610ff09"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 StableRNGs = "860ef19b-820b-49d6-a774-d7a799459cd3"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
