@@ -9,8 +9,8 @@ const rng = StableRNG(42)
 
 const n = 93
 
-M = Pkg.Operations.Context().env.manifest
-V = M[findfirst(v -> v.name == "ResumableFunctions", M)].version
+Manifest = Pkg.Operations.Context().env.manifest
+V = Manifest[findfirst(v -> v.name == "ResumableFunctions", Manifest)].version
 
 
 ## Benchmarks hardcoded for various types
@@ -240,54 +240,52 @@ end # for N in [Int, BigInt]
 ##
 
 # run as `julia --project=. benchmark/benchmarks.jl`
+const T = Int # pick a type to test for (from hardcoded_types)
 
-isinteractive() || ENV["CI"]=="true" || begin
-  for T in hardcoded_types
-  M = eval(Symbol("Test",T))
+isinteractive() || get(ENV,"CI","false") =="true" || begin
   println("\n\nTesting with $T\n")
-
+  eval( :(import .$(Symbol("Test",T)): test_direct, test_resumable, test_channel, test_task, test_closure, test_closure_opt, test_closure_stm, test_iteration_protocol) )
   println("Direct: ")
-  @btime M.test_direct($n)
-  @assert M.test_direct(n) == 7540113804746346429
+  @btime test_direct($n)
+  @assert test_direct(n) == 7540113804746346429
 
   println("ResumableFunctions: ")
-  @btime M.test_resumable($n)
-  @assert M.test_resumable(n) == 7540113804746346429
+  @btime test_resumable($n)
+  @assert test_resumable(n) == 7540113804746346429
 
   println("Channels csize=0: ")
-  @btime M.test_channel($n, $0)
-  @assert M.test_channel(n, 0) == 7540113804746346429
+  @btime test_channel($n, $0)
+  @assert test_channel(n, 0) == 7540113804746346429
 
   println("Channels csize=1: ")
-  @btime M.test_channel($n, $1)
-  @assert M.test_channel(n, 1) == 7540113804746346429
+  @btime test_channel($n, $1)
+  @assert test_channel(n, 1) == 7540113804746346429
 
   println("Channels csize=20: ")
-  @btime M.test_channel($n, $20)
-  @assert M.test_channel(n, 20) == 7540113804746346429
+  @btime test_channel($n, $20)
+  @assert test_channel(n, 20) == 7540113804746346429
 
   println("Channels csize=100: ")
-  @btime M.test_channel($n, $100)
-  @assert M.test_channel(n, 100) == 7540113804746346429
+  @btime test_channel($n, $100)
+  @assert test_channel(n, 100) == 7540113804746346429
 
   println("Task scheduling")
-  @btime M.test_task($n)
-  @assert M.test_task(n) == 7540113804746346429
+  @btime test_task($n)
+  @assert test_task(n) == 7540113804746346429
 
   println("Closure: ")
-  @btime M.test_closure($n)
-  @assert M.test_closure(n) == 7540113804746346429
+  @btime test_closure($n)
+  @assert test_closure(n) == 7540113804746346429
 
   println("Closure optimised: ")
-  @btime M.test_closure_opt($n)
-  @assert M.test_closure_opt(n) == 7540113804746346429
+  @btime test_closure_opt($n)
+  @assert test_closure_opt(n) == 7540113804746346429
 
   println("Closure statemachine: ")
-  @btime M.test_closure_stm($n)
-  @assert M.test_closure_stm(n) == 7540113804746346429
+  @btime test_closure_stm($n)
+  @assert test_closure_stm(n) == 7540113804746346429
 
   println("Iteration protocol: ")
-  @btime M.test_iteration_protocol($n)
-  @assert M.test_iteration_protocol(n) == 7540113804746346429
-  end
+  @btime test_iteration_protocol($n)
+  @assert test_iteration_protocol(n) == 7540113804746346429
 end
