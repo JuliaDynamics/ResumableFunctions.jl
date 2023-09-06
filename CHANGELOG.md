@@ -1,5 +1,10 @@
 # News
 
+
+## v0.6.5 - 2023-09-06
+
+- Fix to a performance regresion
+
 ## v0.6.4 - 2023-08-08
 
 - Docstrings now work with `@resumable` functions.
