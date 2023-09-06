@@ -1,9 +1,36 @@
-using BenchmarkTools, ResumableFunctions
+using BenchmarkTools
+using Pkg
+using StableRNGs
 using ResumableFunctions
+
+const SUITE = BenchmarkGroup()
+
+const rng = StableRNG(42)
 
 const n = 93
 
-const N = Int
+Manifest = Pkg.Operations.Context().env.manifest
+V = Manifest[findfirst(v -> v.name == "ResumableFunctions", Manifest)].version
+
+
+## Benchmarks hardcoded for various types
+const hardcoded_types = [Int, BigInt]
+
+S_hc = SUITE["hardcoded types"] = BenchmarkGroup(["hardcoded types"])
+
+for N in hardcoded_types # define a separate submodule for each hardcoded type
+@eval module $(Symbol("Test", N))
+
+using BenchmarkTools
+using ResumableFunctions
+using ..Main: S_hc, rng, V
+
+const n = $n
+const N = $N
+str = string(N)
+S = S_hc[str] = BenchmarkGroup([str])
+
+# the functions to be benchmarked
 
 function direct(a::N, b::N)
   b, a+b
@@ -192,7 +219,32 @@ end
   a
 end
 
-isinteractive() || begin
+
+# define the benchmarks
+S["Direct"] = @benchmarkable test_direct(_n) setup=(_n=n)
+S["ResumableFunctions"] = @benchmarkable test_resumable(_n) setup=(_n=n)
+S["Channels csize=0"] = @benchmarkable test_channel(_n, 0) setup=(_n=n)
+S["Channels csize=1"] = @benchmarkable test_channel(_n, 1) setup=(_n=n)
+S["Channels csize=20"] = @benchmarkable test_channel(_n, 20) setup=(_n=n)
+S["Channels csize=100"] = @benchmarkable test_channel(_n, 100) setup=(_n=n)
+S["Task scheduling"] = @benchmarkable test_task(_n) setup=(_n=n)
+S["Closure"] = @benchmarkable test_closure(_n) setup=(_n=n)
+S["Closure optimized"] = @benchmarkable test_closure_opt(_n) setup=(_n=n)
+S["Closure statemachine"] = @benchmarkable test_closure_stm(_n) setup=(_n=n)
+S["Iteration protocol"] = @benchmarkable test_iteration_protocol(_n) setup=(_n=n)
+
+end # module
+end # for N in [Int, BigInt]
+
+
+##
+
+# run as `julia --project=. benchmark/benchmarks.jl`
+const T = Int # pick a type to test for (from hardcoded_types)
+
+isinteractive() || get(ENV,"CI","false") =="true" || begin
+  println("\n\nTesting with $T\n")
+  eval( :(import .$(Symbol("Test",T)): test_direct, test_resumable, test_channel, test_task, test_closure, test_closure_opt, test_closure_stm, test_iteration_protocol) )
   println("Direct: ")
   @btime test_direct($n)
   @assert test_direct(n) == 7540113804746346429
