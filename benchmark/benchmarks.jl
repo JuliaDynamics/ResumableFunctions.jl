@@ -1,9 +1,36 @@
-using BenchmarkTools, ResumableFunctions
+using BenchmarkTools
+using Pkg
+using StableRNGs
 using ResumableFunctions
+
+const SUITE = BenchmarkGroup()
+
+const rng = StableRNG(42)
 
 const n = 93
 
-const N = Int
+M = Pkg.Operations.Context().env.manifest
+V = M[findfirst(v -> v.name == "ResumableFunctions", M)].version
+
+
+## Benchmarks hardcoded for various types
+const hardcoded_types = [Int, BigInt]
+
+S_hc = SUITE["hardcoded types"] = BenchmarkGroup(["hardcoded types"])
+
+for N in hardcoded_types # define a separate submodule for each hardcoded type
+@eval module $(Symbol("Test", N))
+
+using BenchmarkTools
+using ResumableFunctions
+using ..Main: S_hc, rng, V
+
+const n = $n
+const N = $N
+str = string(N)
+S = S_hc[str] = BenchmarkGroup([str])
+
+# the functions to be benchmarked
 
 function direct(a::N, b::N)
   b, a+b
@@ -192,48 +219,75 @@ end
   a
 end
 
-isinteractive() || begin
+
+# define the benchmarks
+S["Direct"] = @benchmarkable test_direct(_n) setup=(_n=n)
+S["ResumableFunctions"] = @benchmarkable test_resumable(_n) setup=(_n=n)
+S["Channels csize=0"] = @benchmarkable test_channel(_n, 0) setup=(_n=n)
+S["Channels csize=1"] = @benchmarkable test_channel(_n, 1) setup=(_n=n)
+S["Channels csize=20"] = @benchmarkable test_channel(_n, 20) setup=(_n=n)
+S["Channels csize=100"] = @benchmarkable test_channel(_n, 100) setup=(_n=n)
+S["Task scheduling"] = @benchmarkable test_task(_n) setup=(_n=n)
+S["Closure"] = @benchmarkable test_closure(_n) setup=(_n=n)
+S["Closure optimized"] = @benchmarkable test_closure_opt(_n) setup=(_n=n)
+S["Closure statemachine"] = @benchmarkable test_closure_stm(_n) setup=(_n=n)
+S["Iteration protocol"] = @benchmarkable test_iteration_protocol(_n) setup=(_n=n)
+
+end # module
+end # for N in [Int, BigInt]
+
+
+##
+
+# run as `julia --project=. benchmark/benchmarks.jl`
+
+isinteractive() || ENV["CI"]=="true" || begin
+  for T in hardcoded_types
+  M = eval(Symbol("Test",T))
+  println("\n\nTesting with $T\n")
+
   println("Direct: ")
-  @btime test_direct($n)
-  @assert test_direct(n) == 7540113804746346429
+  @btime M.test_direct($n)
+  @assert M.test_direct(n) == 7540113804746346429
 
   println("ResumableFunctions: ")
-  @btime test_resumable($n)
-  @assert test_resumable(n) == 7540113804746346429
+  @btime M.test_resumable($n)
+  @assert M.test_resumable(n) == 7540113804746346429
 
   println("Channels csize=0: ")
-  @btime test_channel($n, $0)
-  @assert test_channel(n, 0) == 7540113804746346429
+  @btime M.test_channel($n, $0)
+  @assert M.test_channel(n, 0) == 7540113804746346429
 
   println("Channels csize=1: ")
-  @btime test_channel($n, $1)
-  @assert test_channel(n, 1) == 7540113804746346429
+  @btime M.test_channel($n, $1)
+  @assert M.test_channel(n, 1) == 7540113804746346429
 
   println("Channels csize=20: ")
-  @btime test_channel($n, $20)
-  @assert test_channel(n, 20) == 7540113804746346429
+  @btime M.test_channel($n, $20)
+  @assert M.test_channel(n, 20) == 7540113804746346429
 
   println("Channels csize=100: ")
-  @btime test_channel($n, $100)
-  @assert test_channel(n, 100) == 7540113804746346429
+  @btime M.test_channel($n, $100)
+  @assert M.test_channel(n, 100) == 7540113804746346429
 
   println("Task scheduling")
-  @btime test_task($n)
-  @assert test_task(n) == 7540113804746346429
+  @btime M.test_task($n)
+  @assert M.test_task(n) == 7540113804746346429
 
   println("Closure: ")
-  @btime test_closure($n)
-  @assert test_closure(n) == 7540113804746346429
+  @btime M.test_closure($n)
+  @assert M.test_closure(n) == 7540113804746346429
 
   println("Closure optimised: ")
-  @btime test_closure_opt($n)
-  @assert test_closure_opt(n) == 7540113804746346429
+  @btime M.test_closure_opt($n)
+  @assert M.test_closure_opt(n) == 7540113804746346429
 
   println("Closure statemachine: ")
-  @btime test_closure_stm($n)
-  @assert test_closure_stm(n) == 7540113804746346429
+  @btime M.test_closure_stm($n)
+  @assert M.test_closure_stm(n) == 7540113804746346429
 
   println("Iteration protocol: ")
-  @btime test_iteration_protocol($n)
-  @assert test_iteration_protocol(n) == 7540113804746346429
+  @btime M.test_iteration_protocol($n)
+  @assert M.test_iteration_protocol(n) == 7540113804746346429
+  end
 end
