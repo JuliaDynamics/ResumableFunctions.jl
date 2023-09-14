@@ -100,7 +100,7 @@ end
 """
 Function that replaces a variable `x` in an expression by `_fsmi.x` where `x` is a known slot.
 """
-function transform_slots(expr, symbols::Base.KeySet{Symbol, Dict{Symbol,Any}})
+function transform_slots(expr, symbols)
   expr isa Expr || return expr
   expr.head === :let && return transform_slots_let(expr, symbols)
   for i in 1:length(expr.args)
@@ -114,7 +114,7 @@ end
 """
 Function that handles `let` block
 """
-function transform_slots_let(expr::Expr, symbols::Base.KeySet{Symbol, Dict{Symbol,Any}})
+function transform_slots_let(expr::Expr, symbols)
   @capture(expr, let vars_; body_ end)
   locals = Set{Symbol}()
   (isa(vars, Expr) && vars.head==:(=))  || error("@resumable currently supports only single variable declarations in let blocks, i.e. only let blocks exactly of the form `let i=j; ...; end`. If you need multiple variables, please submit an issue on the issue tracker and consider contributing a patch.")

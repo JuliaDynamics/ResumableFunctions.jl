@@ -39,16 +39,13 @@ macro resumable(expr::Expr)
   func_def[:body] = postwalk(transform_arg_yieldfrom, func_def[:body])
   func_def[:body] = postwalk(transform_yieldfrom, func_def[:body])
   func_def[:body] = postwalk(x->transform_for(x, ui8), func_def[:body])
-  slots = get_slots(copy(func_def), arg_dict, __module__)
+  inferfn, slots = get_slots(copy(func_def), arg_dict, __module__)
   type_name = gensym(Symbol(func_def[:name], :_FSMI))
   constr_def = copy(func_def)
-  if isempty(params)
-    struct_name = :($type_name <: ResumableFunctions.FiniteStateMachineIterator{$rtype})
-    constr_def[:name] = :($type_name)
-  else
-    struct_name = :($type_name{$(func_def[:whereparams]...)} <: ResumableFunctions.FiniteStateMachineIterator{$rtype})
-    constr_def[:name] = :($type_name{$(params...)})
-  end
+  slot_T = [gensym(s) for s in slots]
+  struct_name = :($type_name{$(slot_T...)} <: ResumableFunctions.FiniteStateMachineIterator{$rtype})
+  constr_def[:whereparams] = slot_T
+  constr_def[:name] = :($type_name{$(slot_T...)})
   constr_def[:args] = tuple()
   constr_def[:kwargs] = tuple()
   constr_def[:rtype] = nothing
@@ -61,28 +58,18 @@ macro resumable(expr::Expr)
   type_expr = :(
     mutable struct $struct_name
       _state :: UInt8
-      $((:($slotname :: $slottype) for (slotname, slottype) in slots)...)
+      $((:($slotname :: $slottype) for (slotname, slottype) in zip(slots, slot_T))...)
       $(constr_expr)
     end
   )
   @debug type_expr|>MacroTools.striplines
   call_def = copy(func_def)
-  if isempty(params)
-    call_def[:rtype] = nothing
-    call_def[:body] = quote
-      fsmi = $type_name()
-      $((arg !== Symbol("_") ? :(fsmi.$arg = $arg) : nothing for arg in args)...)
-      $((:(fsmi.$arg = $arg) for arg in kwargs)...)
-      fsmi
-    end
-  else
-    call_def[:rtype] = nothing
-    call_def[:body] = quote
-      fsmi = $type_name{$(params...)}()
-      $((arg !== Symbol("_") ? :(fsmi.$arg = $arg) : nothing for arg in args)...)
-      $((:(fsmi.$arg = $arg) for arg in kwargs)...)
-      fsmi
-    end
+  call_def[:rtype] = nothing
+  call_def[:body] = quote
+    fsmi = ResumableFunctions.typed_fsmi($type_name, $inferfn, $(args...))
+    $((arg !== Symbol("_") ? :(fsmi.$arg = $arg) : nothing for arg in args)...)
+    $((:(fsmi.$arg = $arg) for arg in kwargs)...)
+    fsmi
   end
   call_expr = combinedef(call_def) |> flatten
   @debug call_expr|>MacroTools.striplines
@@ -92,7 +79,7 @@ macro resumable(expr::Expr)
     func_def[:name] = :((_fsmi::$type_name{$(params...)}))
   end
   func_def[:rtype] = nothing
-  func_def[:body] = postwalk(x->transform_slots(x, keys(slots)), func_def[:body])
+  func_def[:body] = postwalk(x->transform_slots(x, slots), func_def[:body])
   func_def[:body] = postwalk(transform_arg, func_def[:body])
   func_def[:body] = postwalk(transform_exc, func_def[:body]) |> flatten
   ui8 = BoxedUInt8(zero(UInt8))

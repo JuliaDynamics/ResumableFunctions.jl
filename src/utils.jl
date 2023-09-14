@@ -28,42 +28,24 @@ function get_args(func_def::Dict)
   arg_list, kwarg_list, arg_dict
 end
 
+const unused = (Symbol("#temp#"), Symbol("_"), Symbol(""), Symbol("#unused#"), Symbol("#self#"))
+
 """
 Function returning the slots of a function definition
 """
-function get_slots(func_def::Dict, args::Dict{Symbol, Any}, mod::Module) :: Dict{Symbol, Any}
-  slots = Dict{Symbol, Any}()
+function get_slots(func_def::Dict, args::Dict{Symbol, Any}, mod::Module)
   func_def[:name] = gensym()
   func_def[:args] = (func_def[:args]..., func_def[:kwargs]...)
   func_def[:kwargs] = []
-  body = func_def[:body]
   func_def[:body] = postwalk(transform_yield, func_def[:body])
   nosaves = Set{Symbol}()
   func_def[:body] = postwalk(x->transform_nosave(x, nosaves), func_def[:body])
   func_expr = combinedef(func_def) |> flatten
   @eval(mod, @noinline $func_expr)
   codeinfos = @eval(mod, code_typed($(func_def[:name]), Tuple; optimize=false))
-  for codeinfo in codeinfos
-    for (name, type) in collect(zip(codeinfo.first.slotnames, codeinfo.first.slottypes))
-      name ∉ nosaves && (slots[name] = type)
-    end
-  end
-  for (argname, argtype) in args
-    slots[argname] = argtype
-  end
-  postwalk(x->remove_catch_exc(x, slots), func_def[:body])
-  postwalk(x->make_arg_any(x, slots), body)
-  for (key, val) in slots
-    if val === Union{}
-      slots[key] = Any
-    end
-  end
-  delete!(slots, Symbol("#temp#"))
-  delete!(slots, Symbol("_"))
-  delete!(slots, Symbol(""))
-  delete!(slots, Symbol("#unused#"))
-  delete!(slots, Symbol("#self#"))
-  slots
+  slots = only(codeinfos).first.slotnames
+  filter!(x->x ∉ nosaves && x ∉ unused, slots)
+  return func_def[:name], slots
 end
 
 """
@@ -106,4 +88,52 @@ end
   ret = iterate(iter, state)
   isnothing(ret) && return IteratorReturn(nothing)
   ret
+end
+
+# copied from Base
+function code_typed_by_type(@nospecialize(tt::Type);
+                            optimize::Bool=true,
+                            debuginfo::Symbol=:default,
+                            world::UInt=Base.get_world_counter(),
+                            interp::Core.Compiler.AbstractInterpreter=Core.Compiler.NativeInterpreter(world))
+    # (ccall(:jl_is_in_pure_context, Bool, ()) || world == typemax(UInt)) &&
+    #     error("code reflection cannot be used from generated functions")
+    if isdefined(Base, :IRShow)
+        debuginfo = Base.IRShow.debuginfo(debuginfo)
+    elseif debuginfo === :default
+        debuginfo = :source
+    end
+    if debuginfo !== :source && debuginfo !== :none
+        throw(ArgumentError("'debuginfo' must be either :source or :none"))
+    end
+    tt = Base.to_tuple_type(tt)
+    matches = Base._methods_by_ftype(tt, #=lim=#-1, world)::Vector
+    asts = []
+    for match in matches
+        match = match::Core.MethodMatch
+        meth = Base.func_for_method_checked(match.method, tt, match.sparams)
+        (code, ty) = Core.Compiler.typeinf_code(interp, meth, match.spec_types, match.sparams, optimize)
+        if code === nothing
+            push!(asts, meth => Any)
+        else
+            debuginfo === :none && Base.remove_linenums!(code)
+            push!(asts, code => ty)
+        end
+    end
+    return asts
+end
+
+function fsmi_generator(world::UInt, source::LineNumberNode, passtype, fsmitype, fargtypes)
+    @nospecialize passtype fsmitype fargtypes
+    tt = Base.to_tuple_type(fargtypes)
+    ci = first(only(code_typed_by_type(tt; world, optimize=false)))
+    cislots = Dict(zip(ci.slotnames, ci.slottypes))
+    slots = [cislots[arg] for arg in fieldnames(only(fsmitype.parameters))[2:end]]
+    stub = Core.GeneratedFunctionStub(identity, Core.svec(:pass, :fsmi, :fargs), Core.svec())
+    return stub(world, source, :(return fsmi{$(slots...)}()))
+end
+
+@eval function typed_fsmi(fsmi, fargs...)
+    $(Expr(:meta, :generated_only))
+    $(Expr(:meta, :generated, fsmi_generator))
 end
