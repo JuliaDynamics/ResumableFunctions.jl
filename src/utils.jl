@@ -90,14 +90,12 @@ end
   ret
 end
 
-# copied from Base
+# adapted from Base
 function code_typed_by_type(@nospecialize(tt::Type);
                             optimize::Bool=true,
                             debuginfo::Symbol=:default,
                             world::UInt=Base.get_world_counter(),
                             interp::Core.Compiler.AbstractInterpreter=Core.Compiler.NativeInterpreter(world))
-    # (ccall(:jl_is_in_pure_context, Bool, ()) || world == typemax(UInt)) &&
-    #     error("code reflection cannot be used from generated functions")
     if isdefined(Base, :IRShow)
         debuginfo = Base.IRShow.debuginfo(debuginfo)
     elseif debuginfo === :default
@@ -107,30 +105,36 @@ function code_typed_by_type(@nospecialize(tt::Type);
         throw(ArgumentError("'debuginfo' must be either :source or :none"))
     end
     tt = Base.to_tuple_type(tt)
-    matches = Base._methods_by_ftype(tt, #=lim=#-1, world)::Vector
-    asts = []
-    for match in matches
-        match = match::Core.MethodMatch
-        meth = Base.func_for_method_checked(match.method, tt, match.sparams)
-        (code, ty) = Core.Compiler.typeinf_code(interp, meth, match.spec_types, match.sparams, optimize)
-        if code === nothing
-            push!(asts, meth => Any)
-        else
-            debuginfo === :none && Base.remove_linenums!(code)
-            push!(asts, code => ty)
-        end
+    min_world = Ref{UInt}(typemin(UInt))
+    max_world = Ref{UInt}(typemax(UInt))
+    matches = Base._methods_by_ftype(tt, nothing, #=lim=#-1, world, false, min_world, max_world, Ptr{Int32}(C_NULL))::Vector
+    match = only(matches)::Core.MethodMatch
+    meth = Base.func_for_method_checked(match.method, tt, match.sparams)
+    (code, ty) = Core.Compiler.typeinf_code(interp, meth, match.spec_types, match.sparams, optimize)
+    if code === nothing
+        ast = meth
+    else
+        debuginfo === :none && Base.remove_linenums!(code)
+        ast = code
     end
-    return asts
+    mi = ccall(:jl_specializations_get_linfo, Ref{Core.MethodInstance},
+            (Any, Any, Any), match.method, match.spec_types, match.sparams)
+    return mi, ast, min_world[], max_world[]
 end
 
 function fsmi_generator(world::UInt, source::LineNumberNode, passtype, fsmitype, fargtypes)
-    @nospecialize passtype fsmitype fargtypes
+    @nospecialize
     tt = Base.to_tuple_type(fargtypes)
-    ci = first(only(code_typed_by_type(tt; world, optimize=false)))
+    mi, ci, min_world, max_world = code_typed_by_type(tt; world, optimize=false)
     cislots = Dict(zip(ci.slotnames, ci.slottypes))
     slots = [cislots[arg] for arg in fieldnames(only(fsmitype.parameters))[2:end]]
     stub = Core.GeneratedFunctionStub(identity, Core.svec(:pass, :fsmi, :fargs), Core.svec())
-    return stub(world, source, :(return fsmi{$(slots...)}()))
+    exprs = stub(world, source, :(return fsmi{$(slots...)}()))
+    ci = ccall(:jl_expand_and_resolve, Any, (Any, Any, Any), exprs, passtype.name.module, Core.svec())
+    ci.min_world = min_world
+    ci.max_world = max_world
+    ci.edges = Core.MethodInstance[mi]
+    return ci
 end
 
 @eval function typed_fsmi(fsmi, fargs...)
