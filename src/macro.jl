@@ -74,7 +74,7 @@ macro resumable(expr::Expr)
   else
     fsmi_name = :($type_name{$(params...)})
   end
-  fwd_args, fwd_kwargs = forward_args(func_def)
+  fwd_args, fwd_kwargs = forward_args(call_def)
   call_def[:body] = quote
     fsmi = ResumableFunctions.typed_fsmi($fsmi_name, $inferfn, $(fwd_args...), $(fwd_kwargs...))
     $((arg !== Symbol("_") ? :(fsmi.$arg = $arg) : nothing for arg in args)...)

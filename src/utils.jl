@@ -30,13 +30,15 @@ end
 
 function forward_args(func_def)
   args = []
-  for arg in func_def[:args]
+  map!(func_def[:args], func_def[:args]) do arg
     name, type, splat, default = splitarg(arg)
+    name = something(name, gensym())
     if splat
       push!(args, :($name...))
     else
       push!(args, name)
     end
+    combinearg(name, type, splat, default)
   end
   kwargs = []
   for arg in func_def[:kwargs]
@@ -150,19 +152,20 @@ function code_typed_by_type(@nospecialize(tt::Type);
     return mi, ast, min_world[], max_world[]
 end
 
-_tfieldnames(::Type{Type{T}}) where T = fieldnames(T)
-
-function fsmi_generator(world::UInt, source::LineNumberNode, passtype, fsmitype, fargtypes)
+function fsmi_generator(world::UInt, source::LineNumberNode, passtype, fsmitype::Type{Type{T}}, fargtypes) where T
     @nospecialize
     tt = Base.to_tuple_type(fargtypes)
     mi, ci, min_world, max_world = code_typed_by_type(tt; world, optimize=false)
     cislots = Dict(zip(ci.slotnames, ci.slottypes))
-    slots = [get(cislots, arg, Any) for arg in _tfieldnames(fsmitype)[2:end]]
+    slots = map(fieldnames(T)[2:end]) do slot
+      s = get(cislots, slot, Any)
+      s isa Core.Const ? typeof(s.val) : s
+    end
     stub = Core.GeneratedFunctionStub(identity, Core.svec(:pass, :fsmi, :fargs), Core.svec())
     if isempty(slots)
-      exprs = stub(world, source, :(return fsmi()))
+      exprs = stub(world, source, :(return $T()))
     else
-      exprs = stub(world, source, :(return fsmi{$(slots...)}()))
+      exprs = stub(world, source, :(return $T{$(slots...)}()))
     end
     # lower codeinfo to pass world age and invalidation edges
     ci = ccall(:jl_expand_and_resolve, Any, (Any, Any, Any), exprs, passtype.name.module, Core.svec())
