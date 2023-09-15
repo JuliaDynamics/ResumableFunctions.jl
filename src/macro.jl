@@ -43,9 +43,13 @@ macro resumable(expr::Expr)
   type_name = gensym(Symbol(func_def[:name], :_FSMI))
   constr_def = copy(func_def)
   slot_T = [gensym(s) for s in slots]
-  struct_name = :($type_name{$(slot_T...)} <: ResumableFunctions.FiniteStateMachineIterator{$rtype})
-  constr_def[:whereparams] = slot_T
-  constr_def[:name] = :($type_name{$(slot_T...)})
+  struct_name = :($type_name{$(func_def[:whereparams]...), $(slot_T...)} <: ResumableFunctions.FiniteStateMachineIterator{$rtype})
+  constr_def[:whereparams] = (func_def[:whereparams]..., slot_T...)
+  if isempty(params) && isempty(slot_T)
+    constr_def[:name] = :($type_name)
+  else
+    constr_def[:name] = :($type_name{$(params...), $(slot_T...)})
+  end
   constr_def[:args] = tuple()
   constr_def[:kwargs] = tuple()
   constr_def[:rtype] = nothing
@@ -65,8 +69,14 @@ macro resumable(expr::Expr)
   @debug type_expr|>MacroTools.striplines
   call_def = copy(func_def)
   call_def[:rtype] = nothing
+  if isempty(params)
+    fsmi_name = type_name
+  else
+    fsmi_name = :($type_name{$(params...)})
+  end
+  fwd_args, fwd_kwargs = forward_args(func_def)
   call_def[:body] = quote
-    fsmi = ResumableFunctions.typed_fsmi($type_name, $inferfn, $(args...))
+    fsmi = ResumableFunctions.typed_fsmi($fsmi_name, $inferfn, $(fwd_args...), $(fwd_kwargs...))
     $((arg !== Symbol("_") ? :(fsmi.$arg = $arg) : nothing for arg in args)...)
     $((:(fsmi.$arg = $arg) for arg in kwargs)...)
     fsmi

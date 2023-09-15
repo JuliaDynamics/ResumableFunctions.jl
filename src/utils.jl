@@ -28,6 +28,28 @@ function get_args(func_def::Dict)
   arg_list, kwarg_list, arg_dict
 end
 
+function forward_args(func_def)
+  args = []
+  for arg in func_def[:args]
+    name, type, splat, default = splitarg(arg)
+    if splat
+      push!(args, :($name...))
+    else
+      push!(args, name)
+    end
+  end
+  kwargs = []
+  for arg in func_def[:kwargs]
+    name, type, splat, default = splitarg(arg)
+    if splat
+      push!(kwargs, :($name...))
+    else
+      push!(kwargs, name)
+    end
+  end
+  args, kwargs
+end
+
 const unused = (Symbol("#temp#"), Symbol("_"), Symbol(""), Symbol("#unused#"), Symbol("#self#"))
 
 """
@@ -128,12 +150,14 @@ function code_typed_by_type(@nospecialize(tt::Type);
     return mi, ast, min_world[], max_world[]
 end
 
+_tfieldnames(::Type{Type{T}}) where T = fieldnames(T)
+
 function fsmi_generator(world::UInt, source::LineNumberNode, passtype, fsmitype, fargtypes)
     @nospecialize
     tt = Base.to_tuple_type(fargtypes)
     mi, ci, min_world, max_world = code_typed_by_type(tt; world, optimize=false)
     cislots = Dict(zip(ci.slotnames, ci.slottypes))
-    slots = [get(cislots, arg, Any) for arg in fieldnames(only(fsmitype.parameters))[2:end]]
+    slots = [get(cislots, arg, Any) for arg in _tfieldnames(fsmitype)[2:end]]
     stub = Core.GeneratedFunctionStub(identity, Core.svec(:pass, :fsmi, :fargs), Core.svec())
     exprs = stub(world, source, :(return fsmi{$(slots...)}()))
     # lower codeinfo to pass world age and invalidation edges
