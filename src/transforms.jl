@@ -254,7 +254,7 @@ function transform_yield(expr)
   _is_yield(expr) || return expr
   ret = length(expr.args) > 2 ? expr.args[3:end] : [nothing]
   quote
-    $(ret...)
+    Base.inferencebarrier($(ret...))
   end
 end
 

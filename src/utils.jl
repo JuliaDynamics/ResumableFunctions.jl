@@ -43,15 +43,20 @@ function get_slots(func_def::Dict, args::Dict{Symbol, Any}, mod::Module)
   func_expr = combinedef(func_def) |> flatten
   @eval(mod, @noinline $func_expr)
   codeinfos = @eval(mod, code_typed($(func_def[:name]), Tuple; optimize=false))
-  slots = only(codeinfos).first.slotnames
-  filter!(x->x ∉ nosaves && x ∉ unused, slots)
+  slots = Set{Symbol}()
+  for codeinfo in codeinfos
+    for slot in codeinfo.first.slotnames
+      slot ∉ nosaves && slot ∉ unused && push!(slots, slot)
+    end
+  end
+  postwalk(x->remove_catch_exc(x, slots), func_def[:body])
   return func_def[:name], slots
 end
 
 """
 Function removing the `exc` symbol of a `catch exc` statement of a list of slots.
 """
-function remove_catch_exc(expr, slots::Dict{Symbol, Any})
+function remove_catch_exc(expr, slots::Set{Symbol})
   @capture(expr, (try body__ catch exc_; handling__ end) | (try body__ catch exc_; handling__ finally always__ end)) && delete!(slots, exc)
   expr
 end
@@ -90,7 +95,7 @@ end
   ret
 end
 
-# adapted from Base
+# adapted from Base to handle world age
 function code_typed_by_type(@nospecialize(tt::Type);
                             optimize::Bool=true,
                             debuginfo::Symbol=:default,
@@ -107,8 +112,9 @@ function code_typed_by_type(@nospecialize(tt::Type);
     tt = Base.to_tuple_type(tt)
     min_world = Ref{UInt}(typemin(UInt))
     max_world = Ref{UInt}(typemax(UInt))
-    matches = Base._methods_by_ftype(tt, nothing, #=lim=#-1, world, false, min_world, max_world, Ptr{Int32}(C_NULL))::Vector
-    match = only(matches)::Core.MethodMatch
+    match = ccall(:jl_gf_invoke_lookup_worlds, Any,
+              (Any, Any, Csize_t, Ref{Csize_t}, Ref{Csize_t}),
+              tt, #=mt=# nothing, world, min_world, max_world)
     meth = Base.func_for_method_checked(match.method, tt, match.sparams)
     (code, ty) = Core.Compiler.typeinf_code(interp, meth, match.spec_types, match.sparams, optimize)
     if code === nothing
@@ -127,9 +133,10 @@ function fsmi_generator(world::UInt, source::LineNumberNode, passtype, fsmitype,
     tt = Base.to_tuple_type(fargtypes)
     mi, ci, min_world, max_world = code_typed_by_type(tt; world, optimize=false)
     cislots = Dict(zip(ci.slotnames, ci.slottypes))
-    slots = [cislots[arg] for arg in fieldnames(only(fsmitype.parameters))[2:end]]
+    slots = [get(cislots, arg, Any) for arg in fieldnames(only(fsmitype.parameters))[2:end]]
     stub = Core.GeneratedFunctionStub(identity, Core.svec(:pass, :fsmi, :fargs), Core.svec())
     exprs = stub(world, source, :(return fsmi{$(slots...)}()))
+    # lower codeinfo to pass world age and invalidation edges
     ci = ccall(:jl_expand_and_resolve, Any, (Any, Any, Any), exprs, passtype.name.module, Core.svec())
     ci.min_world = min_world
     ci.max_world = max_world
@@ -137,6 +144,7 @@ function fsmi_generator(world::UInt, source::LineNumberNode, passtype, fsmitype,
     return ci
 end
 
+# low level generated function for caller world age
 @eval function typed_fsmi(fsmi, fargs...)
     $(Expr(:meta, :generated_only))
     $(Expr(:meta, :generated, fsmi_generator))
