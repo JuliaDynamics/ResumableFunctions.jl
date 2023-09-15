@@ -159,7 +159,11 @@ function fsmi_generator(world::UInt, source::LineNumberNode, passtype, fsmitype,
     cislots = Dict(zip(ci.slotnames, ci.slottypes))
     slots = [get(cislots, arg, Any) for arg in _tfieldnames(fsmitype)[2:end]]
     stub = Core.GeneratedFunctionStub(identity, Core.svec(:pass, :fsmi, :fargs), Core.svec())
-    exprs = stub(world, source, :(return fsmi{$(slots...)}()))
+    if isempty(slots)
+      exprs = stub(world, source, :(return fsmi()))
+    else
+      exprs = stub(world, source, :(return fsmi{$(slots...)}()))
+    end
     # lower codeinfo to pass world age and invalidation edges
     ci = ccall(:jl_expand_and_resolve, Any, (Any, Any, Any), exprs, passtype.name.module, Core.svec())
     ci.min_world = min_world
