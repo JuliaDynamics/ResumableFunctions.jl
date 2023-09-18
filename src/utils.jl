@@ -175,8 +175,21 @@ function fsmi_generator(world::UInt, source::LineNumberNode, passtype, fsmitype:
     return ci
 end
 
-# low level generated function for caller world age
-@eval function typed_fsmi(fsmi, fargs...)
-    $(Expr(:meta, :generated_only))
-    $(Expr(:meta, :generated, fsmi_generator))
+# JuliaLang/julia#48611: world age is exposed to generated functions, and should be used
+if fieldcount(Core.GeneratedFunctionStub) == 3
+  # low level generated function for caller world age
+  @eval function typed_fsmi(fsmi, fargs...)
+      $(Expr(:meta, :generated_only))
+      $(Expr(:meta, :generated, fsmi_generator))
+  end
+else
+  # runtime fallback function
+  function typed_fsmi(fsmi, fargs...)
+    slots = fill(Any, length(fieldnames(fsmi))-1)
+    if isempty(slots)
+      return fsmi()
+    else
+      return fsmi{slots...}()
+    end
+  end
 end
