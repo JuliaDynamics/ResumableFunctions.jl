@@ -152,14 +152,26 @@ function fsmi_generator(world::UInt, source::LineNumberNode, passtype, fsmitype:
     # get typed code of the inference function evaluated in get_slots
     # but this time with concrete argument types
     tt = Base.to_tuple_type(fargtypes)
-    mi, ci, valid_worlds = code_typed_by_type(tt; world, optimize=false)
-    (; min_world, max_world) = valid_worlds
-    # extract slot types
-    cislots = Dict(zip(ci.slotnames, ci.slottypes))
-    slots = map(fieldnames(T)[2:end]) do slot
-      s = get(cislots, slot, Any)
-      Core.Compiler.widenconst(s)
+    mi, ci, (; min_world, max_world) = try
+      code_typed_by_type(tt; world, optimize=false)
+    catch err # inference failed, return generic type
+      Core.println(err)
+      slots = fieldtypes(T)[2:end]
+      stub = Core.GeneratedFunctionStub(identity, Core.svec(:pass, :fsmi, :fargs), Core.svec())
+      if isempty(slots)
+        return stub(world, source, :(return $T()))
+      else
+        return stub(world, source, :(return $T{$(slots...)}()))
+      end
     end
+    # extract slot types
+    cislots = Dict{Symbol, Any}()
+    for (name, type) in collect(zip(ci.slotnames, ci.slottypes))
+      # take care to widen types that are unstable or Const
+      type = Core.Compiler.widenconst(type)
+      cislots[name] = Union{type, get(cislots, name, Union{})}
+    end
+    slots = map(slot->get(cislots, slot, Any), fieldnames(T)[2:end])
     # generate code to instantiate the concrete type
     stub = Core.GeneratedFunctionStub(identity, Core.svec(:pass, :fsmi, :fargs), Core.svec())
     if isempty(slots)
