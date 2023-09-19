@@ -122,44 +122,31 @@ end
 # adapted from Base to handle world age
 function code_typed_by_type(@nospecialize(tt::Type);
                             optimize::Bool=true,
-                            debuginfo::Symbol=:default,
                             world::UInt=Base.get_world_counter(),
                             interp::Core.Compiler.AbstractInterpreter=Core.Compiler.NativeInterpreter(world))
-    if isdefined(Base, :IRShow)
-        debuginfo = Base.IRShow.debuginfo(debuginfo)
-    elseif debuginfo === :default
-        debuginfo = :source
-    end
-    if debuginfo !== :source && debuginfo !== :none
-        throw(ArgumentError("'debuginfo' must be either :source or :none"))
-    end
     tt = Base.to_tuple_type(tt)
-    min_world = Ref{UInt}(typemin(UInt))
-    max_world = Ref{UInt}(typemax(UInt))
-    match = ccall(:jl_gf_invoke_lookup_worlds, Any,
-              (Any, Any, Csize_t, Ref{Csize_t}, Ref{Csize_t}),
-              tt, #=mt=# nothing, world, min_world, max_world)
+    match, valid_worlds = Core.Compiler.findsup(tt, Core.Compiler.InternalMethodTable(world))
     meth = Base.func_for_method_checked(match.method, tt, match.sparams)
-    (code, ty) = Core.Compiler.typeinf_code(interp, meth, match.spec_types, match.sparams, optimize)
-    if code === nothing
-        ast = meth
-    else
-        debuginfo === :none && Base.remove_linenums!(code)
-        ast = code
-    end
-    mi = ccall(:jl_specializations_get_linfo, Ref{Core.MethodInstance},
-            (Any, Any, Any), match.method, match.spec_types, match.sparams)
-    return mi, ast, min_world[], max_world[]
+    frame = Core.Compiler.typeinf_frame(interp, meth, match.spec_types, match.sparams, optimize)
+    frame === nothing && return nothing # inference failed
+    return frame.linfo, frame.src, valid_worlds
 end
 
 function fsmi_generator(world::UInt, source::LineNumberNode, passtype, fsmitype::Type{Type{T}}, fargtypes) where T
     @nospecialize
     tt = Base.to_tuple_type(fargtypes)
-    mi, ci, min_world, max_world = code_typed_by_type(tt; world, optimize=false)
+    ret = code_typed_by_type(tt; world, optimize=false)
+    if ret === nothing
+        # code generation failed – TODO make it raise an appropriate error
+        Core.println("inference failed")
+        error("")
+    end
+    mi, ci, valid_worlds = ret
+    (; min_world, max_world) = valid_worlds
     cislots = Dict(zip(ci.slotnames, ci.slottypes))
     slots = map(fieldnames(T)[2:end]) do slot
       s = get(cislots, slot, Any)
-      s isa Core.Const ? typeof(s.val) : s
+      Core.Compiler.widenconst(s)
     end
     stub = Core.GeneratedFunctionStub(identity, Core.svec(:pass, :fsmi, :fargs), Core.svec())
     if isempty(slots)
