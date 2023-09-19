@@ -142,6 +142,7 @@ function code_typed_by_type(@nospecialize(tt::Type);
     meth = Base.func_for_method_checked(match.method, tt, match.sparams)
     # run inference, normally not allowed in generated functions
     frame = Core.Compiler.typeinf_frame(interp, meth, match.spec_types, match.sparams, optimize)
+    valid_worlds = Core.Compiler.intersect(valid_worlds, frame.valid_worlds)
     frame === nothing && error("inference failed")
     return frame.linfo, frame.src, valid_worlds
 end
