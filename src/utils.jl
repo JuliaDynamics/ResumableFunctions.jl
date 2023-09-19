@@ -58,29 +58,41 @@ const unused = (Symbol("#temp#"), Symbol("_"), Symbol(""), Symbol("#unused#"), S
 Function returning the slots of a function definition
 """
 function get_slots(func_def::Dict, args::Dict{Symbol, Any}, mod::Module)
+  slots = Dict{Symbol, Any}()
   func_def[:name] = gensym()
   func_def[:args] = (func_def[:args]..., func_def[:kwargs]...)
   func_def[:kwargs] = []
+  # replace yield with inference barrier
   func_def[:body] = postwalk(transform_yield, func_def[:body])
+  # collect items to skip
   nosaves = Set{Symbol}()
   func_def[:body] = postwalk(x->transform_nosave(x, nosaves), func_def[:body])
+  # eval function
   func_expr = combinedef(func_def) |> flatten
   @eval(mod, @noinline $func_expr)
+  # get typed code
   codeinfos = @eval(mod, code_typed($(func_def[:name]), Tuple; optimize=false))
-  slots = Set{Symbol}()
+  # extract slot names and types
   for codeinfo in codeinfos
-    for slot in codeinfo.first.slotnames
-      slot ∉ nosaves && slot ∉ unused && push!(slots, slot)
+    for (name, type) in collect(zip(codeinfo.first.slotnames, codeinfo.first.slottypes))
+      name ∉ nosaves && name ∉ unused && (slots[name] = Union{type, get(slots, name, Union{})})
     end
   end
+  # remove `catch exc` statements
   postwalk(x->remove_catch_exc(x, slots), func_def[:body])
+  # set error branches to Any
+  for (key, val) in slots
+    if val === Union{}
+      slots[key] = Any
+    end
+  end
   return func_def[:name], slots
 end
 
 """
 Function removing the `exc` symbol of a `catch exc` statement of a list of slots.
 """
-function remove_catch_exc(expr, slots::Set{Symbol})
+function remove_catch_exc(expr, slots::Dict{Symbol, Any})
   @capture(expr, (try body__ catch exc_; handling__ end) | (try body__ catch exc_; handling__ finally always__ end)) && delete!(slots, exc)
   expr
 end
@@ -119,35 +131,35 @@ end
   ret
 end
 
-# adapted from Base to handle world age
+# this is similar to code_typed but it considers the world age
 function code_typed_by_type(@nospecialize(tt::Type);
                             optimize::Bool=true,
                             world::UInt=Base.get_world_counter(),
                             interp::Core.Compiler.AbstractInterpreter=Core.Compiler.NativeInterpreter(world))
     tt = Base.to_tuple_type(tt)
+    # look up the method
     match, valid_worlds = Core.Compiler.findsup(tt, Core.Compiler.InternalMethodTable(world))
     meth = Base.func_for_method_checked(match.method, tt, match.sparams)
+    # run inference, normally not allowed in generated functions
     frame = Core.Compiler.typeinf_frame(interp, meth, match.spec_types, match.sparams, optimize)
-    frame === nothing && return nothing # inference failed
+    frame === nothing && error("inference failed")
     return frame.linfo, frame.src, valid_worlds
 end
 
 function fsmi_generator(world::UInt, source::LineNumberNode, passtype, fsmitype::Type{Type{T}}, fargtypes) where T
     @nospecialize
+    # get typed code of the inference function evaluated in get_slots
+    # but this time with concrete argument types
     tt = Base.to_tuple_type(fargtypes)
-    ret = code_typed_by_type(tt; world, optimize=false)
-    if ret === nothing
-        # code generation failed – TODO make it raise an appropriate error
-        Core.println("inference failed")
-        error("")
-    end
-    mi, ci, valid_worlds = ret
+    mi, ci, valid_worlds = code_typed_by_type(tt; world, optimize=false)
     (; min_world, max_world) = valid_worlds
+    # extract slot types
     cislots = Dict(zip(ci.slotnames, ci.slottypes))
     slots = map(fieldnames(T)[2:end]) do slot
       s = get(cislots, slot, Any)
       Core.Compiler.widenconst(s)
     end
+    # generate code to instantiate the concrete type
     stub = Core.GeneratedFunctionStub(identity, Core.svec(:pass, :fsmi, :fargs), Core.svec())
     if isempty(slots)
       exprs = stub(world, source, :(return $T()))
@@ -163,20 +175,21 @@ function fsmi_generator(world::UInt, source::LineNumberNode, passtype, fsmitype:
 end
 
 # JuliaLang/julia#48611: world age is exposed to generated functions, and should be used
-if fieldcount(Core.GeneratedFunctionStub) == 3
-  # low level generated function for caller world age
+if VERSION >= v"1.10.0-DEV.873"
+  # This is like @generated, but it receives the world age of the caller
+  # which we need to do inference safely and correctly
   @eval function typed_fsmi(fsmi, fargs...)
       $(Expr(:meta, :generated_only))
       $(Expr(:meta, :generated, fsmi_generator))
   end
 else
   # runtime fallback function
-  function typed_fsmi(fsmi, fargs...)
-    slots = fill(Any, length(fieldnames(fsmi))-1)
+  function typed_fsmi(fsmi::Type{T}, fargs...)::T where T
+    slots = fieldtypes(fsmi)[2:end]
     if isempty(slots)
-      return fsmi()
+      return T()
     else
-      return fsmi{slots...}()
+      return T{slots...}()
     end
   end
 end

@@ -42,9 +42,10 @@ macro resumable(expr::Expr)
   inferfn, slots = get_slots(copy(func_def), arg_dict, __module__)
   type_name = gensym(Symbol(func_def[:name], :_FSMI))
   constr_def = copy(func_def)
-  slot_T = [gensym(s) for s in slots]
-  struct_name = :($type_name{$(func_def[:whereparams]...), $(slot_T...)} <: ResumableFunctions.FiniteStateMachineIterator{$rtype})
-  constr_def[:whereparams] = (func_def[:whereparams]..., slot_T...)
+  slot_T = [gensym(s) for s in keys(slots)]
+  slot_T_sub = [:($k <: $v) for (k, v) in zip(slot_T, values(slots))]
+  struct_name = :($type_name{$(func_def[:whereparams]...), $(slot_T_sub...)} <: ResumableFunctions.FiniteStateMachineIterator{$rtype})
+  constr_def[:whereparams] = (func_def[:whereparams]..., slot_T_sub...)
   if isempty(params) && isempty(slot_T)
     constr_def[:name] = :($type_name)
   else
@@ -62,7 +63,7 @@ macro resumable(expr::Expr)
   type_expr = :(
     mutable struct $struct_name
       _state :: UInt8
-      $((:($slotname :: $slottype) for (slotname, slottype) in zip(slots, slot_T))...)
+      $((:($slotname :: $slottype) for (slotname, slottype) in zip(keys(slots), slot_T))...)
       $(constr_expr)
     end
   )
@@ -89,7 +90,7 @@ macro resumable(expr::Expr)
     func_def[:name] = :((_fsmi::$type_name{$(params...)}))
   end
   func_def[:rtype] = nothing
-  func_def[:body] = postwalk(x->transform_slots(x, slots), func_def[:body])
+  func_def[:body] = postwalk(x->transform_slots(x, keys(slots)), func_def[:body])
   func_def[:body] = postwalk(transform_arg, func_def[:body])
   func_def[:body] = postwalk(transform_exc, func_def[:body]) |> flatten
   ui8 = BoxedUInt8(zero(UInt8))
