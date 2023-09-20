@@ -152,7 +152,7 @@ function fsmi_generator(world::UInt, source::LineNumberNode, passtype, fsmitype:
     # get typed code of the inference function evaluated in get_slots
     # but this time with concrete argument types
     tt = Base.to_tuple_type(fargtypes)
-    mi, ci, (; min_world, max_world) = try
+    mi, ci, valid_worlds = try
       code_typed_by_type(tt; world, optimize=false)
     catch err # inference failed, return generic type
       Core.println(err)
@@ -164,6 +164,8 @@ function fsmi_generator(world::UInt, source::LineNumberNode, passtype, fsmitype:
         return stub(world, source, :(return $T{$(slots...)}()))
       end
     end
+    min_world = valid_worlds.min_world
+    max_world = valid_worlds.max_world
     # extract slot types
     cislots = Dict{Symbol, Any}()
     for (name, type) in collect(zip(ci.slotnames, ci.slottypes))
