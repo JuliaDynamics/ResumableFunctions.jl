@@ -22,7 +22,7 @@ end
     rep = report_package("ResumableFunctions";
         report_pass=MayThrowIsOk(),
         ignored_modules=(
-
+            Core.Compiler,
         )
     )
     @show rep
