@@ -199,11 +199,6 @@ if VERSION >= v"1.10.0-DEV.873"
 else
   # runtime fallback function
   function typed_fsmi(fsmi::Type{T}, fargs...)::T where T
-    slots = fieldtypes(T)[2:end]
-    if isempty(slots)
-      return T()
-    else
-      return T{slots...}()
-    end
+    return T()
   end
 end

@@ -59,12 +59,26 @@ macro resumable(expr::Expr)
     fsmi._state = 0x00
     fsmi
   end
+  if !isempty(slot_T)
+    bareconstr_def = copy(constr_def)
+    if isempty(params)
+      bareconstr_def[:name] = :($type_name)
+    else
+      bareconstr_def[:name] = :($type_name{$(params...)})
+    end
+    bareconstr_def[:whereparams] = func_def[:whereparams]
+    bareconstr_def[:body] = :($(bareconstr_def[:name]){$(values(slots)...)}())
+    bareconst_expr = combinedef(bareconstr_def) |> flatten
+  else
+    bareconst_expr = nothing
+  end
   constr_expr = combinedef(constr_def) |> flatten
   type_expr = :(
     mutable struct $struct_name
       _state :: UInt8
       $((:($slotname :: $slottype) for (slotname, slottype) in zip(keys(slots), slot_T))...)
       $(constr_expr)
+      $(bareconst_expr)
     end
   )
   @debug type_expr|>MacroTools.striplines
