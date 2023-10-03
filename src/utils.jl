@@ -197,7 +197,7 @@ if VERSION >= v"1.10.0-DEV.873"
       $(Expr(:meta, :generated, fsmi_generator))
   end
 else
-  # runtime fallback function
+  # runtime fallback function that uses the fallback constructor with generic slot types
   function typed_fsmi(fsmi::Type{T}, fargs...)::T where T
     return T()
   end

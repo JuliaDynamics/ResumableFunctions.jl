@@ -46,6 +46,7 @@ macro resumable(expr::Expr)
   slot_T_sub = [:($k <: $v) for (k, v) in zip(slot_T, values(slots))]
   struct_name = :($type_name{$(func_def[:whereparams]...), $(slot_T_sub...)} <: ResumableFunctions.FiniteStateMachineIterator{$rtype})
   constr_def[:whereparams] = (func_def[:whereparams]..., slot_T_sub...)
+  # if there are no where or slot type parameters, we need to use the bare type
   if isempty(params) && isempty(slot_T)
     constr_def[:name] = :($type_name)
   else
@@ -59,6 +60,8 @@ macro resumable(expr::Expr)
     fsmi._state = 0x00
     fsmi
   end
+  # the bare/fallback version of the constructor supplies default slot type parameters
+  # we only need to define this if there there are actually slot defaults to be filled
   if !isempty(slot_T)
     bareconstr_def = copy(constr_def)
     if isempty(params)
