@@ -247,8 +247,10 @@ end
 """
 Function that replaces a `@yield ret` or `@yield` statement with
 ```julia
-  return ret
+  Base.inferencebarrier(ret)
 ```
+This version is used for inference only.
+It makes sure that `val = @yield ret` is inferred as `Any` rather than `typeof(ret)`.
 """
 function transform_yield(expr)
   _is_yield(expr) || return expr

@@ -28,6 +28,12 @@ function get_args(func_def::Dict)
   arg_list, kwarg_list, arg_dict
 end
 
+"""
+Takes a function definition and returns the expressions needed to forward the arguments to an inner function.
+For example `function foo(a, ::Int, c...; x, y=1, z...)` will
+1. moodify the function to `gensym()` nameless arguments
+2. return `(:a, gensym(), :(c...)), (:x, :y, :(z...)))`
+"""
 function forward_args(func_def)
   args = []
   map!(func_def[:args], func_def[:args]) do arg
@@ -94,16 +100,6 @@ Function removing the `exc` symbol of a `catch exc` statement of a list of slots
 """
 function remove_catch_exc(expr, slots::Dict{Symbol, Any})
   @capture(expr, (try body__ catch exc_; handling__ end) | (try body__ catch exc_; handling__ finally always__ end)) && delete!(slots, exc)
-  expr
-end
-
-"""
-Function changing the type of a slot `arg` of a `arg = @yield ret` or `arg = @yield` statement to `Any`.
-"""
-function make_arg_any(expr, slots::Dict{Symbol, Any})
-  @capture(expr, arg_ = ex_) || return expr
-  _is_yield(ex) || return expr
-  slots[arg] = Any
   expr
 end
 
