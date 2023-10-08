@@ -216,3 +216,14 @@ end
 @testset "test_docstring" begin
 @test (@doc fwithdoc) == (@doc gwithdoc)
 end
+
+@resumable function test_unstable(a::Int)
+  for i in 1:a
+    a = "number $i"
+    @yield a
+  end
+end
+
+@testset "test_unstable" begin
+  @test collect(test_unstable(3)) == ["number 1", "number 2", "number 3"]
+end

@@ -1,5 +1,8 @@
 # News
 
+## v0.6.6 - TBD
+
+- Improved performance on Julia nightly by more precise inference of slot types
 
 ## v0.6.5 - 2023-09-06
 
