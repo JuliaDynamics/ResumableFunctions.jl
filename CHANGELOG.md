@@ -1,12 +1,12 @@
 # News
 
-## v0.6.6 - TBD
+## v0.6.6 - 2023-10-08
 
-- Improved performance on Julia nightly by more precise inference of slot types
+- Significantly improved performance on Julia 1.10 and newer by more precise inference of slot types.
 
 ## v0.6.5 - 2023-09-06
 
-- Fix to a performance regresion
+- Fix to a performance regresion originally introduced by `@yieldfrom`.
 
 ## v0.6.4 - 2023-08-08
 
