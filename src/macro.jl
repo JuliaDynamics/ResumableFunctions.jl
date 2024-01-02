@@ -39,18 +39,15 @@ macro resumable(expr::Expr)
   func_def[:body] = postwalk(transform_arg_yieldfrom, func_def[:body])
   func_def[:body] = postwalk(transform_yieldfrom, func_def[:body])
   func_def[:body] = postwalk(x->transform_for(x, ui8), func_def[:body])
-  inferfn, slots = get_slots(copy(func_def), arg_dict, __module__)
+  slots = get_slots(copy(func_def), arg_dict, __module__)
   type_name = gensym(Symbol(func_def[:name], :_FSMI))
   constr_def = copy(func_def)
-  slot_T = [gensym(s) for s in keys(slots)]
-  slot_T_sub = [:($k <: $v) for (k, v) in zip(slot_T, values(slots))]
-  struct_name = :($type_name{$(func_def[:whereparams]...), $(slot_T_sub...)} <: ResumableFunctions.FiniteStateMachineIterator{$rtype})
-  constr_def[:whereparams] = (func_def[:whereparams]..., slot_T_sub...)
-  # if there are no where or slot type parameters, we need to use the bare type
-  if isempty(params) && isempty(slot_T)
+  if isempty(params)
+    struct_name = :($type_name <: ResumableFunctions.FiniteStateMachineIterator{$rtype})
     constr_def[:name] = :($type_name)
   else
-    constr_def[:name] = :($type_name{$(params...), $(slot_T...)})
+    struct_name = :($type_name{$(func_def[:whereparams]...)} <: ResumableFunctions.FiniteStateMachineIterator{$rtype})
+    constr_def[:name] = :($type_name{$(params...)})
   end
   constr_def[:args] = tuple()
   constr_def[:kwargs] = tuple()
@@ -60,44 +57,32 @@ macro resumable(expr::Expr)
     fsmi._state = 0x00
     fsmi
   end
-  # the bare/fallback version of the constructor supplies default slot type parameters
-  # we only need to define this if there there are actually slot defaults to be filled
-  if !isempty(slot_T)
-    bareconstr_def = copy(constr_def)
-    if isempty(params)
-      bareconstr_def[:name] = :($type_name)
-    else
-      bareconstr_def[:name] = :($type_name{$(params...)})
-    end
-    bareconstr_def[:whereparams] = func_def[:whereparams]
-    bareconstr_def[:body] = :($(bareconstr_def[:name]){$(values(slots)...)}())
-    bareconst_expr = combinedef(bareconstr_def) |> flatten
-  else
-    bareconst_expr = nothing
-  end
   constr_expr = combinedef(constr_def) |> flatten
   type_expr = :(
     mutable struct $struct_name
       _state :: UInt8
-      $((:($slotname :: $slottype) for (slotname, slottype) in zip(keys(slots), slot_T))...)
+      $((:($slotname :: $slottype) for (slotname, slottype) in slots)...)
       $(constr_expr)
-      $(bareconst_expr)
     end
   )
   @debug type_expr|>MacroTools.striplines
   call_def = copy(func_def)
-  call_def[:rtype] = nothing
   if isempty(params)
-    fsmi_name = type_name
+    call_def[:rtype] = nothing
+    call_def[:body] = quote
+      fsmi = $type_name()
+      $((arg !== Symbol("_") ? :(fsmi.$arg = $arg) : nothing for arg in args)...)
+      $((:(fsmi.$arg = $arg) for arg in kwargs)...)
+      fsmi
+    end
   else
-    fsmi_name = :($type_name{$(params...)})
-  end
-  fwd_args, fwd_kwargs = forward_args(call_def)
-  call_def[:body] = quote
-    fsmi = ResumableFunctions.typed_fsmi($fsmi_name, $inferfn, $(fwd_args...), $(fwd_kwargs...))
-    $((arg !== Symbol("_") ? :(fsmi.$arg = $arg) : nothing for arg in args)...)
-    $((:(fsmi.$arg = $arg) for arg in kwargs)...)
-    fsmi
+    call_def[:rtype] = nothing
+    call_def[:body] = quote
+      fsmi = $type_name{$(params...)}()
+      $((arg !== Symbol("_") ? :(fsmi.$arg = $arg) : nothing for arg in args)...)
+      $((:(fsmi.$arg = $arg) for arg in kwargs)...)
+      fsmi
+    end
   end
   call_expr = combinedef(call_def) |> flatten
   @debug call_expr|>MacroTools.striplines
