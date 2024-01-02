@@ -18,3 +18,19 @@ end
 end
 
 @test (@allocated test_resumable(80))==0
+
+
+@resumable function cumsum(iter)
+  acc = zero(eltype(iter))
+  for i in iter
+    acc += i
+    @yield acc
+  end
+end
+
+# versions that support generating inferred code
+if VERSION >= v"1.10.0-DEV.873"
+  cs = cumsum(1:1000)
+  @allocated cs() # shake out the compilation overhead
+  @test_broken (@allocated cs())==0
+end
