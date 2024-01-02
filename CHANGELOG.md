@@ -1,5 +1,9 @@
 # News
 
+## v0.6.7 - 2024-01-02
+
+- Fix stack overflow errors by reverting the changes introduced in v0.6.6.
+
 ## v0.6.6 - 2023-10-08
 
 - Significantly improved performance on Julia 1.10 and newer by more precise inference of slot types.
