@@ -195,6 +195,11 @@ if VERSION >= v"1.10.0-DEV.873"
 else
   # runtime fallback function that uses the fallback constructor with generic slot types
   function typed_fsmi(fsmi::Type{T}, fargs...)::T where T
-    return T()
+    return typed_fsmi_fallback(fsmi, fargs...)
   end
+end
+
+# a fallback function that uses the fallback constructor with generic slot types -- useful for older versions of Julia or for situations where our current custom inference struggles
+function typed_fsmi_fallback(fsmi::Type{T}, fargs...)::T where T
+  return T()
 end
