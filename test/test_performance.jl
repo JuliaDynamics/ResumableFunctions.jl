@@ -32,5 +32,5 @@ end
 if VERSION >= v"1.10.0-DEV.873"
   cs = cumsum(1:1000)
   @allocated cs() # shake out the compilation overhead
-  @test_broken (@allocated cs())==0
+  @test (@allocated cs())==0
 end
