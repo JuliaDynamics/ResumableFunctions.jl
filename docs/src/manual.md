@@ -272,7 +272,7 @@ DocTestSetup = nothing
 
 ## Iterator interface
 
-The interator interface is implemented for a `@resumable function`:
+The iterator interface is implemented for a `@resumable function`:
 
 ```@meta
 DocTestSetup = quote

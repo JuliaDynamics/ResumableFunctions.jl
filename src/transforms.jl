@@ -66,7 +66,7 @@ end
 
 
 """
-Function that replaces a `for` loop by a corresponding `while` loop saving explicitely the *iterator* and its *state*.
+Function that replaces a `for` loop by a corresponding `while` loop saving explicitly the *iterator* and its *state*.
 """
 function transform_for(expr, ui8::BoxedUInt8)
   @capture(expr, for element_ in iterator_ body_ end) || return expr

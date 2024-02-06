@@ -10,7 +10,7 @@
 
 ## v0.6.5 - 2023-09-06
 
-- Fix to a performance regresion originally introduced by `@yieldfrom`.
+- Fix to a performance regression originally introduced by `@yieldfrom`.
 
 ## v0.6.4 - 2023-08-08
 
@@ -57,7 +57,7 @@
   * introduction of `let` block to allow variables not te be persisted between `@resumable function` calls (EXPERIMENTAL).
   * the `eltype` of a `@resumable function` based iterator is its return type if specified, otherwise `Any`.
 
-* 2018: v0.2 the iterator now behaves as a Python generator: only values that are explicitely yielded are generated; the return value is ignored and a warning is generated.
+* 2018: v0.2 the iterator now behaves as a Python generator: only values that are explicitly yielded are generated; the return value is ignored and a warning is generated.
 
 * 2017: v0.1 initial release that is Julia v0.6 compatible:
   * Introduction of the `@resumable` and the `@yield` macros.
