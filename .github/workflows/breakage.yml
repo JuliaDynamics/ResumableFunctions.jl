@@ -1,0 +1,62 @@
+# Ref: https://securitylab.github.com/research/github-actions-preventing-pwn-requests
+# and: https://github.com/JuliaSmoothOptimizers/NLPModels.jl/blob/main/.github/workflows/breakage.yml
+name: Breakage
+
+# read-only repo token
+# no access to secrets
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  break:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        pkg: [
+          "JuliaDynamics/ConcurrentSim.jl",
+          "gerlero/Fronts.jl",
+          "QuantumSavory/QuantumSavory.jl",
+          "Tortar/IteratorSampling.jl",
+          "marcom/FoldRNA.jl",
+          "aclai-lab/ModalDecisionTrees.jl",
+        ]
+        pkgversion: [latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Install Julia
+      - uses: julia-actions/setup-julia@v1
+        with:
+          version: 1
+          arch: x64
+      - uses: julia-actions/cache@v1
+      - uses: julia-actions/julia-buildpkg@v1
+
+      # Breakage test
+      - name: 'Breakage of ${{ matrix.pkg }}, ${{ matrix.pkgversion }} version'
+        env:
+          URL: ${{ matrix.pkg }}
+          VERSION: ${{ matrix.pkgversion }}
+        run: |
+          set -v
+          mkdir -p ./pr
+          echo "${{ github.event.number }}" > ./pr/NR
+          git clone https://github.com/$URL
+          export PKG=$(echo $URL | cut -f2 -d/)
+          cd $PKG
+          TAG=$VERSION
+          export TAG
+          julia -e 'using Pkg;
+            PKG, TAG, VERSION = ENV["PKG"], ENV["TAG"], ENV["VERSION"]
+            joburl = joinpath(ENV["GITHUB_SERVER_URL"], ENV["GITHUB_REPOSITORY"], "actions/runs", ENV["GITHUB_RUN_ID"])
+            open("../pr/$PKG-$VERSION", "w") do io
+                TAG == "no_tag" && error("No tag for $VERSION")
+                pkg"activate .";
+                pkg"instantiate";
+                pkg"dev ../";
+                pkg"build";
+                pkg"test";
+            end'
