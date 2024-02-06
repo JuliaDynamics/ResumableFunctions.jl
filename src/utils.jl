@@ -31,7 +31,7 @@ end
 """
 Takes a function definition and returns the expressions needed to forward the arguments to an inner function.
 For example `function foo(a, ::Int, c...; x, y=1, z...)` will
-1. moodify the function to `gensym()` nameless arguments
+1. modify the function to `gensym()` nameless arguments
 2. return `(:a, gensym(), :(c...)), (:x, :y, :(z...)))`
 """
 function forward_args(func_def)

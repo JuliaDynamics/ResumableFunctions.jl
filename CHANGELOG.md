@@ -1,5 +1,13 @@
 # News
 
+## v0.6.8 - 2024-02-07
+
+- Redeploy the improved performance from v0.6.6 without the issues that caused them to be reverted in v0.6.7. The issue stemmed from lack of support for recursive resumable functions in the v0.6.6 improvements.
+- Significant additions to the CI and testing of the package to avoid such issues in the future.
+## v0.6.7 - 2024-01-02
+
+- Fix stack overflow errors by reverting the changes introduced in v0.6.6.
+
 ## v0.6.6 - 2023-10-08
 
 - Significantly improved performance on Julia 1.10 and newer by more precise inference of slot types.
