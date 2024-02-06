@@ -18,9 +18,8 @@ jobs:
           "JuliaDynamics/ConcurrentSim.jl",
           "gerlero/Fronts.jl",
           "QuantumSavory/QuantumSavory.jl",
-          "Tortar/IteratorSampling.jl",
           "marcom/FoldRNA.jl",
-          "aclai-lab/ModalDecisionTrees.jl",
+          "Tortar/IteratorSampling.jl",
         ]
         pkgversion: [latest]
 
