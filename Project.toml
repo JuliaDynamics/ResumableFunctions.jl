@@ -11,5 +11,5 @@ version = "0.6.7"
 MacroTools = "1914dd2f-81c6-5fcd-8719-6d5c9610ff09"
 
 [compat]
-MacroTools = "0.5"
+MacroTools = "0.5.6"
 julia = "1.6"
