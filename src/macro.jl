@@ -127,19 +127,6 @@ macro resumable(expr::Expr)
   func_def[:args] = [Expr(:kw, :(_arg::Any), nothing)]
   func_def[:kwargs] = []
   func_expr = combinedef(func_def) |> flatten
-  #= # This is a failed attempt at short-circuiting the inference pass for recursive resumable functions
-  call_def_recursive_escape = deepcopy(call_def) # we need an escape hatch for recursive resumable functions because our current inference analysis gets confused by them
-  call_def_recursive_escape[:name] = gensym(Symbol(call_def[:name],:_recursive_escape))
-  call_def_recursive_escape[:body] = quote
-    fsmi = ResumableFunctions.typed_fsmi_fallback($fsmi_name, $inferfn, $(fwd_args...), $(fwd_kwargs...))
-    $((arg !== Symbol("_") ? :(fsmi.$arg = $arg) : nothing for arg in args)...)
-    $((:(fsmi.$arg = $arg) for arg in kwargs)...)
-    fsmi
-  end
-  call_expr_recursive_escape = combinedef(call_def_recursive_escape) |> flatten
-  func_def[:body] = postwalk(x->x==call_def[:name] ? call_def_recursive_escape[:name] : x, func_def[:body]) # ensure recursion does not get analyzed by our custom inference pass as it struggles with it
-  =#
-  # Given that the above does not fully work, here we simply disable inference in the presence of recursion
   if inexpr(func_def[:body], call_def[:name])
     @debug "recursion is present in a resumable function definition: falling back to no inference"
     call_expr = postwalk(x->x==:(ResumableFunctions.typed_fsmi) ? :(ResumableFunctions.typed_fsmi_fallback) : x, call_expr)
