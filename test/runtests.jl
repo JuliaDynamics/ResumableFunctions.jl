@@ -31,6 +31,7 @@ println("Starting tests with $(Threads.nthreads()) threads out of `Sys.CPU_THREA
 @doset "typeparams"
 @doset "repeated_variable"
 @doset "inference_recursive_calls"
+@doset "selfreferencing_functional"
 @doset "coverage_preservation"
 @doset "performance"
 VERSION >= v"1.8" && @doset "doctests"

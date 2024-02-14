@@ -31,21 +31,35 @@ Macro that transforms a function definition in a finite-statemachine:
 """
 macro resumable(expr::Expr)
   expr.head !== :function && error("Expression is not a function definition!")
+
+  # The function that executes a step of the finite state machine
   func_def = splitdef(expr)
   rtype = :rtype in keys(func_def) ? func_def[:rtype] : Any
   args, kwargs, arg_dict = get_args(func_def)
   params = ((get_param_name(param) for param in func_def[:whereparams])...,)
+
+  # Initial preparation of the function stepping through the finite state machine and extraction of local variables and their types
   ui8 = BoxedUInt8(zero(UInt8))
   func_def[:body] = postwalk(transform_arg_yieldfrom, func_def[:body])
   func_def[:body] = postwalk(transform_yieldfrom, func_def[:body])
   func_def[:body] = postwalk(x->transform_for(x, ui8), func_def[:body])
   inferfn, slots = get_slots(copy(func_def), arg_dict, __module__)
+
+  # check if the resumable function is a callable struct instance (a functional) that is referencing itself
+  isfunctional = @capture(func_def[:name], functional_::T_) && inexpr(func_def[:body], functional)
+  if isfunctional
+    slots[functional] = T
+    push!(args, functional)
+  end
+
+  # The finite state machine structure definition
   type_name = gensym(Symbol(func_def[:name], :_FSMI))
   constr_def = copy(func_def)
   slot_T = [gensym(s) for s in keys(slots)]
   slot_T_sub = [:($k <: $v) for (k, v) in zip(slot_T, values(slots))]
   struct_name = :($type_name{$(func_def[:whereparams]...), $(slot_T_sub...)} <: ResumableFunctions.FiniteStateMachineIterator{$rtype})
   constr_def[:whereparams] = (func_def[:whereparams]..., slot_T_sub...)
+
   # if there are no where or slot type parameters, we need to use the bare type
   if isempty(params) && isempty(slot_T)
     constr_def[:name] = :($type_name)
@@ -60,6 +74,7 @@ macro resumable(expr::Expr)
     fsmi._state = 0x00
     fsmi
   end
+
   # the bare/fallback version of the constructor supplies default slot type parameters
   # we only need to define this if there there are actually slot defaults to be filled
   if !isempty(slot_T)
@@ -85,6 +100,8 @@ macro resumable(expr::Expr)
     end
   )
   @debug type_expr|>MacroTools.striplines
+
+  # The "original" function that now is simply a wrapper around the construction of the finite state machine
   call_def = copy(func_def)
   call_def[:rtype] = nothing
   if isempty(params)
@@ -93,6 +110,7 @@ macro resumable(expr::Expr)
     fsmi_name = :($type_name{$(params...)})
   end
   fwd_args, fwd_kwargs = forward_args(call_def)
+  isfunctional && push!(fwd_args, functional)
   call_def[:body] = quote
     fsmi = ResumableFunctions.typed_fsmi($fsmi_name, $inferfn, $(fwd_args...), $(fwd_kwargs...))
     $((arg !== Symbol("_") ? :(fsmi.$arg = $arg) : nothing for arg in args)...)
@@ -101,6 +119,8 @@ macro resumable(expr::Expr)
   end
   call_expr = combinedef(call_def) |> flatten
   @debug call_expr|>MacroTools.striplines
+
+  # Finalizing the function stepping through the finite state machine
   if isempty(params)
     func_def[:name] = :((_fsmi::$type_name))
   else
@@ -127,15 +147,20 @@ macro resumable(expr::Expr)
   func_def[:args] = [Expr(:kw, :(_arg::Any), nothing)]
   func_def[:kwargs] = []
   func_expr = combinedef(func_def) |> flatten
-  if inexpr(func_def[:body], call_def[:name])
-    @debug "recursion is present in a resumable function definition: falling back to no inference"
+
+  if inexpr(func_def[:body], call_def[:name]) || isfunctional
+    @debug "recursion or self-reference is present in a resumable function definition: falling back to no inference"
     call_expr = postwalk(x->x==:(ResumableFunctions.typed_fsmi) ? :(ResumableFunctions.typed_fsmi_fallback) : x, call_expr)
   end
   @debug func_expr|>MacroTools.striplines
+
+  # The final expression:
+  # - the finite state machine struct
+  # - the function stepping through the states
+  # - the "original" function which now is a simple wrapper around the construction of the finite state machine
   esc(quote
     $type_expr
     $func_expr
     Base.@__doc__($call_expr)
-    #$call_expr_recursive_escape
   end)
 end

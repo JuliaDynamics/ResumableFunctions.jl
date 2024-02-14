@@ -6,7 +6,13 @@ module ResumableFunctions
   using MacroTools
   using MacroTools: combinedef, combinearg, flatten, postwalk
 
-  export @resumable, @yield, @nosave, @yieldfrom 
+  export @resumable, @yield, @nosave, @yieldfrom
+
+  function __init__()
+    STDERR_HAS_COLOR[] = get(stderr, :color, false)
+  end
+
+  include("safe_logging.jl")
 
   include("types.jl")
   include("transforms.jl")
