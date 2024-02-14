@@ -150,8 +150,8 @@ function fsmi_generator(world::UInt, source::LineNumberNode, passtype, fsmitype:
     mi, ci, valid_worlds = try
       code_typed_by_type(tt; world, optimize=false)
     catch err # inference failed, return generic type
-      Core.println("inference of a @resumable function failed -- a slower fallback will be used and everything will still work, however please consider reporting this to the developers of ResumableFunctions.jl so that we can debug and increase performance")
-      Core.println(err)
+      @safe_warn "Inference of a @resumable function failed -- a slower fallback will be used and everything will still work, however please consider reporting this to the developers of ResumableFunctions.jl so that we can debug and increase performance"
+      @safe_warn "The error was $err"
       slots = fieldtypes(T)[2:end]
       stub = Core.GeneratedFunctionStub(identity, Core.svec(:pass, :fsmi, :fargs), Core.svec())
       if isempty(slots)
