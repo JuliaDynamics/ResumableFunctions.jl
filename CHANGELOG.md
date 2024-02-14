@@ -1,8 +1,8 @@
 # News
 
-## v0.6.9 - 2024-02
+## v0.6.9 - 2024-02-13
 
-- Self-referencing functionals (callable structs) are now supported as resumable functions, e.g. `@resumable (f::A)() return f.property end`. 
+- Self-referencing functionals (callable structs) are now supported as resumable functions, e.g. `@resumable (f::A)() @yield f.property end`.
 
 ## v0.6.8 - 2024-02-11
 
