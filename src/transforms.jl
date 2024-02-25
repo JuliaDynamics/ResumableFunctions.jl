@@ -102,10 +102,10 @@ Function that replaces a variable `x` in an expression by `_fsmi.x` where `x` is
 """
 function transform_slots(expr, symbols)
   expr isa Expr || return expr
-  expr.head === :let && return transform_slots_let(expr, symbols)
+  expr.head === :let && return undo_transform_slots_in_let(expr, symbols) # TODO Because of the use of postwalk, we need to undo some of the transformations that have happened inside the let blocks. Consider using a better structured prewalk instead.
   for i in 1:length(expr.args)
     expr.head === :kw && i === 1 && continue
-    expr.head === Symbol("quote") && continue
+    expr.head === :quote && continue
     expr.args[i] = expr.args[i] isa Symbol && expr.args[i] in symbols ? :(_fsmi.$(expr.args[i])) : expr.args[i]
   end
   expr
@@ -114,24 +114,45 @@ end
 """
 Function that handles `let` block
 """
-function transform_slots_let(expr::Expr, symbols)
-  @capture(expr, let vars_; body_ end)
+function undo_transform_slots_in_let(expr::Expr, symbols)
   locals = Set{Symbol}()
-  (isa(vars, Expr) && vars.head==:(=))  || error("@resumable currently supports only single variable declarations in let blocks, i.e. only let blocks exactly of the form `let i=j; ...; end`. If you need multiple variables, please submit an issue on the issue tracker and consider contributing a patch.")
-  sym = vars.args[1].args[2].value
-  push!(locals, sym)
-  vars.args[1] = sym
-  body = postwalk(x->transform_let(x, locals), :(begin $(body) end))
-  :(let $vars; $body end)
+  @capture(expr, let begin vars__ end; body__ end)
+  # extract locals from the header of the let block
+  newvars = []
+  for var in vars
+    if var.head == :(.) # _fsmi.localsymbol -> localsymbol
+        v = var.args[2].value
+        push!(locals, v)
+        push!(newvars, v)
+    elseif var.head === :(=) # _fsmi.localsymbol = ... -> localsymbol
+        v = var.args[1].args[2].value
+        push!(locals, var.args[1].args[2].value)
+        var.args[1] = v
+        push!(newvars, var)
+    else
+        error("Encountered unexpected expression in a let block inside of a @resumable function. Check for syntax errors independent of the use of @resumable. If there are no syntax errors, a plausible workaround would be to simplify your let expression (and submitting a bug report so we can support more sophisticated let expressions in the future).")
+    end
+  end
+  # extract locals from the body of the let block
+  for var in body
+    if var.head === :(=) # _fsmi.localsymbol = ... -> localsymbol
+      push!(locals, var.args[1].args[2].value)
+    end
+  end
+  locals
+  expr = postwalk(x->remove_fsmi_from_mangled_let_symbols(x, locals), expr)
+  return expr
 end
 
 """
 Function that replaces a variable `_fsmi.x` in an expression by `x` where `x` is a variable declared in a `let` block.
 """
-function transform_let(expr, symbols::Set{Symbol})
-  expr isa Expr || return expr
-  expr.head === :. || return expr
-  expr = expr.args[2].value in symbols ? :($(expr.args[2].value)) : expr
+function remove_fsmi_from_mangled_let_symbols(expr, locals::Set{Symbol})
+  if expr isa Expr && expr.head === :. && expr.args[1] === :_fsmi && expr.args[2].value in locals
+    return expr.args[2].value
+  else
+    return expr
+  end
 end
 
 """
