@@ -20,6 +20,7 @@ jobs:
           "QuantumSavory/QuantumSavory.jl",
           "marcom/FoldRNA.jl",
           "Tortar/IteratorSampling.jl",
+          "JuliaAstro/CCDReduction.jl",
         ]
         pkgversion: [latest]
 
