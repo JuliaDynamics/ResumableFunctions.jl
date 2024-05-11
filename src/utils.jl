@@ -182,6 +182,10 @@ function fsmi_generator(world::UInt, source::LineNumberNode, passtype, fsmitype:
     ci.min_world = min_world
     ci.max_world = max_world
     ci.edges = Core.MethodInstance[mi]
+    if isdefined(Base, :__has_internal_change) && Base.__has_internal_change(v"1.12-alpha", :codeinfonargs)
+      src.nargs = 3
+      src.isva = true
+    end
     return ci
 end
 
