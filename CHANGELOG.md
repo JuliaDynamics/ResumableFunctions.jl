@@ -1,5 +1,9 @@
 # News
 
+## v0.6.10 - 2024-05-11
+
+- Adjust to an internal changes in Julia 1.12 (see julia#54341).
+
 ## v0.6.9 - 2024-02-13
 
 - Self-referencing functionals (callable structs) are now supported as resumable functions, e.g. `@resumable (f::A)() @yield f.property end`.
