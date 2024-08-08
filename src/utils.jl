@@ -208,3 +208,153 @@ end
 function typed_fsmi_fallback(fsmi::Type{T}, fargs...)::T where T
   return T()
 end
+
+mutable struct ScopeTracker
+  i::Int
+  mod::Module
+  scope_stack::Vector
+end
+
+function lookup!(s::Symbol, S::ScopeTracker; new = false)
+  if isdefined(S.mod, s)
+    return s
+  end
+  if !new
+    for D in Iterators.reverse(S.scope_stack)
+      if haskey(D, s)
+        return D[s]
+      end
+    end
+  end
+  D = last(S.scope_stack)
+  new = Symbol(s, Symbol("_$(S.i)"))
+  S.i += 1
+  D[s] = new
+  return new
+end
+
+scoping(e::LineNumberNode, scope) = e
+
+scoping(e::Int, scope) = e
+
+scoping(e::String, scope) = e
+scoping(e::typeof(ResumableFunctions.generate), scope) = e
+scoping(e::typeof(ResumableFunctions.IteratorReturn), scope) = e
+scoping(e::QuoteNode, scope) = e
+scoping(e::Bool, scope) = e
+scoping(e::Nothing, scope) = e
+
+function scoping(s::Symbol, scope; new = false)
+  #@info "scoping $s, $new"
+  return lookup!(s, scope; new = new)
+end
+
+function scoping(expr::Expr, scope)
+  if expr.head === :macrocall
+    for i in 2:length(expr.args)
+      expr.args[i] = scoping(expr.args[i], scope)
+    end
+    return expr
+  end
+  new_stack = false
+  if expr.head === :let
+    # Replace 
+    #   let i, k = 2, j = 1
+    #      [...]
+    #   end
+    #
+    #   by
+    #
+    #   let
+    #     local i_new
+    #     local k_new = 2
+    #     local j_new = 1
+    #   end
+    #
+    #   Caveat:
+    #   let i = i, j = i
+    #
+    #   must be
+    #   new_i = old_i
+    #   new_j = new_i
+    #
+    #   :(
+
+    # defer adding a new scope after the right hand side have been renamed
+    @capture(expr, let arg_; body_ end) || return expr
+    @capture(arg, begin x__ end)
+    replace_rhs = []
+    for i in 1:length(x)
+      y = x[i]
+      fl = @capture(y, k_ = v_)
+      if fl
+        push!(replace_rhs, scoping(v, scope))
+      else
+        # there was no right side
+        push!(replace_rhs, nothing)
+      end
+    end
+    new_stack = true
+    push!(scope.scope_stack, Dict())
+    replace_lhs = []
+    rep = []
+    for i in 1:length(x)
+      y = x[i]
+      fl = @capture(y, k_ = v_)
+      if fl
+        push!(replace_lhs, scoping(k, scope, new = true))
+        push!(rep, quote local $(replace_lhs[i]); $(replace_lhs[i]) = $(replace_rhs[i]) end)
+      else
+        @assert y isa Symbol
+        push!(replace_lhs, scoping(y, scope, new = true))
+        push!(rep, quote local $(replace_lhs[i]) end)
+      end
+    end
+    rep = quote
+      $(rep...)
+    end
+    rep = MacroTools.flatten(rep)
+    expr.args[1] = Expr(:block)
+    pushfirst!(expr.args[2].args, rep)
+
+    # Now continue recursively
+    # but skip the local/dance, since we already replaced them
+    for i in 2:length(expr.args[2].args)
+      a = expr.args[2].args[i]
+      expr.args[2].args[i] = scoping(a, scope)
+    end
+    pop!(scope.scope_stack)
+    return expr
+  end
+
+  if expr.head === :while || expr.head === :let
+    push!(scope.scope_stack, Dict())
+    new_stack = true
+  end
+  if expr.head === :local
+    # this is my local dance
+    # explain and rewrite using @capture
+    if length(expr.args) == 1 && expr.args[1] isa Symbol
+      expr.args[1] = scoping(expr.args[1], scope, new = true)
+    elseif length(expr.args) == 1 && expr.args[1].head === :tuple
+      for i in 1:length(expr.args[1].args)
+        a = expr.args[1].args[i]
+        expr.args[1].args[i] = scoping(a, scope, new = true)
+      end
+    else
+      for i in 1:length(expr.args)
+        a = expr.args[i]
+        expr.args[i] = scoping(a, scope, new = true)
+      end
+    end
+  else
+    for i in 1:length(expr.args)
+      a = expr.args[i]
+      expr.args[i] = scoping(a, scope)
+    end
+  end
+  if new_stack
+    pop!(scope.scope_stack)
+  end
+  return expr
+end
