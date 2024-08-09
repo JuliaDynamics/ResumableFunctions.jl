@@ -230,6 +230,10 @@ function lookup_lhs!(s::Symbol, S::ScopeTracker; new::Bool = false)
   return new
 end
 
+function lookup_lhs!(s::QuoteNode, S::ScopeTracker)
+  return s
+end
+
 function lookup_lhs!(s::Expr, S::ScopeTracker)
   if s.head === :(.)
     s.args[1] === lookup_lhs!(s.args[1], S)
