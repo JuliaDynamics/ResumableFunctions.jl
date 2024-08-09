@@ -215,7 +215,44 @@ mutable struct ScopeTracker
   scope_stack::Vector
 end
 
+function lookup_lhs!(s::Symbol, S::ScopeTracker; new::Bool = false)
+  if !new
+    for D in Iterators.reverse(S.scope_stack)
+      if haskey(D, s)
+        return D[s]
+      end
+    end
+  end
+  D = last(S.scope_stack)
+  new = Symbol(s, Symbol("_$(S.i)"))
+  S.i += 1
+  D[s] = new
+  return new
+end
+
+function lookup_lhs!(s::Expr, S::ScopeTracker)
+  if s.head === :(.)
+    s.args[1] === lookup_lhs!(s.args[1], S)
+    return s
+  end
+  @assert s.head === :tuple
+  for i in 1:length(s.args)
+    s.args[i] = lookup_rhs!(s.args[i], S)
+  end
+  return s
+end
+
+function lookup_rhs!(s::Symbol, S::ScopeTracker)
+  for D in Iterators.reverse(S.scope_stack)
+    if haskey(D, s)
+      return D[s]
+    end
+  end
+  return s
+end
+
 function lookup!(s::Symbol, S::ScopeTracker; new = false)
+  s == :val && @show s, length(S.scope_stack), new
   if isdefined(S.mod, s)
     return s
   end
@@ -225,6 +262,9 @@ function lookup!(s::Symbol, S::ScopeTracker; new = false)
         return D[s]
       end
     end
+    D = last(S.scope_stack)
+    D[s] = s
+    return s
   end
   D = last(S.scope_stack)
   new = Symbol(s, Symbol("_$(S.i)"))
@@ -246,10 +286,45 @@ scoping(e::Nothing, scope) = e
 
 function scoping(s::Symbol, scope; new = false)
   #@info "scoping $s, $new"
-  return lookup!(s, scope; new = new)
+  return lookup_rhs!(s, scope)
 end
 
 function scoping(expr::Expr, scope)
+  if expr.head === :comprehension
+    # this is again special with respect to scoping
+    if expr.args[1].head === :generator
+      # first the generator case
+      for i in 2:length(expr.args[1].args)
+        @assert expr.args[1].args[i] isa Expr && expr.args[1].args[i].head === :(=)
+        expr.args[1].args[i].args[2] = lookup_rhs!(expr.args[1].args[i].args[2], scope)
+      end
+      # now create new scope
+      push!(scope.scope_stack, Dict())
+      for i in 2:length(expr.args[1].args)
+        expr.args[1].args[i].args[1] = lookup_lhs!(expr.args[1].args[i].args[1], scope)
+      end
+
+      expr.args[1].args[1] = scoping(expr.args[1].args[1], scope)
+      pop!(scope.scope_stack)
+      return expr
+    else
+      error("not implemented yet")
+    end
+  end
+
+  if expr.head === :(=)
+    if expr.args[1] isa Symbol
+      expr.args[1] = lookup_lhs!(expr.args[1], scope)
+    else
+      for i in 1:length(expr.args[1].args)
+        expr.args[1].args[i] = lookup_lhs!(expr.args[1].args[i], scope)
+      end
+    end
+    for i in 2:length(expr.args)
+      expr.args[i] = scoping(expr.args[i], scope)
+    end
+    return expr
+  end
   if expr.head === :macrocall
     for i in 2:length(expr.args)
       expr.args[i] = scoping(expr.args[i], scope)
@@ -302,11 +377,11 @@ function scoping(expr::Expr, scope)
       y = x[i]
       fl = @capture(y, k_ = v_)
       if fl
-        push!(replace_lhs, scoping(k, scope, new = true))
+        push!(replace_lhs, lookup_lhs!(k, scope, new = true))
         push!(rep, quote local $(replace_lhs[i]); $(replace_lhs[i]) = $(replace_rhs[i]) end)
       else
         @assert y isa Symbol
-        push!(replace_lhs, scoping(y, scope, new = true))
+        push!(replace_lhs, lookup_lhs!(y, scope, new = true))
         push!(rep, quote local $(replace_lhs[i]) end)
       end
     end
@@ -334,17 +409,23 @@ function scoping(expr::Expr, scope)
   if expr.head === :local
     # this is my local dance
     # explain and rewrite using @capture
+    #
+    # if I see a local x or local x = ...
+    # we always emit a new identifier
     if length(expr.args) == 1 && expr.args[1] isa Symbol
-      expr.args[1] = scoping(expr.args[1], scope, new = true)
+      #expr.args[1] = scoping(expr.args[1], scope, new = true)
+      expr.args[1] = lookup_lhs!(expr.args[1], scope)
     elseif length(expr.args) == 1 && expr.args[1].head === :tuple
       for i in 1:length(expr.args[1].args)
         a = expr.args[1].args[i]
-        expr.args[1].args[i] = scoping(a, scope, new = true)
+        #expr.args[1].args[i] = scoping(a, scope, new = true)
+        expr.args[1].args[i] = lookup_lhs!(a, scope)
       end
     else
       for i in 1:length(expr.args)
         a = expr.args[i]
-        expr.args[i] = scoping(a, scope, new = true)
+        #expr.args[i] = scoping(a, scope, new = true)
+        expr.args[i] = lookup_lhs!(a, scope)
       end
     end
   else

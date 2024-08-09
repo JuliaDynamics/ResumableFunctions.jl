@@ -91,7 +91,6 @@ macro resumable(ex::Expr...)
   #func_def[:body] = postwalk(x->transform_let(x), func_def[:body])
   #@info func_def[:body]|>MacroTools.striplines
   #func_def[:body] = postwalk(x->transform_local(x), func_def[:body])
-  #@info func_def[:body]|>MacroTools.striplines
   # Scoping fixes
 
   # :name is :(fA::A) if it is an overloading call function (fA::A)(...)
@@ -105,9 +104,11 @@ macro resumable(ex::Expr...)
   
   scope = ScopeTracker(0, __module__, [Dict(i =>i for i in vcat(args, kwargs, [_name], params...))])
   #@info func_def[:body]|>MacroTools.striplines
+  #@info func_def[:body]|>MacroTools.striplines
   func_def[:body] = scoping(copy(func_def[:body]), scope)
   #@info func_def[:body]|>MacroTools.striplines
   func_def[:body] = postwalk(x->transform_remove_local(x), func_def[:body])
+  #@info func_def[:body]|>MacroTools.striplines
   #@info func_def[:body]|>MacroTools.striplines
 
   inferfn, slots = get_slots(copy(func_def), arg_dict, __module__)

@@ -248,3 +248,15 @@ end
   @test length(collect(test_length(10, 20))) === 10^2 * 20^2
   @test Base.IteratorSize(typeof(test_length(1, 1))) == Base.HasLength()
 end
+
+@testset "test_scope_2" begin
+  @resumable function test_forward()
+    for i in 1:10
+      @yield test_bla(i)
+    end
+  end
+
+  test_bla(i) = i^2
+
+  @test collect(test_forward()) == [i^2 for i in 1:10]
+end
