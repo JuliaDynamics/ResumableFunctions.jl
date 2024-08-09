@@ -260,3 +260,14 @@ end
 
   @test collect(test_forward()) == [i^2 for i in 1:10]
 end
+
+@testset "test_kw" begin
+  g(x, y; z = 2) = x + y^2 + z^C
+
+  @resumable function f(z)
+    y = 1
+    @yield g(z, z = y, 2)
+  end
+  
+  @test collect(test_kw()) == [8]
+end

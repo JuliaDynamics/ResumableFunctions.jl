@@ -295,6 +295,31 @@ function scoping(s::Symbol, scope; new = false)
 end
 
 function scoping(expr::Expr, scope)
+  if expr.head === :call
+    @info expr
+    # We have to not rename the keyword arguments
+    # Super awkward because of f(x, y = z, w) and f(x; y) is allowed :(
+    # Or even f(x, y = 1, w, z = 2)
+    for i in 2:length(expr.args)
+      if expr.args[i] isa Expr && expr.args[i].head === :kw
+        # this is f(..., x = 2, ...)
+        expr.args[i].args[2] = scoping(expr.args[i].args[2], scope)
+      elseif expr.args[i] isa Expr && expr.args[i].head === :paramaters
+        for j in 1:length(expr.args[i].args)
+          if expr.args[i].args[j] isa Symbol
+            # this is f(...; x)
+          else
+            @assert expr.args[i].args[j] isa Expr && expr.args[i].args[j].head === :kw
+            # this is f(...; x = 2)
+            expr.args[i].args[j].args[2] = scoping(expr.args[i].args[j].args[2], scope)
+          end
+        end
+      else
+        expr.args[i] = scoping(expr.args[i], scope)
+      end
+    end
+    return expr
+  end
   if expr.head === :comprehension
     # this is again special with respect to scoping
     if expr.args[1].head === :generator
