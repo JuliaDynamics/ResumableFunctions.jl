@@ -262,12 +262,27 @@ end
 end
 
 @testset "test_kw" begin
-  g(x, y; z = 2) = x + y^2 + z^C
+  g(x, y; z = 2) = x + y^2 + z
 
-  @resumable function f(z)
+  @resumable function test_kw(z)
     y = 1
     @yield g(z, z = y, 2)
   end
   
-  @test collect(test_kw()) == [8]
+  @test collect(test_kw(3)) == [8]
+end
+
+@testset "test_call_renaming" begin
+  g(x) = x^2
+
+  @resumable function test_call_renaming(y)
+    sin = g
+    let g = 3
+      for h in 1:10
+        @yield sin(g + h + y)
+      end
+    end
+  end
+
+  @test collect(test_call_renaming(3)) == [49, 64, 81, 100, 121, 144, 169, 196, 225, 256]
 end

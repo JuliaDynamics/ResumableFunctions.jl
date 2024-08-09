@@ -246,6 +246,8 @@ function lookup_lhs!(s::Expr, S::ScopeTracker)
   return s
 end
 
+lookup_rhs!(e::typeof(ResumableFunctions.generate), scope) = e
+
 function lookup_rhs!(s::Symbol, S::ScopeTracker)
   for D in Iterators.reverse(S.scope_stack)
     if haskey(D, s)
@@ -296,7 +298,8 @@ end
 
 function scoping(expr::Expr, scope)
   if expr.head === :call
-    @info expr
+    # Rename the name
+    expr.args[1] = lookup_rhs!(expr.args[1], scope)
     # We have to not rename the keyword arguments
     # Super awkward because of f(x, y = z, w) and f(x; y) is allowed :(
     # Or even f(x, y = 1, w, z = 2)
