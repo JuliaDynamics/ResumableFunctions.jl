@@ -276,6 +276,7 @@ end
 scoping(e::LineNumberNode, scope) = e
 
 scoping(e::Int, scope) = e
+scoping(e::Float64, scope) = e
 
 scoping(e::String, scope) = e
 scoping(e::typeof(ResumableFunctions.generate), scope) = e
