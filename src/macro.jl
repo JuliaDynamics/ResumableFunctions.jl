@@ -108,7 +108,7 @@ macro resumable(ex::Expr...)
   func_def[:body] = scoping(copy(func_def[:body]), scope)
   #@info func_def[:body]|>MacroTools.striplines
   func_def[:body] = postwalk(x->transform_remove_local(x), func_def[:body])
-  #@info func_def[:body]|>MacroTools.striplines
+  @info func_def[:body]|>MacroTools.striplines
 
   inferfn, slots = get_slots(copy(func_def), arg_dict, __module__)
   @debug slots

@@ -238,14 +238,20 @@ end
 
 function lookup_lhs!(s::Expr, S::ScopeTracker; new = false)
   if s.head === :(.)
-    s.args[1] === lookup_lhs!(s.args[1], S; new = new)
+    s.args[1] = lookup_lhs!(s.args[1], S; new = new)
     return s
   end
-  @assert s.head === :tuple
-  for i in 1:length(s.args)
-    s.args[i] = lookup_lhs!(s.args[i], S; new = new)
+  if s.head  === :tuple
+    for i in 1:length(s.args)
+      s.args[i] = lookup_lhs!(s.args[i], S; new = new)
+    end
+    return s
   end
-  return s
+  if s.head === :ref
+    s = scoping(s, S)
+    return s
+  end
+  error("Not captured")
 end
 
 lookup_rhs!(e::typeof(ResumableFunctions.generate), scope) = e
@@ -326,21 +332,35 @@ function scoping(expr::Expr, scope)
   # because of the (;a, b) syntax, which we have to expand by hand to
   # (;a = a, b = b), otherwise we do (;a_1, b_2), and this gets
   # (;a_1 = a_1, b_2 = b_2) which is nonsensical
-  if expr.head === :tuple && length(expr.args) > 0 && expr.args[1] isa Expr && expr.args[1].head === :parameters
-    # this is a named tuple of the form (;...)
-    # TODO: named tuple recognition not working properly yet
-    # first bring (;...,b,...) in the form (;...,b => b,...)
-    for i in 1:length(expr.args[1].args)
-      if !(expr.args[1].args[i] isa Expr)
-        expr.args[1].args[i] = Expr(:kw, expr.args[1].args[i], expr.args[1].args[i])
+  if expr.head === :tuple
+    if length(expr.args) > 0 && expr.args[1] isa Expr && expr.args[1].head === :parameters
+      # this is a named tuple of the form (;...)
+      # TODO: named tuple recognition not working properly yet
+      # first bring (;...,b,...) in the form (;...,b => b,...)
+      for i in 1:length(expr.args[1].args)
+        if !(expr.args[1].args[i] isa Expr)
+          expr.args[1].args[i] = Expr(:kw, expr.args[1].args[i], expr.args[1].args[i])
+        end
       end
+      # Now rename the RHS
+      for i in 1:length(expr.args[1].args)
+        @assert expr.args[1].args[i] isa Expr && expr.args[1].args[i].head === :kw
+        expr.args[1].args[i].args[2] = scoping(expr.args[1].args[i].args[2], scope)
+      end
+      return expr
+    elseif any(a -> a isa Expr && a.head === :(=), expr.args[1:end])
+      # Can be any of (a = 2, b, c = d)
+      # lets first normalize the entries of the form b to b => scoping(b, ...)
+      for i in 2:length(expr.args)
+        if expr.args[i] isa Symbol
+          expr.args[i] = Expr(:(=), expr.args[i], lookup_lhs!(expr.args[i], scope))
+        else
+          @assert expr.args[i].head === :(=)
+          expr.args[i].args[2] = scoping(expr.args[i].args[2], scope)
+        end
+      end
+      return expr
     end
-    # Now rename the RHS
-    for i in 1:length(expr.args[1].args)
-      @assert expr.args[1].args[i] isa Expr && expr.args[1].args[i].head === :kw
-      expr.args[1].args[i].args[2] = scoping(expr.args[1].args[i].args[2], scope)
-    end
-    return expr
   end
 
   if expr.head === :call
@@ -498,12 +518,15 @@ function scoping(expr::Expr, scope)
         expr.args[i] = lookup_lhs!(a, scope)
       end
     end
-  else
-    for i in 1:length(expr.args)
-      a = expr.args[i]
-      expr.args[i] = scoping(a, scope)
-    end
+    return expr
   end
+
+  # default
+  for i in 1:length(expr.args)
+    a = expr.args[i]
+    expr.args[i] = scoping(a, scope)
+  end
+
   if new_stack
     pop!(scope.scope_stack)
   end

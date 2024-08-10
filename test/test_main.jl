@@ -318,6 +318,14 @@ end
   end
 
   @test collect(test_named_tuple([1, 2], [3, 4])) == [(a = 1, b = 3), (a = 1, b = 4), (a = 2, b = 3), (a = 2, b = 4), (a = 1, b = 4)]
+
+  @resumable function test_32()
+    x = 0
+    @yield (x = 1, )
+  end
+
+  @test collect(test_32()) == [(x = 1, )]
+
 end
 
 @testset "test_comprehension" begin
@@ -332,4 +340,31 @@ end
     end
   end
   @test collect(test_comprehension([(1, 2), (3, 4)])) == [2,4,1,9]
+end
+
+@testset "test_ref" begin
+  @resumable function test_ref(x)
+    y = x
+    a = [i^2 for i in 1:3]
+    for i in 1:3
+      y[] = a[i]
+      @yield y[]
+    end
+  end
+  @test collect(test_ref(Ref(1))) == [1,4,9]
+end
+
+@testset "test_getproperty" begin
+  @resumable function test_getproperty()
+    let
+      node = (a = 1, b = 2)
+      v = [[2], node]
+      let node = (a = 2, b = 1)
+        (v[node.a])[node.b] == 3
+      end
+      @yield v
+    end
+  end
+
+  @test collect(test_getproperty()) == [[[2], (a = 1, b = 2)]]
 end
