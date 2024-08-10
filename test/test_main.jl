@@ -270,6 +270,16 @@ end
   end
   
   @test collect(test_kw(3)) == [8]
+
+  g(z; y) = z - y
+
+  @resumable function test_kw_2(x)
+    for y in 1:10
+      @yield g(x; y)
+    end
+  end
+
+  @test collect(test_kw_2(2)) == [1, 0, -1, -2, -3, -4, -5, -6, -7, -8]
 end
 
 @testset "test_call_renaming" begin
@@ -285,4 +295,41 @@ end
   end
 
   @test collect(test_call_renaming(3)) == [49, 64, 81, 100, 121, 144, 169, 196, 225, 256]
+end
+
+@testset "test_quotenode" begin
+  @resumable function test_quotenode(x)
+    @yield x.a^2 + x.b^2
+  end
+
+  @test collect((test_quotenode((a = 3, b = 4)))) == [5^2]
+end
+
+@testset "test_named_tuple" begin
+  @resumable function test_named_tuple(u, v)
+    r = @NamedTuple{a::Int, b::Int}[]
+    for a in u
+      for b in v
+        push!(r, (;a, b))
+        @yield (;a, b)
+      end
+    end
+    @yield r[2]
+  end
+
+  @test collect(test_named_tuple([1, 2], [3, 4])) == [(a = 1, b = 3), (a = 1, b = 4), (a = 2, b = 3), (a = 2, b = 4), (a = 1, b = 4)]
+end
+
+@testset "test_comprehension" begin
+  @resumable function test_comprehension(u)
+    r = Dict{Int, Int}(c =>i for (i, c) in u)
+    s = [u^2 for u in first.(u)]
+    for k in sort(collect(keys(r)))
+      @yield k
+    end
+    for s in s
+      @yield s
+    end
+  end
+  @test collect(test_comprehension([(1, 2), (3, 4)])) == [2,4,1,9]
 end

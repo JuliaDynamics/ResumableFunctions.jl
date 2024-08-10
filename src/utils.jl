@@ -76,8 +76,10 @@ function get_slots(func_def::Dict, args::Dict{Symbol, Any}, mod::Module)
   # eval function
   func_expr = combinedef(func_def) |> flatten
   @eval(mod, @noinline $func_expr)
+  #@info func_def[:body]|>MacroTools.striplines
   # get typed code
   codeinfos = @eval(mod, code_typed($(func_def[:name]), Tuple; optimize=false))
+  #@info codeinfos
   # extract slot names and types
   for codeinfo in codeinfos
     for (name, type) in collect(zip(codeinfo.first.slotnames, codeinfo.first.slottypes))
@@ -234,14 +236,14 @@ function lookup_lhs!(s::QuoteNode, S::ScopeTracker)
   return s
 end
 
-function lookup_lhs!(s::Expr, S::ScopeTracker)
+function lookup_lhs!(s::Expr, S::ScopeTracker; new = false)
   if s.head === :(.)
-    s.args[1] === lookup_lhs!(s.args[1], S)
+    s.args[1] === lookup_lhs!(s.args[1], S; new = new)
     return s
   end
   @assert s.head === :tuple
   for i in 1:length(s.args)
-    s.args[i] = lookup_rhs!(s.args[i], S)
+    s.args[i] = lookup_lhs!(s.args[i], S; new = new)
   end
   return s
 end
@@ -296,10 +298,54 @@ function scoping(s::Symbol, scope; new = false)
   return lookup_rhs!(s, scope)
 end
 
+function scope_generator(expr, scope)
+  @assert expr.head === :generator
+  # first the generator case
+  for i in 2:length(expr.args)
+    @assert expr.args[i] isa Expr && expr.args[i].head === :(=)
+    #expr.args[i].args[2] = lookup_rhs!(expr.args[i].args[2], scope)
+    expr.args[i].args[2] = scoping(expr.args[i].args[2], scope)
+  end
+  # now create new scope
+  push!(scope.scope_stack, Dict())
+  for i in 2:length(expr.args)
+    expr.args[i].args[1] = lookup_lhs!(expr.args[i].args[1], scope, new = true)
+  end
+
+  expr.args[1] = scoping(expr.args[1], scope)
+  pop!(scope.scope_stack)
+  return expr
+end
+
 function scoping(expr::Expr, scope)
+  if expr.head === :generator
+    return scope_generator(expr, scope)
+  end
+
+  # Named tuple handling is again pretty awkward
+  # because of the (;a, b) syntax, which we have to expand by hand to
+  # (;a = a, b = b), otherwise we do (;a_1, b_2), and this gets
+  # (;a_1 = a_1, b_2 = b_2) which is nonsensical
+  if expr.head === :tuple && length(expr.args) > 0 && expr.args[1] isa Expr && expr.args[1].head === :parameters
+    # this is a named tuple of the form (;...)
+    # TODO: named tuple recognition not working properly yet
+    # first bring (;...,b,...) in the form (;...,b => b,...)
+    for i in 1:length(expr.args[1].args)
+      if !(expr.args[1].args[i] isa Expr)
+        expr.args[1].args[i] = Expr(:kw, expr.args[1].args[i], expr.args[1].args[i])
+      end
+    end
+    # Now rename the RHS
+    for i in 1:length(expr.args[1].args)
+      @assert expr.args[1].args[i] isa Expr && expr.args[1].args[i].head === :kw
+      expr.args[1].args[i].args[2] = scoping(expr.args[1].args[i].args[2], scope)
+    end
+    return expr
+  end
+
   if expr.head === :call
-    # Rename the name
-    expr.args[1] = lookup_rhs!(expr.args[1], scope)
+    # Rename the caller name
+    expr.args[1] = scoping(expr.args[1], scope)
     # We have to not rename the keyword arguments
     # Super awkward because of f(x, y = z, w) and f(x; y) is allowed :(
     # Or even f(x, y = 1, w, z = 2)
@@ -307,15 +353,18 @@ function scoping(expr::Expr, scope)
       if expr.args[i] isa Expr && expr.args[i].head === :kw
         # this is f(..., x = 2, ...)
         expr.args[i].args[2] = scoping(expr.args[i].args[2], scope)
-      elseif expr.args[i] isa Expr && expr.args[i].head === :paramaters
+      elseif expr.args[i] isa Expr && expr.args[i].head === :parameters
+        # this is f(...;...)
+        # first normalize f(...;...,x...) to f(...;..., x = x,...)
         for j in 1:length(expr.args[i].args)
-          if expr.args[i].args[j] isa Symbol
-            # this is f(...; x)
-          else
-            @assert expr.args[i].args[j] isa Expr && expr.args[i].args[j].head === :kw
-            # this is f(...; x = 2)
-            expr.args[i].args[j].args[2] = scoping(expr.args[i].args[j].args[2], scope)
+          if !(expr.args[i].args[j] isa Expr)
+            expr.args[i].args[j] = Expr(:kw, expr.args[i].args[j], expr.args[i].args[j])
           end
+        end
+        for j in 1:length(expr.args[i].args)
+          @assert expr.args[i].args[j] isa Expr && expr.args[i].args[j].head === :kw
+          # this is f(...; x = 2)
+          expr.args[i].args[j].args[2] = scoping(expr.args[i].args[j].args[2], scope)
         end
       else
         expr.args[i] = scoping(expr.args[i], scope)
@@ -326,19 +375,7 @@ function scoping(expr::Expr, scope)
   if expr.head === :comprehension
     # this is again special with respect to scoping
     if expr.args[1].head === :generator
-      # first the generator case
-      for i in 2:length(expr.args[1].args)
-        @assert expr.args[1].args[i] isa Expr && expr.args[1].args[i].head === :(=)
-        expr.args[1].args[i].args[2] = lookup_rhs!(expr.args[1].args[i].args[2], scope)
-      end
-      # now create new scope
-      push!(scope.scope_stack, Dict())
-      for i in 2:length(expr.args[1].args)
-        expr.args[1].args[i].args[1] = lookup_lhs!(expr.args[1].args[i].args[1], scope)
-      end
-
-      expr.args[1].args[1] = scoping(expr.args[1].args[1], scope)
-      pop!(scope.scope_stack)
+      expr.args[1] = scope_generator(expr.args[1], scope)
       return expr
     else
       error("not implemented yet")
