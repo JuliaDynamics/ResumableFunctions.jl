@@ -142,6 +142,19 @@ Function that replaces a variable `x` in an expression by `_fsmi.x` where `x` is
 function transform_slots(expr, symbols)
   expr isa Expr || return expr
   #expr.head === :let && return transform_slots_let(expr, symbols)
+  
+  # Special handling of named tuples, we are not allowed to replace things in name tuples
+  # note that the scoping pass already turned (;b) into (;b = b) etc
+  if expr.head === :tuple && expr.args[1] isa Expr && expr.args[1].head === :parameters
+    # (;...)
+    for i in 1:length(expr.args[1].args)
+      @assert !(expr.args[1].args[i] isa Symbol)
+      a = expr.args[1].args[i].args[2] # RHS replace
+      a isa Symbol && a in symbols ? :(_fsmi.$(a)) : a
+    end
+    return expr
+  end
+
   for i in 1:length(expr.args)
     expr.head === :kw && i === 1 && continue
     expr.head === Symbol("quote") && continue

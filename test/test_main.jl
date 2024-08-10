@@ -326,6 +326,16 @@ end
 
   @test collect(test_32()) == [(x = 1, )]
 
+  @resumable function test_named_tuple2(b)
+    @yield (;a = b.a + 2, b)
+  end
+  @test collect(test_named_tuple2((a = 1, ))) == [(a = 3, b = (a = 1,))]
+
+  @resumable function test_named_tuple2(b)
+    @yield (a = b.a + 2, b)
+  end
+  @test collect(test_named_tuple2((a = 1, ))) == [(a = 3, b = (a = 1,))]
+
 end
 
 @testset "test_comprehension" begin
@@ -375,6 +385,5 @@ end
       @yield i, j
     end
   end
-
   @test collect(test_weird_for(3)) == [(1, 1), (2, 1), (2, 2), (3, 1), (3, 2), (3, 3)]
 end

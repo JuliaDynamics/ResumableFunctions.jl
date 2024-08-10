@@ -242,6 +242,10 @@ function lookup_lhs!(s::Expr, S::ScopeTracker; new = false)
     return s
   end
   if s.head  === :tuple
+    # we should never have to treat a (;a) = b here
+    @assert !(s.args[1] isa Expr && s.args[1].head === :parameters)
+
+    # we should have an innocent (a, b, c) = ...
     for i in 1:length(s.args)
       s.args[i] = lookup_lhs!(s.args[i], S; new = new)
     end
@@ -336,7 +340,7 @@ function scoping(expr::Expr, scope)
     if length(expr.args) > 0 && expr.args[1] isa Expr && expr.args[1].head === :parameters
       # this is a named tuple of the form (;...)
       # TODO: named tuple recognition not working properly yet
-      # first bring (;...,b,...) in the form (;...,b => b,...)
+      # first bring (;...,b,...) in the form (;...,b = b,...)
       for i in 1:length(expr.args[1].args)
         if !(expr.args[1].args[i] isa Expr)
           expr.args[1].args[i] = Expr(:kw, expr.args[1].args[i], expr.args[1].args[i])
@@ -351,14 +355,18 @@ function scoping(expr::Expr, scope)
     elseif any(a -> a isa Expr && a.head === :(=), expr.args[1:end])
       # Can be any of (a = 2, b, c = d)
       # lets first normalize the entries of the form b to b => scoping(b, ...)
-      for i in 2:length(expr.args)
+      for i in 1:length(expr.args)
         if expr.args[i] isa Symbol
-          expr.args[i] = Expr(:(=), expr.args[i], lookup_lhs!(expr.args[i], scope))
+          expr.args[i] = Expr(:kw, expr.args[i], lookup_lhs!(expr.args[i], scope))
         else
           @assert expr.args[i].head === :(=)
           expr.args[i].args[2] = scoping(expr.args[i].args[2], scope)
+          expr.args[i].head = :kw
         end
       end
+      # Let's normalize to a parameter (;...) form
+      expr.args[1] = Expr(:parameters, expr.args...)
+      expr.args = expr.args[1:1]
       return expr
     end
   end
@@ -403,13 +411,28 @@ function scoping(expr::Expr, scope)
   end
 
   if expr.head === :(=)
-    if expr.args[1] isa Symbol
-      expr.args[1] = lookup_lhs!(expr.args[1], scope)
-    else
-      for i in 1:length(expr.args[1].args)
-        expr.args[1].args[i] = lookup_lhs!(expr.args[1].args[i], scope)
+    # One special case, where we need to have both LHS and RHS at our hands
+    if expr.args[1] isa Expr && expr.args[1].head === :tuple && expr.args[1].args[1] isa Expr && expr.args[1].args[1].head === :parameters
+      # OK, so this (;a, b) = c
+      # lets transform this into
+      # d = c # because c could be an expression itself
+      # a_new = d.a
+      # b_new = d.b
+      d = gensym()
+      res = [quote $(d) = $(expr.args[2]); end]
+      for i in 1:length(expr.args[1].args[1].args)
+        lhs = expr.args[1].args[1].args[i]
+        @assert lhs isa Symbol
+        lhslookup = lookup_lhs!(lhs, scope)
+        push!(res, quote $(lhslookup) = $(d).$(lhs) end)
       end
+      return quote $(res...) end
     end
+
+    # the LHS is a symbol or a tuple of symbols
+    expr.args[1] = lookup_lhs!(expr.args[1], scope)
+
+    # now transform the RHS, this can be anything
     for i in 2:length(expr.args)
       expr.args[i] = scoping(expr.args[i], scope)
     end
