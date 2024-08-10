@@ -84,10 +84,28 @@ end
 
 """
 Function that replaces a `for` loop by a corresponding `while` loop saving explicitly the *iterator* and its *state*.
+
+For loops of the form `for a, b, c; body; end` are denested.
 """
 function transform_for(expr, ui8::BoxedUInt8)
+  (expr isa Expr && expr.head === :for) || return expr
+  # test for simple for a in b expression
+  expr.args[1].head === :(=) && return transform_for_inner(expr, ui8)
+  # must be a complicated iteration
+  @assert expr.args[1].head === :block
+  body = expr.args[2]
+  # denest, starting at the back
+  for a in reverse(expr.args[1].args)
+    body = Expr(:for, a, body)
+    # turn for into while loop
+    body = transform_for_inner(body, ui8)
+  end
+  return body
+end
+
+function transform_for_inner(expr, ui8::BoxedUInt8)
+  # turning for into while loops
   @capture(expr, for element_ in iterator_ body_ end) || return expr
-  #@info element
   localelement = Expr(:local, element)
   ui8.n += one(UInt8)
   next = Symbol("_iteratornext_", ui8.n)

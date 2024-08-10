@@ -368,3 +368,13 @@ end
 
   @test collect(test_getproperty()) == [[[2], (a = 1, b = 2)]]
 end
+
+@testset "test_weird_for" begin
+  @resumable function test_weird_for(n)
+    for i=1:n, j=1:i
+      @yield i, j
+    end
+  end
+
+  @test collect(test_weird_for(3)) == [(1, 1), (2, 1), (2, 2), (3, 1), (3, 2), (3, 3)]
+end
