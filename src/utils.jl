@@ -302,6 +302,7 @@ scoping(e::typeof(ResumableFunctions.IteratorReturn), scope) = e
 scoping(e::QuoteNode, scope) = e
 scoping(e::Bool, scope) = e
 scoping(e::Nothing, scope) = e
+scoping(e::GlobalRef, scope) = e
 
 function scoping(s::Symbol, scope; new = false)
   #@info "scoping $s, $new"
@@ -519,11 +520,16 @@ function scoping(expr::Expr, scope)
         expr.args[1].args[i] = lookup_lhs!(a, scope)
       end
     else
-      for i in 1:length(expr.args)
-        a = expr.args[i]
-        #expr.args[i] = scoping(a, scope, new = true)
-        expr.args[i] = lookup_lhs!(a, scope)
-      end
+      # this is local x = y
+      @assert length(expr.args) == 1 && expr.args[1] isa Expr && expr.args[1].head === :(=)
+      expr.args[1].args[1] = lookup_lhs!(expr.args[1].args[1], scope)
+      expr.args[1].args[2] = scoping(expr.args[1].args[2], scope)
+      #for i in 1:length(expr.args)
+      #  a = expr.args[i]
+      #  #expr.args[i] = scoping(a, scope, new = true)
+      #  expr.args[i] = lookup_lhs!(a, scope)
+      #end
+      expr = quote local $(expr.args[1].args[1]); $(expr.args[1].args[1]) = $(expr.args[1].args[2]); end
     end
     return expr
   end
