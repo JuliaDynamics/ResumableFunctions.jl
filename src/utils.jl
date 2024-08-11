@@ -400,14 +400,9 @@ function scoping(expr::Expr, scope)
     end
     return expr
   end
-  if expr.head === :comprehension
-    # this is again special with respect to scoping
-    if expr.args[1].head === :generator
-      expr.args[1] = scope_generator(expr.args[1], scope)
-      return expr
-    else
-      error("not implemented yet")
-    end
+  if expr.head === :generator
+    expr = scope_generator(expr)
+    return expr
   end
 
   if expr.head === :(=)

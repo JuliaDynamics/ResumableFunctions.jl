@@ -350,10 +350,10 @@ end
   end
   @test collect(test_named_tuple2((a = 1, ))) == [(a = 3, b = (a = 1,))]
 
-  @resumable function test_named_tuple2(b)
+  @resumable function test_named_tuple3(b)
     @yield (a = b.a + 2, b)
   end
-  @test collect(test_named_tuple2((a = 1, ))) == [(a = 3, b = (a = 1,))]
+  @test collect(test_named_tuple3((a = 1, ))) == [(a = 3, b = (a = 1,))]
 
 end
 
@@ -369,6 +369,40 @@ end
     end
   end
   @test collect(test_comprehension([(1, 2), (3, 4)])) == [2,4,1,9]
+
+  @resumable function test_comprehension2()
+    x = 2
+    y = 3
+    @yield [ x + y for x in 1:y, y in 1:x]
+  end
+  @test collect(test_comprehension2()) == [[2 3; 3 4; 4 5]]
+
+  @resumable function test_comprehension3()
+    x = 2
+    y = 3
+    @yield [ x + y for x in 1:x, y in 1:y]
+  end
+  @test collect(test_comprehension3()) == [[2 3 4; 3 4 5]]
+
+  @resumable function test_comprehension4()
+    x = 2
+    y = 3
+    u = [  x + y for x in 1:y for y in 1:x]
+    for k in u
+      @yield k
+    end
+  end
+  @test collect(test_comprehension4()) == [2, 3, 4, 4, 5, 6]
+
+  @resumable function test_comprehension5()
+    x = 2
+    y = 3
+    u = [  x + y for x in 1:x for y in 1:y]
+    for k in u
+      @yield k
+    end
+  end
+  @test collect(test_comprehension5()) == [2, 3, 4, 3, 4, 5]
 end
 
 @testset "test_ref" begin
