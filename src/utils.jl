@@ -466,36 +466,25 @@ function scoping(expr::Expr, scope)
     #   new_i = old_i
     #   new_j = new_i
     #
-    #   :(
+    #   Thus we add a new scope, resolve the RHS and force the LHS to be new.
+    #   Do this one after the other and everything will be fine.
 
-    # defer adding a new scope after the right hand side have been renamed
     @capture(expr, let arg_; body_ end) || return expr
     @capture(arg, begin x__ end)
-    replace_rhs = []
-    for i in 1:length(x)
-      y = x[i]
-      fl = @capture(y, k_ = v_)
-      if fl
-        push!(replace_rhs, scoping(v, scope))
-      else
-        # there was no right side
-        push!(replace_rhs, nothing)
-      end
-    end
     new_stack = true
     push!(scope.scope_stack, Dict())
-    replace_lhs = []
     rep = []
     for i in 1:length(x)
       y = x[i]
       fl = @capture(y, k_ = v_)
       if fl
-        push!(replace_lhs, lookup_lhs!(k, scope, new = true))
-        push!(rep, quote local $(replace_lhs[i]); $(replace_lhs[i]) = $(replace_rhs[i]) end)
+        replace_rhs = scoping(v, scope)
+        replace_lhs = lookup_lhs!(k, scope, new = true)
+        push!(rep, quote local $(replace_lhs); $(replace_lhs) = $(replace_rhs) end)
       else
         @assert y isa Symbol
-        push!(replace_lhs, lookup_lhs!(y, scope, new = true))
-        push!(rep, quote local $(replace_lhs[i]) end)
+        replace_lhs = lookup_lhs!(y, scope, new = true)
+        push!(rep, quote local $(replace_lhs) end)
       end
     end
     rep = quote

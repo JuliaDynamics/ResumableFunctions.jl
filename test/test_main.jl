@@ -80,20 +80,39 @@ end
 @test collect(test_varargs(1, 2, 3)) == [1, 2, 3]
 end
 
-@resumable function test_let()
-  for u in [[(1,2),(3,4)], [(5,6),(7,8)]]
-    for i in 1:2
-      local val
-      let i=i
-        val = [a[i] for a in u]
+@testset "test_let" begin
+  @resumable function test_let()
+    for u in [[(1,2),(3,4)], [(5,6),(7,8)]]
+      for i in 1:2
+        local val
+        let i=i
+          val = [a[i] for a in u]
+        end
+        @yield val
       end
-      @yield val
     end
   end
-end
+  @test collect(test_let()) == [[1,3],[2,4],[5,7],[6,8]]
 
-@testset "test_let" begin
-@test collect(test_let()) == [[1,3],[2,4],[5,7],[6,8]]
+  @resumable function test_let2()
+    a = 3
+    b = 2
+    let a = b, b = a, c = b
+      @yield a, b, c
+    end
+    @yield a, b
+  end
+  @test collect(test_let2()) == [(2, 2, 2), (3, 2)]
+
+  @resumable function test_let3()
+    a = 3
+    b = 2
+    let a = a, b = a, c = b
+      @yield a, b, c
+    end
+    @yield a, b
+  end
+  @test collect(test_let3()) == [(3, 3, 3), (3, 2)]
 end
 
 if VERSION >= v"1.8"
