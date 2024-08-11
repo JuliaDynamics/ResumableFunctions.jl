@@ -16,11 +16,13 @@ end
 
 macro doset(descr)
     quote
-        if doset($descr)
-            @safetestset $descr begin
+#        @info "====================================="
+#        @info $descr
+#        if doset($descr)
+#            @safetestset $descr begin
                 include("test_"*$descr*".jl")
-            end
-        end
+#            end
+#        end
     end
 end
 
