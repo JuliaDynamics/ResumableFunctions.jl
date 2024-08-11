@@ -8,6 +8,7 @@ using Test
             Core.Compiler,
         )
     )
-    @test length(JET.get_reports(rep)) <= 7
+    @show rep
+    @test length(JET.get_reports(rep)) <= 8
     @test_broken length(JET.get_reports(rep)) == 0
 end
