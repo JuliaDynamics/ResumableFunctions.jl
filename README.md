@@ -59,6 +59,22 @@ end
 for fib in fibonacci(10)
   println(fib)
 end
+
+# Example with specifies the length
+using ResumableFunctions
+
+@resumable length=n^2 function fibonacci(n::Int) :: Int
+  a = 0
+  b = 1
+  for i in 1:n^2
+    @yield a
+    a, b = b, a+b
+  end
+end
+
+for fib in fibonacci(5)
+  println(fib)
+end
 ```
 
 ## Benchmarks
