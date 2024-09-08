@@ -20,7 +20,7 @@ macro nosave(expr=nothing)
 end
 
 """
-Macro that transforms a function definition in a finite-statemachine:
+Macro that transforms a function definition in a finite-state machine:
 
 - Defines a new `mutable struct` that implements the iterator interface and is used to store the internal state.
 - Makes this new type callable having following characteristics:
@@ -28,8 +28,47 @@ Macro that transforms a function definition in a finite-statemachine:
   - returns at a `@yield` statement and;
   - continues after the `@yield` statement when called again.
 - Defines a constructor function that respects the calling conventions of the initial function definition and returns an object of the new type.
+
+If the element type and length is known, the resulting iterator can be made
+more efficient as follows:
+- Use `length=ex` to specify the length (if known) of the iterator, like:
+    @resumable length=ex function f(x); body; end
+  Here `ex` can be any expression containing the arguments of `f`.
+- Use `function f(x)::T` to specify the element type of the iterator.
+
+# Extended
+
+```julia
+julia> @resumable length=n^2 function f(n)::Int
+         for i in 1:n^2
+           @yield i
+         end
+       end
+f (generic function with 2 methods)
+
+julia> collect(f(3))
+9-element Vector{Int64}:
+ 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+```
 """
-macro resumable(expr::Expr)
+macro resumable(ex::Expr...)
+  length(ex) >= 3 && error("Too many arguments")
+  for i in 1:length(ex)-1
+    a = ex[i]
+    if !(a isa Expr && a.head === :(=) && a.args[1] in [:length])
+      error("only keyword argument 'length' allowed")
+    end
+  end
+
+  expr = ex[end]
   expr.head !== :function && error("Expression is not a function definition!")
 
   # The function that executes a step of the finite state machine
@@ -128,6 +167,23 @@ macro resumable(expr::Expr)
   end
   func_def[:rtype] = nothing
   func_def[:body] = postwalk(x->transform_slots(x, keys(slots)), func_def[:body])
+
+  # Capture the length=...
+  interface_defs = []
+  for i in 1:length(ex)-1
+    a = ex[i]
+    if !(a isa Expr && a.head === :(=) && a.args[1] in [:length])
+      error("only keyword argument 'length' allowed")
+    end
+    if a.args[1] === :length
+      push!(interface_defs, quote Base.IteratorSize(::Type{<: $type_name}) = Base.HasLength() end)
+      func_def2 = copy(func_def)
+      func_def2[:body] = a.args[2]
+      new_body = postwalk(x->transform_slots(x, keys(slots)), a.args[2])
+      push!(interface_defs, quote Base.length(_fsmi::$type_name) = begin $new_body end end)
+    end
+  end
+
   func_def[:body] = postwalk(transform_arg, func_def[:body])
   func_def[:body] = postwalk(transform_exc, func_def[:body]) |> flatten
   ui8 = BoxedUInt8(zero(UInt8))
@@ -161,6 +217,7 @@ macro resumable(expr::Expr)
   esc(quote
     $type_expr
     $func_expr
+    $(interface_defs...)
     Base.@__doc__($call_expr)
   end)
 end

@@ -227,3 +227,19 @@ end
 @testset "test_unstable" begin
   @test collect(test_unstable(3)) == ["number 1", "number 2", "number 3"]
 end
+
+# test length
+
+@testset "test_length" begin
+  @resumable length=n^2*m^2 function test_length(n, m)
+    for i in 1:n^2
+      for j in 1:m^2
+        @yield i + j
+      end
+    end
+  end
+
+  @test length(test_length(10, 20)) === 10^2 * 20^2
+  @test length(collect(test_length(10, 20))) === 10^2 * 20^2
+  @test Base.IteratorSize(typeof(test_length(1, 1))) == Base.HasLength()
+end
