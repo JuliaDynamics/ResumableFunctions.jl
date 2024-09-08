@@ -1,6 +1,6 @@
 # News
 
-## ???
+## v0.6.11 - 2024-09-08
 
 - Add `length` support by allowing `@resumable length=ex function [...]`
 
