@@ -1,11 +1,8 @@
 # News
 
-## v0.6.11 - 2024-09-08
+## v0.6.10 - 2024-09-08
 
 - Add `length` support by allowing `@resumable length=ex function [...]`
-
-## v0.6.10 - 2024-05-11
-
 - Adjust to an internal changes in Julia 1.12 (see julia#54341).
 
 ## v0.6.9 - 2024-02-13
