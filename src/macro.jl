@@ -73,7 +73,7 @@ macro resumable(ex::Expr...)
 
   # The function that executes a step of the finite state machine
   func_def = splitdef(expr)
-  @debug func_def[:body]
+  @debug func_def[:body]|>MacroTools.striplines
   rtype = :rtype in keys(func_def) ? func_def[:rtype] : Any
   args, kwargs, arg_dict = get_args(func_def)
   params = ((get_param_name(param) for param in func_def[:whereparams])...,)
@@ -96,19 +96,16 @@ macro resumable(ex::Expr...)
   # :name is :(fA::A) if it is an overloading call function (fA::A)(...)
   # ...
   if func_def[:name] isa Expr
-    @assert func_def[:name].head == :(::)
+    func_def[:name].head != :(::) && error("Unrecognized function name: $(func_def[:name].head)")
     _name = func_def[:name].args[1]
   else
     _name = func_def[:name]
   end
   
   scope = ScopeTracker(0, __module__, [Dict(i =>i for i in vcat(args, kwargs, [_name], params...))])
-  #@info func_def[:body]|>MacroTools.striplines
-  #@info func_def[:body]|>MacroTools.striplines
   func_def[:body] = scoping(copy(func_def[:body]), scope)
-  #@info func_def[:body]|>MacroTools.striplines
   func_def[:body] = postwalk(x->transform_remove_local(x), func_def[:body])
-  #@info func_def[:body]|>MacroTools.striplines
+  @debug func_def[:body]|>MacroTools.striplines
 
   inferfn, slots = get_slots(copy(func_def), arg_dict, __module__)
   @debug slots

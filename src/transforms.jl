@@ -92,7 +92,7 @@ function transform_for(expr, ui8::BoxedUInt8)
   # test for simple for a in b expression
   expr.args[1].head === :(=) && return transform_for_inner(expr, ui8)
   # must be a complicated iteration
-  @assert expr.args[1].head === :block
+  expr.args[1].head !== :block && error("Unrecognized for expression: $(expr.args[1])")
   body = expr.args[2]
   # denest, starting at the back
   for a in reverse(expr.args[1].args)

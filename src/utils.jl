@@ -211,6 +211,65 @@ function typed_fsmi_fallback(fsmi::Type{T}, fargs...)::T where T
   return T()
 end
 
+################################################################################
+#
+#  Scoping
+#
+################################################################################
+
+# As every modern programming language, julia has the concept of variable scope,
+# see https://docs.julialang.org/en/v1/manual/variables-and-scoping/.
+#
+# For example, in the following example, there are actual two variables.
+# This can be seen by rewriting this as on the right hand side.
+#
+# a = 1         | a_1 = 1
+# let a = a     | begin
+#   a = 2       |   a_2 = a_1; a_2 = 2
+# end           | end
+#
+# A similar phenomen happens with `local`
+#
+# x = 1           | x_1 = 1
+# begin           | begin
+#   local x = 0   |   x_2 = 0
+# end             | end
+#
+# Simulating a function using a finite state machine (FSM) has a disadvantage
+# that it cannot handle expressions, where identical left-hand sides (RHS)
+# refer to different variables. This applies to both `let` as well as `local`
+# constructions.
+# 
+# We solve this problem by renaming all variables.
+#
+# We use a ScopeTracker type to keep track of the things that are already
+# renamned. It is basically just a Vector{Dict{Symbol, Symbol}},
+# representing a stack, where the top records the renamend variables in the
+# current scope.
+#
+# The renaming is done as follows. If we encounter an assignment of the form
+# x = y
+# there are two cases for x:
+#   1) x has been seen before in some scope. Then we replace x accordingly.
+#   2) x has not been seen before. We give x a new name and store :x => :x_new
+#      in current scope.
+#
+# This is done in lookup_lhs!. Note that some construction, like `let`, create
+# a new variable in a new scope. This is handled by the `new` keyword.
+#
+# For any other symbol y (which is not the left hand side of an assignmetn),
+# there are the following two cases:
+#   1) y has been seen before in some scope. Then we replace y accordinly.
+#   2) y has not been seen before, then we don't rename it.
+#
+# ---
+#
+# Note that we handle local x, by emitting a new variable :x => :x_new
+# inside the current scope.
+#
+# We exploit this when rewriting let and for constructions, see below for
+# examples with let.
+
 mutable struct ScopeTracker
   i::Int
   mod::Module
@@ -243,7 +302,8 @@ function lookup_lhs!(s::Expr, S::ScopeTracker; new = false)
   end
   if s.head  === :tuple
     # we should never have to treat a (;a) = b here
-    @assert !(s.args[1] isa Expr && s.args[1].head === :parameters)
+    (s.args[1] isa Expr && s.args[1].head === :parameters) &&
+        error("Illegal tuple expression in scope lookup: $(s.args[1])")
 
     # we should have an innocent (a, b, c) = ...
     for i in 1:length(s.args)
@@ -269,33 +329,9 @@ function lookup_rhs!(s::Symbol, S::ScopeTracker)
   return s
 end
 
-function lookup!(s::Symbol, S::ScopeTracker; new = false)
-  s == :val && @show s, length(S.scope_stack), new
-  if isdefined(S.mod, s)
-    return s
-  end
-  if !new
-    for D in Iterators.reverse(S.scope_stack)
-      if haskey(D, s)
-        return D[s]
-      end
-    end
-    D = last(S.scope_stack)
-    D[s] = s
-    return s
-  end
-  D = last(S.scope_stack)
-  new = Symbol(s, Symbol("_$(S.i)"))
-  S.i += 1
-  D[s] = new
-  return new
-end
-
 scoping(e::LineNumberNode, scope) = e
-
 scoping(e::Int, scope) = e
 scoping(e::Float64, scope) = e
-
 scoping(e::String, scope) = e
 scoping(e::typeof(ResumableFunctions.generate), scope) = e
 scoping(e::typeof(ResumableFunctions.IteratorReturn), scope) = e
@@ -305,16 +341,14 @@ scoping(e::Nothing, scope) = e
 scoping(e::GlobalRef, scope) = e
 
 function scoping(s::Symbol, scope; new = false)
-  #@info "scoping $s, $new"
   return lookup_rhs!(s, scope)
 end
 
 function scope_generator(expr, scope)
-  @assert expr.head === :generator
+  expr.head !== :generator && error("Illegal generator expression: $(expr)")
   # first the generator case
   for i in 2:length(expr.args)
-    @assert expr.args[i] isa Expr && expr.args[i].head === :(=)
-    #expr.args[i].args[2] = lookup_rhs!(expr.args[i].args[2], scope)
+    !(expr.args[i] isa Expr && expr.args[i].head === :(=)) && error("Illegal expression in generator: $(expr.args[i])")
     expr.args[i].args[2] = scoping(expr.args[i].args[2], scope)
   end
   # now create new scope
@@ -349,7 +383,8 @@ function scoping(expr::Expr, scope)
       end
       # Now rename the RHS
       for i in 1:length(expr.args[1].args)
-        @assert expr.args[1].args[i] isa Expr && expr.args[1].args[i].head === :kw
+        !(expr.args[1].args[i] isa Expr && expr.args[1].args[i].head === :kw) &&
+          error("Illegal expression in named tuple: $(expr.args[1].args[i])")
         expr.args[1].args[i].args[2] = scoping(expr.args[1].args[i].args[2], scope)
       end
       return expr
@@ -360,7 +395,8 @@ function scoping(expr::Expr, scope)
         if expr.args[i] isa Symbol
           expr.args[i] = Expr(:kw, expr.args[i], lookup_lhs!(expr.args[i], scope))
         else
-          @assert expr.args[i].head === :(=)
+          expr.args[i].head !== :(=) &&
+            error("Uncregonized expression in tuple expression: $(expr.args[i])")
           expr.args[i].args[2] = scoping(expr.args[i].args[2], scope)
           expr.args[i].head = :kw
         end
@@ -391,7 +427,8 @@ function scoping(expr::Expr, scope)
           end
         end
         for j in 1:length(expr.args[i].args)
-          @assert expr.args[i].args[j] isa Expr && expr.args[i].args[j].head === :kw
+          !(expr.args[i].args[j] isa Expr && expr.args[i].args[j].head === :kw) &&
+            error("Unrecognized keyword expression: $(expr.args[i].args[j])")
           # this is f(...; x = 2)
           expr.args[i].args[j].args[2] = scoping(expr.args[i].args[j].args[2], scope)
         end
@@ -418,7 +455,8 @@ function scoping(expr::Expr, scope)
       res = [quote $(d) = $(expr.args[2]); end]
       for i in 1:length(expr.args[1].args[1].args)
         lhs = expr.args[1].args[1].args[i]
-        @assert lhs isa Symbol
+        !(lhs isa Symbol) &&
+          error("Unrecognized expression in named tuple assignment: $(lhs)")
         lhslookup = lookup_lhs!(lhs, scope)
         push!(res, quote $(lhslookup) = $(d).$(lhs) end)
       end
@@ -478,7 +516,8 @@ function scoping(expr::Expr, scope)
         replace_lhs = lookup_lhs!(k, scope, new = true)
         push!(rep, quote local $(replace_lhs); $(replace_lhs) = $(replace_rhs) end)
       else
-        @assert y isa Symbol
+        !(y isa Symbol) &&
+          error("Unrecognized expression in let expression: $(y)")
         replace_lhs = lookup_lhs!(y, scope, new = true)
         push!(rep, quote local $(replace_lhs) end)
       end
@@ -505,30 +544,21 @@ function scoping(expr::Expr, scope)
     new_stack = true
   end
   if expr.head === :local
-    # this is my local dance
-    # explain and rewrite using @capture
-    #
-    # if I see a local x or local x = ...
+    # if we see a local x or local x = ...
     # we always emit a new identifier
     if length(expr.args) == 1 && expr.args[1] isa Symbol
-      #expr.args[1] = scoping(expr.args[1], scope, new = true)
       expr.args[1] = lookup_lhs!(expr.args[1], scope)
     elseif length(expr.args) == 1 && expr.args[1].head === :tuple
       for i in 1:length(expr.args[1].args)
         a = expr.args[1].args[i]
-        #expr.args[1].args[i] = scoping(a, scope, new = true)
         expr.args[1].args[i] = lookup_lhs!(a, scope)
       end
     else
       # this is local x = y
-      @assert length(expr.args) == 1 && expr.args[1] isa Expr && expr.args[1].head === :(=)
+      !(length(expr.args) == 1 && expr.args[1] isa Expr && expr.args[1].head === :(=)) &&
+        error("Illegal local expression: $(expr.args)")
       expr.args[1].args[1] = lookup_lhs!(expr.args[1].args[1], scope)
       expr.args[1].args[2] = scoping(expr.args[1].args[2], scope)
-      #for i in 1:length(expr.args)
-      #  a = expr.args[i]
-      #  #expr.args[i] = scoping(a, scope, new = true)
-      #  expr.args[i] = lookup_lhs!(a, scope)
-      #end
       expr = quote local $(expr.args[1].args[1]); $(expr.args[1].args[1]) = $(expr.args[1].args[2]); end
     end
     return expr
