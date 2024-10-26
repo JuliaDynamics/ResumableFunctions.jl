@@ -259,7 +259,7 @@ end
 #
 # For any other symbol y (which is not the left hand side of an assignmetn),
 # there are the following two cases:
-#   1) y has been seen before in some scope. Then we replace y accordinly.
+#   1) y has been seen before in some scope. Then we replace y accordingly.
 #   2) y has not been seen before, then we don't rename it.
 #
 # ---
