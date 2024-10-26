@@ -268,7 +268,7 @@ end
 # inside the current scope.
 #
 # We exploit this when rewriting let and for constructions, see below for
-# examples with let.
+# examples with let. At the end, all `local x` are removed.
 
 mutable struct ScopeTracker
   i::Int

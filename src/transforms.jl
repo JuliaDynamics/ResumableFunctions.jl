@@ -1,18 +1,9 @@
+"""
+Function that removes `local x` expression.
+"""
 function transform_remove_local(ex)
   ex isa Expr && ex.head === :local && return Expr(:block)
   return ex
-end
-
-function transform_macro(ex)
-  ex isa Expr || return ex
-  ex.head !== :macrocall && return ex
-  return Expr(:call, :__secret__, ex.args)
-end
-
-function transform_macro_undo(ex)
-  ex isa Expr || return ex
-  (ex.head !== :call || ex.args[1] !== :__secret__) && return ex
-  return Expr(:macrocall, ex.args[2]...)
 end
 
 """
@@ -150,55 +141,6 @@ function transform_slots(expr, symbols)
     expr.args[i] = expr.args[i] isa Symbol && expr.args[i] in symbols ? :(_fsmi.$(expr.args[i])) : expr.args[i]
   end
   expr
-end
-
-#"""
-#Function that handles `let` block
-#"""
-#function transform_slots_let(expr::Expr, symbols)
-#  @capture(expr, let vars_; body_ end)
-#  locals = Set{Symbol}()
-#  (isa(vars, Expr) && vars.head==:(=))  || error("@resumable currently supports only single variable declarations in let blocks, i.e. only let blocks exactly of the form `let i=j; ...; end`. If you need multiple variables, please submit an issue on the issue tracker and consider contributing a patch.")
-#  sym = vars.args[1].args[2].value
-#  push!(locals, sym)
-#  vars.args[1] = sym
-#  body = postwalk(x->transform_let(x, locals), :(begin $(body) end))
-#  :(let $vars; $body end)
-#end
-
-function transform_let(expr)
-  expr isa Expr || return expr
-  expr.head === :block && return expr
-  #@info "inside transform let"
-  @capture(expr, let arg_; body_; end) || return expr
-  #@info "captured let"
-  #arg |> dump
-  #@info expr
-  #@info arg
-  #error("ASds")
-  res = quote
-    let
-      local $arg
-      $body
-    end
-  end
-  #@info "emitting $res"
-  res
-  #expr.head === :. || return expr
-  #expr = expr.args[2].value in symbols ? :($(expr.args[2].value)) : expr
-end
-
-"""
-Function that replaces a variable `_fsmi.x` in an expression by `x` where `x` is a variable declared in a `let` block.
-"""
-function transform_local(expr)
-  expr isa Expr || return expr
-  @capture(expr, local arg_ = ex_) || return expr
-  res = quote
-    local $arg
-    $arg = $ex
-  end
-  res
 end
 
 """

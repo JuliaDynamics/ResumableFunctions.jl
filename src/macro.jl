@@ -84,13 +84,7 @@ macro resumable(ex::Expr...)
   func_def[:body] = postwalk(transform_yieldfrom, func_def[:body])
   func_def[:body] = postwalk(x->transform_for(x, ui8), func_def[:body])
   @debug func_def[:body]|>MacroTools.striplines
-  #func_def[:body] = postwalk(x->transform_macro(x), func_def[:body])
-  #@debug func_def[:body]|>MacroTools.striplines
-  #func_def[:body] = postwalk(x->transform_macro_undo(x), func_def[:body])
-  #@debug func_def[:body]|>MacroTools.striplines
-  #func_def[:body] = postwalk(x->transform_let(x), func_def[:body])
-  #@info func_def[:body]|>MacroTools.striplines
-  #func_def[:body] = postwalk(x->transform_local(x), func_def[:body])
+
   # Scoping fixes
 
   # :name is :(fA::A) if it is an overloading call function (fA::A)(...)
