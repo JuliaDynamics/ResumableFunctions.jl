@@ -1,6 +1,7 @@
 using ResumableFunctions
 using Test
 using SafeTestsets
+using REPL # work around regression with @doc macro: https://github.com/JuliaLang/julia/issues/54664
 
 function doset(descr)
     if length(ARGS) == 0
