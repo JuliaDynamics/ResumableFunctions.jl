@@ -287,7 +287,7 @@ end
     y = 1
     @yield g(z, z = y, 2)
   end
-  
+
   @test collect(test_kw(3)) == [8]
 
   g(z; y) = z - y

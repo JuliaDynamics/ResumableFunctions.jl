@@ -49,7 +49,7 @@ DocTestSetup = quote
 
   @resumable function basic_example()
     @yield "Initial call"
-    @yield 
+    @yield
     "Final call"
   end
 end
@@ -58,7 +58,7 @@ end
 ```julia
 @resumable function basic_example()
   @yield "Initial call"
-  @yield 
+  @yield
   "Final call"
 end
 ```

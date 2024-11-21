@@ -95,7 +95,7 @@ macro resumable(ex::Expr...)
   else
     _name = func_def[:name]
   end
-  
+
   scope = ScopeTracker(0, __module__, [Dict(i =>i for i in vcat(args, kwargs, [_name], params...))])
   func_def[:body] = scoping(copy(func_def[:body]), scope)
   func_def[:body] = postwalk(x->transform_remove_local(x), func_def[:body])
@@ -176,7 +176,7 @@ macro resumable(ex::Expr...)
   end
   call_expr = combinedef(call_def) |> flatten
   @debug call_expr|>MacroTools.striplines
-  
+
   # Finalizing the function stepping through the finite state machine
   if isempty(params)
     func_def[:name] = :((_fsmi::$type_name))

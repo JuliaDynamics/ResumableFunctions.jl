@@ -133,7 +133,7 @@ Function that replaces a variable `x` in an expression by `_fsmi.x` where `x` is
 function transform_slots(expr, symbols)
   expr isa Expr || return expr
   #expr.head === :let && return transform_slots_let(expr, symbols)
-  
+
   # "Problematic" expressions all have been transformed into Expr(:kw,...)
   for i in 1:length(expr.args)
     expr.head === :kw && i === 1 && continue

@@ -239,7 +239,7 @@ end
 # that it cannot handle expressions, where identical left-hand sides (RHS)
 # refer to different variables. This applies to both `let` as well as `local`
 # constructions.
-# 
+#
 # We solve this problem by renaming all variables.
 #
 # We use a ScopeTracker type to keep track of the things that are already
@@ -480,7 +480,7 @@ function scoping(expr::Expr, scope)
   end
   new_stack = false
   if expr.head === :let
-    # Replace 
+    # Replace
     #   let i, k = 2, j = 1
     #      [...]
     #   end
