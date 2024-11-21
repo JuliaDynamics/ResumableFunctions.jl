@@ -2,8 +2,6 @@
 
 using Logging
 
-const STDERR_HAS_COLOR = Ref{Bool}(false)
-
 # Prevent invalidation when packages define custom loggers
 # Using invoke in combination with @nospecialize eliminates backedges to these methods
 function _invoked_min_enabled_level(@nospecialize(logger))
@@ -19,7 +17,7 @@ for level in [:debug, :info, :warn, :error]
             macrocall.args[1] = Symbol($"@$level")
             quote
                 old_logger = global_logger()
-                io = IOContext(Core.stderr, :color=>STDERR_HAS_COLOR[])
+                io = IOContext(Core.stderr, :color=>get(stderr, :color, false))
                 min_level = _invoked_min_enabled_level(old_logger)
                 global_logger(Logging.ConsoleLogger(io, min_level))
                 ret = $(esc(macrocall))

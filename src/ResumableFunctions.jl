@@ -8,10 +8,6 @@ module ResumableFunctions
 
   export @resumable, @yield, @nosave, @yieldfrom
 
-  function __init__()
-    STDERR_HAS_COLOR[] = get(stderr, :color, false)
-  end
-
   include("safe_logging.jl")
 
   include("types.jl")
