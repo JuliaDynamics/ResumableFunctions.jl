@@ -75,10 +75,10 @@ function get_slots(func_def::Dict, args::Dict{Symbol, Any}, mod::Module)
   func_def[:body] = postwalk(x->transform_nosave(x, nosaves), func_def[:body])
   # eval function
   func_expr = combinedef(func_def) |> flatten
-  @eval(mod, @noinline $func_expr)
+  inferfn = @eval(mod, @noinline $func_expr)
   #@info func_def[:body]|>MacroTools.striplines
   # get typed code
-  codeinfos = @eval(mod, code_typed($(func_def[:name]), Tuple; optimize=false))
+  codeinfos = Core.eval(mod, code_typed(inferfn, Tuple; optimize=false))
   #@info codeinfos
   # extract slot names and types
   for codeinfo in codeinfos
@@ -94,7 +94,7 @@ function get_slots(func_def::Dict, args::Dict{Symbol, Any}, mod::Module)
       slots[key] = Any
     end
   end
-  return func_def[:name], slots
+  return inferfn, slots
 end
 
 """
