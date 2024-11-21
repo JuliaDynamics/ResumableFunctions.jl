@@ -1,5 +1,9 @@
 # News
 
+## v1.0.0 - dev
+
+- **(breaking)** Support for proper Julia scoping of variables inside of resumable functions.
+
 ## v0.6.10 - 2024-09-08
 
 - Add `length` support by allowing `@resumable length=ex function [...]`
@@ -39,7 +43,7 @@
   * introduction of `@yieldfrom` to delegate to another resumable function or iterator (similar to [Python's `yield from`](https://peps.python.org/pep-0380/))
   * resumable functions are now allowed to return values, so that `r = @yieldfrom f` also stores the return value of `f` in `r`
 
-* 2023: v0.6.2 
+* 2023: v0.6.2
   * Julia v1.10 compatibility fix
   * resumable functions can now dispatch on types
 
