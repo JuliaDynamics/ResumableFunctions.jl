@@ -73,6 +73,7 @@ macro resumable(ex::Expr...)
 
   # The function that executes a step of the finite state machine
   func_def = splitdef(expr)
+  @debug func_def[:body]|>MacroTools.striplines
   rtype = :rtype in keys(func_def) ? func_def[:rtype] : Any
   args, kwargs, arg_dict = get_args(func_def)
   params = ((get_param_name(param) for param in func_def[:whereparams])...,)
@@ -82,7 +83,26 @@ macro resumable(ex::Expr...)
   func_def[:body] = postwalk(transform_arg_yieldfrom, func_def[:body])
   func_def[:body] = postwalk(transform_yieldfrom, func_def[:body])
   func_def[:body] = postwalk(x->transform_for(x, ui8), func_def[:body])
+  @debug func_def[:body]|>MacroTools.striplines
+
+  # Scoping fixes
+
+  # :name is :(fA::A) if it is an overloading call function (fA::A)(...)
+  # ...
+  if func_def[:name] isa Expr
+    func_def[:name].head != :(::) && error("Unrecognized function name: $(func_def[:name].head)")
+    _name = func_def[:name].args[1]
+  else
+    _name = func_def[:name]
+  end
+
+  scope = ScopeTracker(0, __module__, [Dict(i =>i for i in vcat(args, kwargs, [_name], params...))])
+  func_def[:body] = scoping(copy(func_def[:body]), scope)
+  func_def[:body] = postwalk(x->transform_remove_local(x), func_def[:body])
+  @debug func_def[:body]|>MacroTools.striplines
+
   inferfn, slots = get_slots(copy(func_def), arg_dict, __module__)
+  @debug slots
 
   # check if the resumable function is a callable struct instance (a functional) that is referencing itself
   isfunctional = @capture(func_def[:name], functional_::T_) && inexpr(func_def[:body], functional)
@@ -113,7 +133,6 @@ macro resumable(ex::Expr...)
     fsmi._state = 0x00
     fsmi
   end
-
   # the bare/fallback version of the constructor supplies default slot type parameters
   # we only need to define this if there there are actually slot defaults to be filled
   if !isempty(slot_T)
@@ -139,7 +158,6 @@ macro resumable(ex::Expr...)
     end
   )
   @debug type_expr|>MacroTools.striplines
-
   # The "original" function that now is simply a wrapper around the construction of the finite state machine
   call_def = copy(func_def)
   call_def[:rtype] = nothing
@@ -209,7 +227,6 @@ macro resumable(ex::Expr...)
     call_expr = postwalk(x->x==:(ResumableFunctions.typed_fsmi) ? :(ResumableFunctions.typed_fsmi_fallback) : x, call_expr)
   end
   @debug func_expr|>MacroTools.striplines
-
   # The final expression:
   # - the finite state machine struct
   # - the function stepping through the states

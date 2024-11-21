@@ -49,7 +49,7 @@ DocTestSetup = quote
 
   @resumable function basic_example()
     @yield "Initial call"
-    @yield 
+    @yield
     "Final call"
   end
 end
@@ -58,7 +58,7 @@ end
 ```julia
 @resumable function basic_example()
   @yield "Initial call"
-  @yield 
+  @yield
   "Final call"
 end
 ```
@@ -373,6 +373,7 @@ DocTestSetup = quote
   @resumable function arrays_of_tuples()
     for u in [[(1,2),(3,4)], [(5,6),(7,8)]]
       for i in 1:2
+        local val
         let i=i
           val = [a[i] for a in u]
         end

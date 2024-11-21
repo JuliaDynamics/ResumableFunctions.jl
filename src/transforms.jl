@@ -1,4 +1,12 @@
 """
+Function that removes `local x` expression.
+"""
+function transform_remove_local(ex)
+  ex isa Expr && ex.head === :local && return Expr(:block)
+  return ex
+end
+
+"""
 Function that replaces a variable
 """
 function transform_nosave(expr, nosaves::Set{Symbol})
@@ -67,25 +75,47 @@ end
 
 """
 Function that replaces a `for` loop by a corresponding `while` loop saving explicitly the *iterator* and its *state*.
+
+For loops of the form `for a, b, c; body; end` are denested.
 """
 function transform_for(expr, ui8::BoxedUInt8)
+  (expr isa Expr && expr.head === :for) || return expr
+  # test for simple for a in b expression
+  expr.args[1].head === :(=) && return transform_for_inner(expr, ui8)
+  # must be a complicated iteration
+  expr.args[1].head !== :block && error("Unrecognized for expression: $(expr.args[1])")
+  body = expr.args[2]
+  # denest, starting at the back
+  for a in reverse(expr.args[1].args)
+    body = Expr(:for, a, body)
+    # turn for into while loop
+    body = transform_for_inner(body, ui8)
+  end
+  return body
+end
+
+function transform_for_inner(expr, ui8::BoxedUInt8)
+  # turning for into while loops
   @capture(expr, for element_ in iterator_ body_ end) || return expr
+  localelement = Expr(:local, element)
   ui8.n += one(UInt8)
   next = Symbol("_iteratornext_", ui8.n)
   state = Symbol("_iterstate_", ui8.n)
   iterator_value = Symbol("_iterator_", ui8.n)
   label = Symbol("_iteratorlabel_", ui8.n)
   body = postwalk(x->transform_continue(x, label), :(begin $(body) end))
-  quote
+  res = quote
     $iterator_value = $iterator
     @nosave $next = iterate($iterator_value)
     while $next !== nothing
+      $localelement
       ($element, $state) = $next
       $body
       @label $label
       $next = iterate($iterator_value, $state)
     end
   end
+  res
 end
 
 
@@ -102,36 +132,15 @@ Function that replaces a variable `x` in an expression by `_fsmi.x` where `x` is
 """
 function transform_slots(expr, symbols)
   expr isa Expr || return expr
-  expr.head === :let && return transform_slots_let(expr, symbols)
+  #expr.head === :let && return transform_slots_let(expr, symbols)
+
+  # "Problematic" expressions all have been transformed into Expr(:kw,...)
   for i in 1:length(expr.args)
     expr.head === :kw && i === 1 && continue
     expr.head === Symbol("quote") && continue
     expr.args[i] = expr.args[i] isa Symbol && expr.args[i] in symbols ? :(_fsmi.$(expr.args[i])) : expr.args[i]
   end
   expr
-end
-
-"""
-Function that handles `let` block
-"""
-function transform_slots_let(expr::Expr, symbols)
-  @capture(expr, let vars_; body_ end)
-  locals = Set{Symbol}()
-  (isa(vars, Expr) && vars.head==:(=))  || error("@resumable currently supports only single variable declarations in let blocks, i.e. only let blocks exactly of the form `let i=j; ...; end`. If you need multiple variables, please submit an issue on the issue tracker and consider contributing a patch.")
-  sym = vars.args[1].args[2].value
-  push!(locals, sym)
-  vars.args[1] = sym
-  body = postwalk(x->transform_let(x, locals), :(begin $(body) end))
-  :(let $vars; $body end)
-end
-
-"""
-Function that replaces a variable `_fsmi.x` in an expression by `x` where `x` is a variable declared in a `let` block.
-"""
-function transform_let(expr, symbols::Set{Symbol})
-  expr isa Expr || return expr
-  expr.head === :. || return expr
-  expr = expr.args[2].value in symbols ? :($(expr.args[2].value)) : expr
 end
 
 """
