@@ -140,7 +140,11 @@ function code_typed_by_type(@nospecialize(tt::Type);
     # run inference, normally not allowed in generated functions
     frame = Core.Compiler.typeinf_frame(interp, match.method, match.spec_types, match.sparams, optimize)
     frame === nothing && error("inference failed")
-    valid_worlds = Core.Compiler.intersect(valid_worlds, frame.valid_worlds)
+    @static if VERSION >= v"1.12.0-DEV.1552"
+      valid_worlds = Core.Compiler.intersect(frame.world, valid_worlds).valid_worlds
+    else
+      valid_worlds = Core.Compiler.intersect(valid_worlds, frame.valid_worlds)
+    end
     return frame.linfo, frame.src, valid_worlds
 end
 
