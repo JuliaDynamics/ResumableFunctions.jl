@@ -1,6 +1,6 @@
 # News
 
-## v1.0.0 - dev
+## v1.0.0 - 2024-11-22
 
 - **(breaking)** Support for proper Julia scoping of variables inside of resumable functions.
 
