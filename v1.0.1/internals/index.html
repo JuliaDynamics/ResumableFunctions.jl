@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Internals · ResumableFunctions</title><meta name="title" content="Internals · ResumableFunctions"/><meta property="og:title" content="Internals · ResumableFunctions"/><meta property="twitter:title" content="Internals · ResumableFunctions"/><meta name="description" content="Documentation for ResumableFunctions."/><meta property="og:description" content="Documentation for ResumableFunctions."/><meta property="twitter:description" content="Documentation for ResumableFunctions."/><script data-outdated-warner src="../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../search_index.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../">ResumableFunctions</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../">Home</a></li><li><a class="tocitem" href="../manual/">Manual</a></li><li class="is-active"><a class="tocitem" href>Internals</a><ul class="internal"><li><a class="tocitem" href="#Split-the-definition"><span>Split the definition</span></a></li><li><a class="tocitem" href="#For-loops"><span>For loops</span></a></li><li><a class="tocitem" href="#Slots"><span>Slots</span></a></li><li><a class="tocitem" href="#Type-definition"><span>Type definition</span></a></li><li><a class="tocitem" href="#Call-definition"><span>Call definition</span></a></li><li><a class="tocitem" href="#Transformation-of-the-body"><span>Transformation of the body</span></a></li><li><a class="tocitem" href="#Making-the-type-callable"><span>Making the type callable</span></a></li></ul></li><li><a class="tocitem" href="../library/">Library</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>Internals</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Internals</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/JuliaDynamics/ResumableFunctions.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/JuliaDynamics/ResumableFunctions.jl/blob/master/docs/src/internals.md" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Internals"><a class="docs-heading-anchor" href="#Internals">Internals</a><a id="Internals-1"></a><a class="docs-heading-anchor-permalink" href="#Internals" title="Permalink"></a></h1><p>The macro <code>@resumable</code> transform a function definition into a finite state-machine, i.e. a callable type holding the state and references to the internal variables of the function and a constructor for this new type respecting the method signature of the original function definition. When calling the new type a modified version of the body of the original function definition is executed:</p><ul><li>a dispatch mechanism is inserted at the start to allow a non local jump to a label inside the body;</li><li>the <code>@yield</code> statement is replaced by a <code>return</code> statement and a label placeholder as endpoint of a non local jump;</li><li><code>for</code> loops are transformed in <code>while</code> loops and</li><li><code>try</code>-<code>catch</code>-<code>finally</code>-<code>end</code> expressions are converted in a sequence of <code>try</code>-<code>catch</code>-<code>end</code> expressions with at the end of the <code>catch</code> part a non local jump to a label that marks the beginning of the expressions in the <code>finally</code> part.</li></ul><p>The two last transformations are needed to overcome the limitations of the non local jump macros <code>@goto</code> and <code>@label</code>.</p><p>The complete procedure is explained using the following example:</p><pre><code class="language-julia hljs">@resumable function fibonacci(n::Int)
+  a = 0
+  b = 1
+  for i in 1:n-1
+    @yield a
+    a, b = b, a + b
+  end
+  a
+end</code></pre><h2 id="Split-the-definition"><a class="docs-heading-anchor" href="#Split-the-definition">Split the definition</a><a id="Split-the-definition-1"></a><a class="docs-heading-anchor-permalink" href="#Split-the-definition" title="Permalink"></a></h2><p>The function definition is split by <code>MacroTools.splitdef</code> in different parts, eg. <code>:name</code>, <code>:body</code>, <code>:args</code>, ...</p><h2 id="For-loops"><a class="docs-heading-anchor" href="#For-loops">For loops</a><a id="For-loops-1"></a><a class="docs-heading-anchor-permalink" href="#For-loops" title="Permalink"></a></h2><p><code>for</code> loops in the body of the function definition are transformed in equivalent while loops:</p><pre><code class="language-julia hljs">begin
+  a = 0
+  b = 1
+  _iter = 1:n-1
+  _iterstate = start(_iter)
+  while !done(_iter, _iterstate)
+    i, _iterstate = next(_iter, _iterstate)
+    @yield a
+    a, b = b, a + b
+  end
+  a
+end</code></pre><h2 id="Slots"><a class="docs-heading-anchor" href="#Slots">Slots</a><a id="Slots-1"></a><a class="docs-heading-anchor-permalink" href="#Slots" title="Permalink"></a></h2><p>The slots and their types in the function definition are recovered by running the <code>code_typed</code> function for the locally evaluated function definition:</p><pre><code class="language-julia hljs">n :: Int64
+a :: Int64
+b :: Int64
+_iter :: UnitRange{Int64}
+_iterstate :: Int64
+i :: Int64</code></pre><h2 id="Type-definition"><a class="docs-heading-anchor" href="#Type-definition">Type definition</a><a id="Type-definition-1"></a><a class="docs-heading-anchor-permalink" href="#Type-definition" title="Permalink"></a></h2><p>A <code>mutable struct</code> is defined containing the state and the slots:</p><pre><code class="language-julia hljs">mutable struct ##123 &lt;: ResumableFunctions.FiniteStateMachineIterator
+      _state :: UInt8
+      n :: Int64
+      a :: Int64
+      b :: Int64
+      _iter :: UnitRange{Int64}
+      _iterstate :: Int64
+      i :: Int64 
+
+      function ##123()
+        fsmi = new()
+        fsmi._state = 0x00
+        fsmi
+      end
+    end</code></pre><h2 id="Call-definition"><a class="docs-heading-anchor" href="#Call-definition">Call definition</a><a id="Call-definition-1"></a><a class="docs-heading-anchor-permalink" href="#Call-definition" title="Permalink"></a></h2><p>A call function is constructed that creates the previously defined composite type. This function satisfy the calling convention of the original function definition and is returned from the macro:</p><pre><code class="language-julia hljs">function fibonacci(n::Int)
+  fsmi = ##123(n)
+  fsmi.n = n
+  fsmi
+end</code></pre><h2 id="Transformation-of-the-body"><a class="docs-heading-anchor" href="#Transformation-of-the-body">Transformation of the body</a><a id="Transformation-of-the-body-1"></a><a class="docs-heading-anchor-permalink" href="#Transformation-of-the-body" title="Permalink"></a></h2><p>In 6 steps the body of the function definition is transformed into a finite state-machine.</p><h3 id="Renaming-of-slots"><a class="docs-heading-anchor" href="#Renaming-of-slots">Renaming of slots</a><a id="Renaming-of-slots-1"></a><a class="docs-heading-anchor-permalink" href="#Renaming-of-slots" title="Permalink"></a></h3><p>The slots are replaced by references to the fields of the composite type:</p><pre><code class="language-julia hljs">begin
+  _fsmi.a = 0
+  _fsmi.b = 1
+  _fsmi._iter = 1:n-1
+  _fsmi._iterstate = start(_fsmi._iter)
+  while !done(_fsmi._iter, _fsmi._iterstate)
+    _fsmi.i, _fsmi._iterstate = next(_fsmi._iter, _fsmi._iterstate)
+    @yield _fsmi.a
+    _fsmi.a, _fsmi.b = _fsmi.b, _fsmi.a + _fsmi.b
+  end
+  _fsmi.a
+end</code></pre><h3 id="Two-way-communication"><a class="docs-heading-anchor" href="#Two-way-communication">Two-way communication</a><a id="Two-way-communication-1"></a><a class="docs-heading-anchor-permalink" href="#Two-way-communication" title="Permalink"></a></h3><p>All expressions of the form <code>_fsmi.arg = @yield</code> are transformed into:</p><pre><code class="language-julia hljs">@yield
+_fsmi.arg = _arg</code></pre><h3 id="Exception-handling"><a class="docs-heading-anchor" href="#Exception-handling">Exception handling</a><a id="Exception-handling-1"></a><a class="docs-heading-anchor-permalink" href="#Exception-handling" title="Permalink"></a></h3><p>Exception handling is added to <code>@yield</code>:</p><pre><code class="language-julia hljs">begin
+  _fsmi.a = 0
+  _fsmi.b = 1
+  _fsmi._iter = 1:n-1
+  _fsmi._iterstate = start(_fsmi._iter)
+  while !done(_fsmi._iter, _fsmi._iterstate)
+    _fsmi.i, _fsmi._iterstate = next(_fsmi._iter, _fsmi._iterstate)
+    @yield _fsmi.a
+    _arg isa Exception &amp;&amp; throw(_arg)
+    _fsmi.a, _fsmi.b = _fsmi.b, _fsmi.a + _fsmi.b
+  end
+  _fsmi.a
+end</code></pre><h3 id="Try-catch-finally-end-block-handling"><a class="docs-heading-anchor" href="#Try-catch-finally-end-block-handling">Try catch finally end block handling</a><a id="Try-catch-finally-end-block-handling-1"></a><a class="docs-heading-anchor-permalink" href="#Try-catch-finally-end-block-handling" title="Permalink"></a></h3><p><code>try</code>-<code>catch</code>-<code>finally</code>-<code>end</code> expressions are converted in a sequence of <code>try</code>-<code>catch</code>-<code>end</code> expressions with at the end of the <code>catch</code> part a non local jump to a label that marks the beginning of the expressions in the <code>finally</code> part.</p><h3 id="Yield-transformation"><a class="docs-heading-anchor" href="#Yield-transformation">Yield transformation</a><a id="Yield-transformation-1"></a><a class="docs-heading-anchor-permalink" href="#Yield-transformation" title="Permalink"></a></h3><p>The <code>@yield</code> statement is replaced by a <code>return</code> statement and a label placeholder as endpoint of a non local jump:</p><pre><code class="language-julia hljs">begin
+  _fsmi.a = 0
+  _fsmi.b = 1
+  _fsmi._iter = 1:n-1
+  _fsmi._iterstate = start(_fsmi._iter)
+  while !done(_fsmi._iter, _fsmi._iterstate)
+    _fsmi.i, _fsmi._iterstate = next(_fsmi._iter, _fsmi._iterstate)
+    _fsmi._state = 0x01
+    return _fsmi.a
+    @label _STATE_1
+    _fsmi._state = 0xff
+    _arg isa Exception &amp;&amp; throw(_arg)
+    _fsmi.a, _fsmi.b = _fsmi.b, _fsmi.a + _fsmi.b
+  end
+  _fsmi.a
+end</code></pre><h3 id="Dispatch-mechanism"><a class="docs-heading-anchor" href="#Dispatch-mechanism">Dispatch mechanism</a><a id="Dispatch-mechanism-1"></a><a class="docs-heading-anchor-permalink" href="#Dispatch-mechanism" title="Permalink"></a></h3><p>A dispatch mechanism is inserted at the start of the body to allow a non local jump to a label inside the body:</p><pre><code class="language-julia hljs">begin
+  _fsmi_state == 0x00 &amp;&amp; @goto _STATE_0
+  _fsmi_state == 0x01 &amp;&amp; @goto _STATE_1
+  error(&quot;@resumable function has stopped!&quot;)
+  @label _STATE_0
+  _fsmi._state = 0xff
+  _arg isa Exception &amp;&amp; throw(_arg)
+  _fsmi.a = 0
+  _fsmi.b = 1
+  _fsmi._iter = 1:n-1
+  _fsmi._iterstate = start(_fsmi._iter)
+  while !done(_fsmi._iter, _fsmi._iterstate)
+    _fsmi.i, _fsmi._iterstate = next(_fsmi._iter, _fsmi._iterstate)
+    _fsmi._state = 0x01
+    return _fsmi.a
+    @label _STATE_1
+    _fsmi._state = 0xff
+    _arg isa Exception &amp;&amp; throw(_arg)
+    _fsmi.a, _fsmi.b = _fsmi.b, _fsmi.a + _fsmi.b
+  end
+  _fsmi.a
+end</code></pre><h2 id="Making-the-type-callable"><a class="docs-heading-anchor" href="#Making-the-type-callable">Making the type callable</a><a id="Making-the-type-callable-1"></a><a class="docs-heading-anchor-permalink" href="#Making-the-type-callable" title="Permalink"></a></h2><p>A function is defined with one argument <code>_arg</code>:</p><pre><code class="language-julia hljs">function (_fsmi::##123)(_arg::Any=nothing)
+  _fsmi_state == 0x00 &amp;&amp; @goto _STATE_0
+  _fsmi_state == 0x01 &amp;&amp; @goto _STATE_1
+  error(&quot;@resumable function has stopped!&quot;)
+  @label _STATE_0
+  _fsmi._state = 0xff
+  _arg isa Exception &amp;&amp; throw(_arg)
+  _fsmi.a = 0
+  _fsmi.b = 1
+  _fsmi._iter = 1:n-1
+  _fsmi._iterstate = start(_fsmi._iter)
+  while !done(_fsmi._iter, _fsmi._iterstate)
+    _fsmi.i, _fsmi._iterstate = next(_fsmi._iter, _fsmi._iterstate)
+    _fsmi._state = 0x01
+    return _fsmi.a
+    @label _STATE_1
+    _fsmi._state = 0xff
+    _arg isa Exception &amp;&amp; throw(_arg)
+    _fsmi.a, _fsmi.b = _fsmi.b, _fsmi.a + _fsmi.b
+  end
+  _fsmi.a
+end</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../manual/">« Manual</a><a class="docs-footer-nextpage" href="../library/">Library »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.8.0 on <span class="colophon-date" title="Sunday 24 November 2024 05:09">Sunday 24 November 2024</span>. Using Julia version 1.11.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
