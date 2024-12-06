@@ -153,4 +153,5 @@ A [detailed change log is kept](https://github.com/JuliaDynamics/ResumableFuncti
 * In a `try` block only top level `@yield` statements are allowed.
 * In a `finally` block a `@yield` statement is not allowed.
 * An anonymous function can not contain a `@yield` statement.
+* `@isdefined` can not be used in a resumable function.
 * Many more restrictions.
