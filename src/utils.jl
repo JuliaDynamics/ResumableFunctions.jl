@@ -469,7 +469,7 @@ function scoping(expr::Expr, scope)
 
     # first transform the RHS (this can be anything) to check for shadowing of globals
     for i in 2:length(expr.args)
-        expr.args[i] = scoping(expr.args[i], scope)
+      expr.args[i] = scoping(expr.args[i], scope)
     end
 
     # only then deal with the LHS (it is a symbol or a tuple of symbols)
