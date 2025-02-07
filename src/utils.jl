@@ -247,8 +247,8 @@ end
 # We solve this problem by renaming all variables.
 #
 # We use a ScopeTracker type to keep track of the things that are already
-# renamned. It is basically just a Vector{Dict{Symbol, Symbol}},
-# representing a stack, where the top records the renamend variables in the
+# renamed. It is basically just a Vector{Dict{Symbol, Symbol}},
+# representing a stack, where the top records the renamed variables in the
 # current scope.
 #
 # The renaming is done as follows. If we encounter an assignment of the form
@@ -261,7 +261,7 @@ end
 # This is done in lookup_lhs!. Note that some construction, like `let`, create
 # a new variable in a new scope. This is handled by the `new` keyword.
 #
-# For any other symbol y (which is not the left hand side of an assignmetn),
+# For any other symbol y (which is not the left hand side of an assignment),
 # there are the following two cases:
 #   1) y has been seen before in some scope. Then we replace y accordingly.
 #   2) y has not been seen before, then we don't rename it.
@@ -467,13 +467,14 @@ function scoping(expr::Expr, scope)
       return quote $(res...) end
     end
 
-    # the LHS is a symbol or a tuple of symbols
+    # first transform the RHS (this can be anything) to check for shadowing of globals
+    for i in 2:length(expr.args)
+        expr.args[i] = scoping(expr.args[i], scope)
+    end
+
+    # only then deal with the LHS (it is a symbol or a tuple of symbols)
     expr.args[1] = lookup_lhs!(expr.args[1], scope)
 
-    # now transform the RHS, this can be anything
-    for i in 2:length(expr.args)
-      expr.args[i] = scoping(expr.args[i], scope)
-    end
     return expr
   end
   if expr.head === :macrocall

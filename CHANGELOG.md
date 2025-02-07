@@ -1,5 +1,9 @@
 # News
 
+## v1.0.2 - 2025-02-07
+
+- Support shadowing of globals, e.g. `@resumable function f(); a=a+1; end;` where `a` is already an existing global.
+
 ## v1.0.1 - 2024-11-23
 
 - Better macro hygiene (e.g. for better support in Pluto.jl) 
