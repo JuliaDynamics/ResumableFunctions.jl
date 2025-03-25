@@ -148,7 +148,7 @@ function code_typed_by_type(@nospecialize(tt::Type);
     return frame.linfo, frame.src, valid_worlds
 end
 
-function fsmi_generator(world::UInt, source::LineNumberNode, passtype, fsmitype::Type{Type{T}}, fargtypes) where T
+function fsmi_generator(world::UInt, source, passtype, fsmitype::Type{Type{T}}, fargtypes) where T
     @nospecialize
     # get typed code of the inference function evaluated in get_slots
     # but this time with concrete argument types
@@ -179,20 +179,10 @@ function fsmi_generator(world::UInt, source::LineNumberNode, passtype, fsmitype:
     # generate code to instantiate the concrete type
     stub = Core.GeneratedFunctionStub(identity, Core.svec(:pass, :fsmi, :fargs), Core.svec())
     if isempty(slots)
-      exprs = stub(world, source, :(return $T()))
+      return stub(world, source, :(return $T()))
     else
-      exprs = stub(world, source, :(return $T{$(slots...)}()))
+      return stub(world, source, :(return $T{$(slots...)}()))
     end
-    # lower codeinfo to pass world age and invalidation edges
-    ci = ccall(:jl_expand_and_resolve, Any, (Any, Any, Any), exprs, passtype.name.module, Core.svec())
-    ci.min_world = min_world
-    ci.max_world = max_world
-    ci.edges = Core.MethodInstance[mi]
-    if isdefined(Base, :__has_internal_change) && Base.__has_internal_change(v"1.12-alpha", :codeinfonargs) # due to julia#54341
-      ci.nargs = 3
-      ci.isva = true
-    end
-    return ci
 end
 
 # JuliaLang/julia#48611: world age is exposed to generated functions, and should be used
