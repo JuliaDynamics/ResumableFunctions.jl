@@ -59,8 +59,10 @@ end
 for fib in fibonacci(10)
   println(fib)
 end
+```
 
-# Example with specifies the length
+```julia
+# Example which specifies the length
 using ResumableFunctions
 
 @resumable length=n^2 function fibonacci(n::Int) :: Int
