@@ -188,7 +188,7 @@ ERROR: @resumable function has stopped!
 DocTestSetup = nothing
 ```
 
-When the `@resumable function` returns normally an error will be thrown if called again.
+When the `@resumable function` returns normally (i.e. at the end of the function rather than at a `@yield` point), an error will be thrown if called again.
 
 ## Two-way communication
 
@@ -320,7 +320,7 @@ DocTestSetup = nothing
 
 ## Parametric `@resumable` functions
 
-Type parameters can be specified with a `where` clause:
+Type parameters can be specified with a normal Julia `where` clause:
 
 ```@meta
 DocTestSetup = quote
@@ -388,6 +388,7 @@ end
 @resumable function arrays_of_tuples()
   for u in [[(1,2),(3,4)], [(5,6),(7,8)]]
     for i in 1:2
+      local val
       let i=i
         val = [a[i] for a in u]
       end
