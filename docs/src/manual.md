@@ -1,30 +1,26 @@
 # Manual
 
+```@meta
+DocTestSetup = quote
+  using ResumableFunctions
+end
+```
+
 ## Basic usage
 
 When a `@resumable function` is called, it continues where it left during the previous invocation:
 
-```@meta
-DocTestSetup = quote
-  using ResumableFunctions
-
-  @resumable function basic_example()
-    @yield "Initial call"
-    @yield "Second call"
-    "Final call"
-  end
-end
-```
-
-```julia
+```jldoctest basic-example; output=false
 @resumable function basic_example()
   @yield "Initial call"
   @yield "Second call"
   "Final call"
 end
+# output
+basic_example (generic function with 1 method)
 ```
 
-```jldoctest
+```jldoctest basic-example
 julia> basic_iterator = basic_example();
 
 julia> basic_iterator()
@@ -37,65 +33,33 @@ julia> basic_iterator()
 "Final call"
 ```
 
-```@meta
-DocTestSetup = nothing
-```
-
 The `@yield` can also be used without a return argument:
 
-```@meta
-DocTestSetup = quote
-  using ResumableFunctions
-
-  @resumable function basic_example()
-    @yield "Initial call"
-    @yield
-    "Final call"
-  end
-end
-```
-
-```julia
-@resumable function basic_example()
+```jldoctest yield-example; output=false
+@resumable function yield_example()
   @yield "Initial call"
   @yield
   "Final call"
 end
+# output
+yield_example (generic function with 1 method)
 ```
 
-```jldoctest
-julia> basic_iterator = basic_example();
+```jldoctest yield-example
+julia> yield_iterator = yield_example();
 
-julia> basic_iterator()
+julia> yield_iterator()
 "Initial call"
 
-julia> basic_iterator()
+julia> yield_iterator()
 
-julia> basic_iterator()
+julia> yield_iterator()
 "Final call"
 ```
 
-```@meta
-DocTestSetup = nothing
-```
+The famous Fibonacci sequence can easily be generated:
 
-The famous fibonacci sequence can easily be generated:
-```@meta
-DocTestSetup = quote
-  using ResumableFunctions
-
-  @resumable function fibonacci()
-    a = 0
-    b = 1
-    while true
-      @yield a
-      a, b = b, a + b
-    end
-  end
-end
-```
-
-```julia
+```jldoctest fibonacci; output=false
 @resumable function fibonacci()
   a = 0
   b = 1
@@ -104,9 +68,11 @@ end
     a, b = b, a + b
   end
 end
+# output
+fibonacci (generic function with 1 method)
 ```
 
-```jldoctest
+```jldoctest fibonacci
 julia> fib_iterator = fibonacci();
 
 julia> fib_iterator()
@@ -131,28 +97,9 @@ julia> fib_iterator()
 8
 ```
 
-```@meta
-DocTestSetup = nothing
-```
-
 The `@resumable function` can take arguments and the type of the return value can be specified:
 
-```@meta
-DocTestSetup = quote
-  using ResumableFunctions
-
-  @resumable function fibonacci(n) :: Int
-    a = 0
-    b = 1
-    for i in 1:n
-      @yield a
-      a, b = b, a + b
-    end
-  end
-end
-```
-
-```julia
+```jldoctest fibo-rettype; output=false
 @resumable function fibonacci(n) :: Int
   a = 0
   b = 1
@@ -161,9 +108,11 @@ end
     a, b = b, a + b
   end
 end
+# output
+fibonacci (generic function with 1 method)
 ```
 
-```jldoctest
+```jldoctest fibo-rettype
 julia> fib_iterator = fibonacci(4);
 
 julia> fib_iterator()
@@ -184,35 +133,22 @@ julia> fib_iterator()
 ERROR: @resumable function has stopped!
 ```
 
-```@meta
-DocTestSetup = nothing
-```
-
 When the `@resumable function` returns normally (i.e. at the end of the function rather than at a `@yield` point), an error will be thrown if called again.
 
 ## Two-way communication
 
 The caller can transmit a variable to the `@resumable function` by assigning a `@yield` statement to a variable:
 
-```@meta
-DocTestSetup = quote
-  using ResumableFunctions
-
-  @resumable function two_way()
-    name = @yield "Who are you?"
-    "Hello, " * name * "!"
-  end
-end
-```
-
-```julia
+```jldoctest two-way; output=false
 @resumable function two_way()
   name = @yield "Who are you?"
   "Hello, " * name * "!"
 end
+# output
+two_way (generic function with 1 method) 
 ```
 
-```jldoctest
+```jldoctest two-way
 julia> hello = two_way();
 
 julia> hello()
@@ -222,29 +158,9 @@ julia> hello("Ben")
 "Hello, Ben!"
 ```
 
-```@meta
-DocTestSetup = nothing
-```
-
 When an `Exception` is passed to the `@resumable function`, it is thrown at the resume point:
 
-```@meta
-DocTestSetup = quote
-  using ResumableFunctions
-
-  @resumable function mouse()
-    try
-      @yield "Here I am!"
-    catch exc
-      return "You got me!"
-    end
-  end
-
-  struct Cat <: Exception end
-end
-```
-
-```julia
+```jldoctest exception-pass; output=false
 @resumable function mouse()
   try
     @yield "Here I am!"
@@ -254,9 +170,11 @@ end
 end
 
 struct Cat <: Exception end
+# output
+
 ```
 
-```jldoctest
+```jldoctest exception-pass
 julia> catch_me = mouse();
 
 julia> catch_me()
@@ -266,30 +184,11 @@ julia> catch_me(Cat())
 "You got me!"
 ```
 
-```@meta
-DocTestSetup = nothing
-```
-
 ## Iterator interface
 
 The iterator interface is implemented for a `@resumable function`:
 
-```@meta
-DocTestSetup = quote
-  using ResumableFunctions
-
-  @resumable function fibonacci(n) :: Int
-    a = 0
-    b = 1
-    for i in 1:n
-      @yield a
-      a, b = b, a + b
-    end
-  end
-end
-```
-
-```julia
+```jldoctest iterate; output=false
 @resumable function fibonacci(n) :: Int
   a = 0
   b = 1
@@ -298,9 +197,11 @@ end
     a, b = b, a + b
   end
 end
+# output
+fibonacci (generic function with 1 method)
 ```
 
-```jldoctest
+```jldoctest iterate
 julia> for val in fibonacci(10) println(val) end
 0
 1
@@ -314,37 +215,22 @@ julia> for val in fibonacci(10) println(val) end
 34
 ```
 
-```@meta
-DocTestSetup = nothing
-```
-
 ## Parametric `@resumable` functions
 
 Type parameters can be specified with a normal Julia `where` clause:
 
-```@meta
-DocTestSetup = quote
-  using ResumableFunctions
-
-  @resumable function fibonacci(a::N, b::N=a+one(N)) :: N where {N<:Number}
-    for i in 1:10
-      @yield a
-      a, b = b, a + b
-    end
-  end
-end
-```
-
-```julia
+```jldoctest parametric; output=false
 @resumable function fibonacci(a::N, b::N=a+one(N)) :: N where {N<:Number}
   for i in 1:10
     @yield a
     a, b = b, a + b
    end
 end
+# output
+fibonacci (generic function with 2 methods)
 ```
 
-```jldoctest
+```jldoctest parametric
 julia> for val in fibonacci(0.0) println(val) end
 0.0
 1.0
@@ -356,58 +242,6 @@ julia> for val in fibonacci(0.0) println(val) end
 13.0
 21.0
 34.0
-```
-
-```@meta
-DocTestSetup = nothing
-```
-
-## Let block
-
-A `let` block allows a variable not to be saved in between calls to a `@resumable function`:
-
-```@meta
-DocTestSetup = quote
-  using ResumableFunctions
-
-  @resumable function arrays_of_tuples()
-    for u in [[(1,2),(3,4)], [(5,6),(7,8)]]
-      for i in 1:2
-        local val
-        let i=i
-          val = [a[i] for a in u]
-        end
-        @yield val
-      end
-    end
-  end
-end
-```
-
-```julia
-@resumable function arrays_of_tuples()
-  for u in [[(1,2),(3,4)], [(5,6),(7,8)]]
-    for i in 1:2
-      local val
-      let i=i
-        val = [a[i] for a in u]
-      end
-      @yield val
-    end
-  end
-end
-```
-
-```jldoctest
-julia> for array in arrays_of_tuples() println(array) end
-[1, 3]
-[2, 4]
-[5, 7]
-[6, 8]
-```
-
-```@meta
-DocTestSetup = nothing
 ```
 
 ## Caveats
