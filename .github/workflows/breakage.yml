@@ -24,7 +24,7 @@ jobs:
         pkgversion: [latest]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       # Install Julia
       - uses: julia-actions/setup-julia@v1
