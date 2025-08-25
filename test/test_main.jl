@@ -403,6 +403,42 @@ end
     end
   end
   @test collect(test_comprehension5()) == [2, 3, 4, 3, 4, 5]
+
+  @resumable function test_comprehension_state()
+    c = 1
+    @yield [i*c for i in 1:5]
+    c += 1
+    @yield [i*c for i in 1:5]
+  end
+  @test_broken collect(test_comprehension_state()) == [[1, 2, 3, 4, 5], [2, 4, 6, 8, 10]]
+
+  @resumable function test_comprehension_if()
+    @yield [i for i in 1:10 if i < 5]
+  end
+  @test collect(test_comprehension_if()) == [[1, 2, 3, 4]]
+
+  @resumable function test_comprehension_if_multi_iterators()
+    @yield [i + j for i in 1:3, j in 1:3 if i <= j]
+  end
+  @test collect(test_comprehension_if_multi_iterators()) == [[2, 3, 4, 4, 5, 6]]
+
+  @resumable function test_comprehension_if_nested_for()
+    @yield [i * j for i in 1:3 for j in 1:3 if i * j < 5]
+  end
+  @test collect(test_comprehension_if_nested_for()) == [[1, 2, 3, 2, 4, 3]]
+
+  @resumable function test_comprehension_if_mixed()
+    @yield [i + j + k for i in 1:2, j in 1:2 for k in 1:2 if i + j + k == 4]
+  end
+  @test collect(test_comprehension_if_mixed()) == [[4, 4, 4]]
+
+  @resumable function test_comprehension_if_state()
+    c = 1
+    @yield [i for i in 1:10 if i < c]
+    c += 1
+    @yield [i for i in 1:10 if i < c]
+  end
+  @test_broken collect(test_comprehension_if_state()) == [Int[], [1]]
 end
 
 @testset "test_ref" begin
