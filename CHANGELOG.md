@@ -1,5 +1,9 @@
 # News
 
+## v1.0.4 - 2025-08-25
+
+- Support comprehensions with conditionals, e.g., `@resumable function f1(); [i for i in 1:10 if i<5]; end` which previously led to "Illegal expression" errors.
+
 ## v1.0.3 - 2025-03-24
 
 - Internal changes to `fsmi_generator` to support julia 1.12

@@ -338,11 +338,10 @@ function scoping(s::Symbol, scope; new = false)
   return lookup_rhs!(s, scope)
 end
 
-function scope_generator(expr, scope)
-  expr.head !== :generator && error("Illegal generator expression: $(expr)")
-  # first the generator case
+function scope_generator_inner(expr, scope)
   for i in 2:length(expr.args)
-    !(expr.args[i] isa Expr && expr.args[i].head === :(=)) && error("Illegal expression in generator: $(expr.args[i])")
+    !(expr.args[i] isa Expr && expr.args[i].head === :(=)) &&
+      error("Illegal expression in generator: $(expr.args[i])")
     expr.args[i].args[2] = scoping(expr.args[i].args[2], scope)
   end
   # now create new scope
@@ -350,7 +349,20 @@ function scope_generator(expr, scope)
   for i in 2:length(expr.args)
     expr.args[i].args[1] = lookup_lhs!(expr.args[i].args[1], scope, new = true)
   end
+end
 
+function scope_generator(expr, scope)
+  expr.head !== :generator && error("Illegal generator expression: $(expr)")
+
+  has_filter = length(expr.args) == 2 && expr.args[2] isa Expr && expr.args[2].head === :filter
+  if has_filter
+    ex = expr.args[2]
+    scope_generator_inner(ex, scope)
+    # now apply scoping to the filter condition expression
+    ex.args[1] = scoping(ex.args[1], scope)
+  else
+    scope_generator_inner(expr, scope)
+  end
   expr.args[1] = scoping(expr.args[1], scope)
   pop!(scope.scope_stack)
   return expr
@@ -430,10 +442,6 @@ function scoping(expr::Expr, scope)
         expr.args[i] = scoping(expr.args[i], scope)
       end
     end
-    return expr
-  end
-  if expr.head === :generator
-    expr = scope_generator(expr)
     return expr
   end
 
