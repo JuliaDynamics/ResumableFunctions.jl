@@ -4,3 +4,5 @@
 examples/.ipynb_checkpoints
 docs/build
 Manifest.toml
+Manifest-v*.toml
+

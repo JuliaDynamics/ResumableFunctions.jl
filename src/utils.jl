@@ -1,5 +1,5 @@
 """
-Function returning the name of a where parameter
+Function returning the name of a `where` parameter
 """
 function get_param_name(expr) :: Symbol
   @capture(expr, arg_<:arg_type_) && return arg
@@ -15,7 +15,7 @@ function get_args(func_def::Dict)
   kwarg_list = Vector{Symbol}()
   for arg in (func_def[:args]...,)
     arg_def = splitarg(arg)
-    if arg_def[1] != nothing
+    if arg_def[1] !== nothing
       push!(arg_list, arg_def[1])
       arg_dict[arg_def[1]] = arg_def[3] ? Any : arg_dict[arg_def[1]] = arg_def[2]
     end
@@ -76,7 +76,7 @@ function get_slots(func_def::Dict, args::Dict{Symbol, Any}, mod::Module)
   # eval function
   func_expr = combinedef(func_def) |> flatten
   inferfn = @eval(mod, @noinline $func_expr)
-  #@info func_def[:body]|>MacroTools.striplines
+  #@info func_def[:body] |> striplines
   # get typed code
   codeinfos = Core.eval(mod, code_typed(inferfn, Tuple; optimize=false))
   #@info codeinfos
@@ -88,7 +88,7 @@ function get_slots(func_def::Dict, args::Dict{Symbol, Any}, mod::Module)
   end
   # remove `catch exc` statements
   postwalk(x->remove_catch_exc(x, slots), func_def[:body])
-  # set error branches to Any
+  # set error branches to `Any`
   for (key, val) in slots
     if val === Union{}
       slots[key] = Any
@@ -200,7 +200,8 @@ else
   end
 end
 
-# a fallback function that uses the fallback constructor with generic slot types -- useful for older versions of Julia or for situations where our current custom inference struggles
+# a fallback function that uses the fallback constructor with generic slot types 
+# useful for older versions of Julia or for situations where our current custom inference struggles
 function typed_fsmi_fallback(fsmi::Type{T}, fargs...)::T where T
   return T()
 end
@@ -279,10 +280,10 @@ function lookup_lhs!(s::Symbol, S::ScopeTracker; new::Bool = false)
     end
   end
   D = last(S.scope_stack)
-  new = Symbol(s, Symbol("_$(S.i)"))
+  new_s = Symbol(s, Symbol("_$(S.i)"))
   S.i += 1
-  D[s] = new
-  return new
+  D[s] = new_s
+  return new_s
 end
 
 function lookup_lhs!(s::QuoteNode, S::ScopeTracker)
@@ -402,7 +403,7 @@ function scoping(expr::Expr, scope)
           expr.args[i] = Expr(:kw, expr.args[i], lookup_lhs!(expr.args[i], scope))
         else
           expr.args[i].head !== :(=) &&
-            error("Uncregonized expression in tuple expression: $(expr.args[i])")
+            error("Unrecognized expression in tuple: $(expr.args[i])")
           expr.args[i].args[2] = scoping(expr.args[i].args[2], scope)
           expr.args[i].head = :kw
         end
@@ -481,7 +482,6 @@ function scoping(expr::Expr, scope)
     end
     return expr
   end
-  new_stack = false
   if expr.head === :let
     # Replace
     #   let i, k = 2, j = 1
@@ -508,7 +508,6 @@ function scoping(expr::Expr, scope)
 
     @capture(expr, let arg_; body_ end) || return expr
     @capture(arg, begin x__ end)
-    new_stack = true
     push!(scope.scope_stack, Dict())
     rep = []
     for i in 1:length(x)
@@ -528,7 +527,7 @@ function scoping(expr::Expr, scope)
     rep = quote
       $(rep...)
     end
-    rep = MacroTools.flatten(rep)
+    rep = flatten(rep)
     expr.args[1] = Expr(:block)
     pushfirst!(expr.args[2].args, rep)
 
@@ -542,10 +541,12 @@ function scoping(expr::Expr, scope)
     return expr
   end
 
-  if expr.head === :while || expr.head === :let
+  new_stack = false
+  if expr.head === :while
     push!(scope.scope_stack, Dict())
     new_stack = true
   end
+
   if expr.head === :local
     # if we see a local x or local x = ...
     # we always emit a new identifier

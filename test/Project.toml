@@ -1,6 +1,7 @@
 [deps]
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+ExplicitImports = "7d51a73a-1435-4ff3-83d9-f097790105c7"
 JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
 MacroTools = "1914dd2f-81c6-5fcd-8719-6d5c9610ff09"
 REPL = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
