@@ -60,30 +60,31 @@ julia> collect(f(3))
 ```
 """
 macro resumable(ex::Expr...)
-  length(ex) >= 3 && error("Too many arguments")
+  length(ex) >= 3 && throw(ArgumentError("Too many arguments"))
   for i in 1:length(ex)-1
     a = ex[i]
     if !(a isa Expr && a.head === :(=) && a.args[1] in [:length])
-      error("only keyword argument 'length' allowed")
+      throw(ArgumentError("only keyword argument 'length' allowed, got `$a` instead"))
     end
   end
 
   expr = ex[end]
-  expr.head !== :function && error("Expression is not a function definition!")
+  expr.head !== :function && throw(ArgumentError("Expression `$expr` is not a function definition!"))
 
   # The function that executes a step of the finite state machine
   func_def = splitdef(expr)
-  @debug func_def[:body]|>MacroTools.striplines
+  @debug func_def[:body] |> striplines
   rtype = :rtype in keys(func_def) ? func_def[:rtype] : Any
   args, kwargs, arg_dict = get_args(func_def)
   params = ((get_param_name(param) for param in func_def[:whereparams])...,)
 
-  # Initial preparation of the function stepping through the finite state machine and extraction of local variables and their types
+  # Initial preparation of the function stepping through the finite state machine,
+  # and extraction of local variables and their types
   ui8 = BoxedUInt8(zero(UInt8))
   func_def[:body] = postwalk(transform_arg_yieldfrom, func_def[:body])
   func_def[:body] = postwalk(transform_yieldfrom, func_def[:body])
   func_def[:body] = postwalk(x->transform_for(x, ui8), func_def[:body])
-  @debug func_def[:body]|>MacroTools.striplines
+  @debug func_def[:body] |> striplines
 
   # Scoping fixes
 
@@ -99,7 +100,7 @@ macro resumable(ex::Expr...)
   scope = ScopeTracker(0, __module__, [Dict(i =>i for i in vcat(args, kwargs, [_name], params...))])
   func_def[:body] = scoping(copy(func_def[:body]), scope)
   func_def[:body] = postwalk(x->transform_remove_local(x), func_def[:body])
-  @debug func_def[:body]|>MacroTools.striplines
+  @debug func_def[:body] |> striplines
 
   inferfn, slots = get_slots(copy(func_def), arg_dict, __module__)
   @debug slots
@@ -157,7 +158,7 @@ macro resumable(ex::Expr...)
       $(bareconst_expr)
     end
   )
-  @debug type_expr|>MacroTools.striplines
+  @debug type_expr |> striplines
   # The "original" function that now is simply a wrapper around the construction of the finite state machine
   call_def = copy(func_def)
   call_def[:rtype] = nothing
@@ -175,7 +176,7 @@ macro resumable(ex::Expr...)
     fsmi
   end
   call_expr = combinedef(call_def) |> flatten
-  @debug call_expr|>MacroTools.striplines
+  @debug call_expr |> striplines
 
   # Finalizing the function stepping through the finite state machine
   if isempty(params)
@@ -226,7 +227,7 @@ macro resumable(ex::Expr...)
     @debug "recursion or self-reference is present in a resumable function definition: falling back to no inference"
     call_expr = postwalk(x->x==:(ResumableFunctions.typed_fsmi) ? :(ResumableFunctions.typed_fsmi_fallback) : x, call_expr)
   end
-  @debug func_expr|>MacroTools.striplines
+  @debug func_expr |> striplines
   # The final expression:
   # - the finite state machine struct
   # - the function stepping through the states

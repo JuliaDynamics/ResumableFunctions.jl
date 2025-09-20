@@ -1,6 +1,6 @@
 # safe logging, copied from GPUCompiler
 
-using Logging
+using Logging: Logging, @debug, @info, @warn, @error, LogLevel, global_logger
 
 # Prevent invalidation when packages define custom loggers
 # Using invoke in combination with @nospecialize eliminates backedges to these methods
