@@ -213,7 +213,8 @@ macro resumable(ex::Expr...)
   func_def[:body] = quote
     _fsmi._state === 0x00 && @goto $(Symbol("_STATE_0"))
     $((:(_fsmi._state === $i && @goto $(Symbol("_STATE_",:($i)))) for i in 0x01:ui8.n)...)
-    error("@resumable function has stopped!")
+    _name = $_name
+    error(lazy"@resumable function $(_name) has stopped!")
     @label $(Symbol("_STATE_0"))
     _fsmi._state = 0xff
     _arg isa Exception && throw(_arg)
