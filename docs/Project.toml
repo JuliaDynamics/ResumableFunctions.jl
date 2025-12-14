@@ -1,2 +1,7 @@
 [deps]
+AnythingLLMDocs = "333fe5f5-19c9-4863-8caf-c9193e7dba62"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+ResumableFunctions = "c5292f4c-5179-55e1-98c5-05642aab7184"
+
+[sources]
+ResumableFunctions = {path = "/workdir/dev/QuantumSavory/ResumableFunctions.jl"}
