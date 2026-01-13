@@ -60,13 +60,18 @@ end
 
 const unused = (Symbol("#temp#"), Symbol("_"), Symbol(""), Symbol("#unused#"), Symbol("#self#"))
 
+function strip_defaults(arg_exprs::Vector{Any})
+  return Any[@capture(arg_expr, arg_expr2_ = default_) ? arg_expr2 : arg_expr
+    for arg_expr in arg_exprs]
+end
+
 """
 Function returning the slots of a function definition
 """
 function get_slots(func_def::Dict, args::Dict{Symbol, Any}, mod::Module)
   slots = Dict{Symbol, Any}()
   func_def[:name] = gensym()
-  func_def[:args] = (func_def[:args]..., func_def[:kwargs]...)
+  func_def[:args] = Any[strip_defaults(func_def[:args])..., strip_defaults(func_def[:kwargs])...]
   func_def[:kwargs] = []
   # replace yield with inference barrier
   func_def[:body] = postwalk(transform_yield, func_def[:body])
@@ -78,13 +83,12 @@ function get_slots(func_def::Dict, args::Dict{Symbol, Any}, mod::Module)
   inferfn = @eval(mod, @noinline $func_expr)
   #@info func_def[:body] |> striplines
   # get typed code
-  codeinfos = Core.eval(mod, code_typed(inferfn, Tuple; optimize=false))
+  m = only(methods(inferfn, Tuple))
+  codeinfo = only(code_typed(inferfn, Tuple; optimize=false))
   #@info codeinfos
   # extract slot names and types
-  for codeinfo in codeinfos
-    for (name, type) in collect(zip(codeinfo.first.slotnames, codeinfo.first.slottypes))
-      name ∉ nosaves && name ∉ unused && (slots[name] = Union{type, get(slots, name, Union{})})
-    end
+  for (name, type) in collect(zip(codeinfo.first.slotnames, codeinfo.first.slottypes))
+    name ∉ nosaves && name ∉ unused && (slots[name] = Union{type, get(slots, name, Union{})})
   end
   # remove `catch exc` statements
   postwalk(x->remove_catch_exc(x, slots), func_def[:body])
@@ -94,7 +98,7 @@ function get_slots(func_def::Dict, args::Dict{Symbol, Any}, mod::Module)
       slots[key] = Any
     end
   end
-  return inferfn, slots
+  return m, slots
 end
 
 """
@@ -129,78 +133,76 @@ end
   ret
 end
 
-# this is similar to code_typed but it considers the world age
-function code_typed_by_type(@nospecialize(tt::Type);
-                            optimize::Bool=true,
-                            world::UInt=Base.get_world_counter(),
-                            interp::Core.Compiler.AbstractInterpreter=Core.Compiler.NativeInterpreter(world))
-    tt = Base.to_tuple_type(tt)
-    # look up the method
-    match, valid_worlds = Core.Compiler.findsup(tt, Core.Compiler.InternalMethodTable(world))
-    # run inference, normally not allowed in generated functions
-    frame = Core.Compiler.typeinf_frame(interp, match.method, match.spec_types, match.sparams, optimize)
-    frame === nothing && error("inference failed")
-    @static if VERSION >= v"1.12.0-DEV.1552"
-      valid_worlds = Core.Compiler.intersect(frame.world, valid_worlds).valid_worlds
-    else
-      valid_worlds = Core.Compiler.intersect(valid_worlds, frame.valid_worlds)
-    end
-    return frame.linfo, frame.src, valid_worlds
+struct FSMIGenerator
+  m::Method
 end
 
-function fsmi_generator(world::UInt, source, passtype, fsmitype::Type{Type{T}}, fargtypes) where T
+intersection_env(@nospecialize(x), @nospecialize(y)) = ccall(:jl_type_intersection_with_env, Any, (Any,Any), x, y)::Core.SimpleVector
+
+if VERSION >= v"1.12"
+  using Base: invoke_in_typeinf_world
+else
+  function invoke_in_typeinf_world(args...)
+    vargs = Any[args...]
+    return ccall(:jl_call_in_typeinf_world, Any, (Ptr{Any}, Cint), vargs, length(vargs))
+  end
+end
+
+function code_typed_by_method(method::Method, @nospecialize(tt::Type), world::UInt)
+  # run inference (TODO: not really allowed or safe in a generated function)
+  (ti, sparams) = intersection_env(tt, method.sig)
+  interp = Core.Compiler.NativeInterpreter(world)
+  frame = invoke_in_typeinf_world(Core.Compiler.typeinf_frame, interp, method, tt, sparams::Core.SimpleVector, false)
+  frame === nothing && error("inference failed")
+  ci = frame.src
+  @static if VERSION >= v"1.12"
+    ci.edges = Core.svec(frame.edges...) # Core.Compiler seems to forget to do this
+  end
+  return frame.linfo, ci
+end
+
+function (fsmi_generator::FSMIGenerator)(world::UInt, source, typed_fsmitype, fsmitype::Type{Type{T_}}, fargtypes) where T_
     @nospecialize
     # get typed code of the inference function evaluated in get_slots
-    # but this time with concrete argument types
-    tt = Base.to_tuple_type(fargtypes)
-    mi, ci, valid_worlds = try
-      code_typed_by_type(tt; world, optimize=false)
+    # using the concrete argument types
+    T = T_
+    m = fsmi_generator.m
+    stub = Core.GeneratedFunctionStub(identity, Core.svec(:var"#self#", :fsmi, :fargs), Core.svec())
+    fargtypes = Tuple{fargtypes...} # convert (types...) to Tuple{types...}
+    mi, ci = try
+      code_typed_by_method(m, fargtypes, world)
     catch err # inference failed, return generic type
       @safe_warn "Inference of a @resumable function failed -- a slower fallback will be used and everything will still work, however please consider reporting this to the developers of ResumableFunctions.jl so that we can debug and increase performance"
       @safe_warn "The error was $err"
-      slots = fieldtypes(T)[2:end]
-      stub = Core.GeneratedFunctionStub(identity, Core.svec(:pass, :fsmi, :fargs), Core.svec())
-      if isempty(slots)
-        return stub(world, source, :(return $T()))
-      else
-        return stub(world, source, :(return $T{$(slots...)}()))
-      end
+      return stub(world, source, :(return $T())) # use typed_fsmi_fallback implementation
     end
-    min_world = valid_worlds.min_world
-    max_world = valid_worlds.max_world
     # extract slot types
     cislots = Dict{Symbol, Any}()
-    for (name, type) in collect(zip(ci.slotnames, ci.slottypes))
+    names = ci.slotnames
+    types = ci.slottypes
+    for i in eachindex(names)
       # take care to widen types that are unstable or Const
-      type = Core.Compiler.widenconst(type)
+      name = names[i]
+      type = Core.Compiler.widenconst(types[i])
       cislots[name] = Union{type, get(cislots, name, Union{})}
     end
     slots = map(slot->get(cislots, slot, Any), fieldnames(T)[2:end])
-    # generate code to instantiate the concrete type
-    stub = Core.GeneratedFunctionStub(identity, Core.svec(:pass, :fsmi, :fargs), Core.svec())
-    if isempty(slots)
-      return stub(world, source, :(return $T()))
-    else
-      return stub(world, source, :(return $T{$(slots...)}()))
+    # instantiate the concrete type
+    if !isempty(slots)
+      T = T{slots...}
     end
+    new_ci = stub(world, source, :(return $T()))
+    edges = ci.edges
+    if edges !== nothing && !isempty(edges)
+      # Inference may have conservatively limited the world range, even though it also concluded there was no restrictions (hence no edges) necessary.
+      new_ci.min_world = ci.min_world
+      new_ci.max_world = ci.max_world
+      new_ci.edges = edges
+    end
+    return new_ci
 end
 
-# JuliaLang/julia#48611: world age is exposed to generated functions, and should be used
-if VERSION >= v"1.10.0-DEV.873"
-  # This is like @generated, but it receives the world age of the caller
-  # which we need to do inference safely and correctly
-  @eval function typed_fsmi(fsmi, fargs...)
-      $(Expr(:meta, :generated_only))
-      $(Expr(:meta, :generated, fsmi_generator))
-  end
-else
-  # runtime fallback function that uses the fallback constructor with generic slot types
-  function typed_fsmi(fsmi::Type{T}, fargs...)::T where T
-    return typed_fsmi_fallback(fsmi, fargs...)
-  end
-end
-
-# a fallback function that uses the fallback constructor with generic slot types 
+# a fallback function that uses the fallback constructor with generic slot types
 # useful for older versions of Julia or for situations where our current custom inference struggles
 function typed_fsmi_fallback(fsmi::Type{T}, fargs...)::T where T
   return T()
