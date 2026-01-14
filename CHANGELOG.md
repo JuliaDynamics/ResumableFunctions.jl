@@ -2,7 +2,9 @@
 
 ## v1.0.5 - unreleased
 
-- Some general cleanup of the code, and adding ExplicitImports.jl tests for long term maintainability.
+- Some general cleanup of the code
+- Adding ExplicitImports.jl tests for long term maintainability.
+- Restored edge code, for soundness of re-evaluation (lost in #124)
 
 ## v1.0.4 - 2025-08-25
 

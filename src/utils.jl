@@ -139,7 +139,7 @@ end
 
 intersection_env(@nospecialize(x), @nospecialize(y)) = ccall(:jl_type_intersection_with_env, Any, (Any,Any), x, y)::Core.SimpleVector
 
-if VERSION >= v"1.12"
+@static if VERSION >= v"1.12" # static macro prevents JET/Revise from making mistakes here when analyzing the file
   using Base: invoke_in_typeinf_world
 else
   function invoke_in_typeinf_world(args...)
