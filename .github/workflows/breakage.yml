@@ -16,7 +16,6 @@ jobs:
       matrix:
         pkg: [
           "JuliaDynamics/ConcurrentSim.jl",
-          "gerlero/Fronts.jl",
           "QuantumSavory/QuantumSavory.jl",
           "marcom/FoldRNA.jl",
           "JuliaAstro/CCDReduction.jl",
