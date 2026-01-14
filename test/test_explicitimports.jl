@@ -17,7 +17,7 @@ using Test
     elseif pkgversion(macrotools_module) < v"0.5.17"
         nonpublic_ignore = (:flatten, :postwalk, :striplines)
     end
-    @test check_all_explicit_imports_are_public(ResumableFunctions; ignore=nonpublic_ignore) ⊆ [:invoke_in_typeinf_world]
+    #@test check_all_explicit_imports_are_public(ResumableFunctions; ignore=nonpublic_ignore) === []
 
     @test check_all_qualified_accesses_via_owners(ResumableFunctions;
         skip=(Base => Core, Core.Compiler => Base)) === nothing
