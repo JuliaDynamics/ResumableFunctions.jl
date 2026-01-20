@@ -3,6 +3,7 @@
 ## v1.0.5 - unreleased
 
 - Some general cleanup of the code, and adding ExplicitImports.jl tests for long term maintainability.
+- Fix the error when there is a positional vararg eg. `fn(a...; kw)` (#135)
 
 ## v1.0.4 - 2025-08-25
 

@@ -80,6 +80,18 @@ end
 @test collect(test_varargs(1, 2, 3)) == [1, 2, 3]
 end
 
+@resumable function test_varargs_kwargs(a...; k...)
+  @yield a
+  @yield k
+end
+
+@testset "test_varargs_kwargs" begin
+  it = test_varargs_kwargs(1, 2, x=3, y=4)
+  res = collect(it)
+  @test res[1] == (1, 2)
+  @test Dict(res[2]) == Dict(:x => 3, :y => 4)
+end
+
 @testset "test_let" begin
   @resumable function test_let()
     for u in [[(1,2),(3,4)], [(5,6),(7,8)]]
