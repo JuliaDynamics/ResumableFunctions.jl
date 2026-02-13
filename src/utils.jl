@@ -66,8 +66,16 @@ Function returning the slots of a function definition
 function get_slots(func_def::Dict, args::Dict{Symbol, Any}, mod::Module)
   slots = Dict{Symbol, Any}()
   func_def[:name] = gensym()
+  
+  if !isempty(func_def[:args]) && !isempty(func_def[:kwargs])
+    name, type, splat, default = splitarg(last(func_def[:args]))
+    # if the final arg is a splat, appending kwargs like we do below causes error
+    # so set it as non-splat, since we only care about names here anyway
+    func_def[:args][end] = combinearg(name, type, false, default)
+  end
   func_def[:args] = (func_def[:args]..., func_def[:kwargs]...)
   func_def[:kwargs] = []
+
   # replace yield with inference barrier
   func_def[:body] = postwalk(transform_yield, func_def[:body])
   # collect items to skip
@@ -75,6 +83,7 @@ function get_slots(func_def::Dict, args::Dict{Symbol, Any}, mod::Module)
   func_def[:body] = postwalk(x->transform_nosave(x, nosaves), func_def[:body])
   # eval function
   func_expr = combinedef(func_def) |> flatten
+  @debug func_expr |> striplines
   inferfn = @eval(mod, @noinline $func_expr)
   #@info func_def[:body] |> striplines
   # get typed code
