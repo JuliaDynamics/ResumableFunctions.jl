@@ -109,8 +109,10 @@ macro resumable(ex::Expr...)
   isfunctional = @capture(func_def[:name], functional_::T_) && inexpr(func_def[:body], functional)
   if isfunctional
     slots[functional] = T
-    push!(args, functional)
+  else
+    functional = :var"#self#"
   end
+  pushfirst!(args, functional)
 
   # The finite state machine structure definition
   type_name = gensym(Symbol(func_def[:name], :_FSMI))
@@ -150,14 +152,24 @@ macro resumable(ex::Expr...)
     bareconst_expr = nothing
   end
   constr_expr = combinedef(constr_def) |> flatten
-  type_expr = :(
+  typed_fsmi = VERSION >= v"1.10.0-DEV.873" ? gensym(:typed_fsmi) : typed_fsmi_fallback
+  type_expr = quote
     mutable struct $struct_name
       _state :: UInt8
       $((:($slotname :: $slottype) for (slotname, slottype) in zip(keys(slots), slot_T))...)
       $(constr_expr)
       $(bareconst_expr)
     end
-  )
+    # JuliaLang/julia#48611: world age is exposed to generated functions, and should be used
+    if VERSION >= v"1.10.0-DEV.873"
+      # This is like @generated, but it receives the world age of the caller
+      # which we need to do inference safely and correctly
+      function $typed_fsmi(fsmi, fargs...)
+          $(Expr(:meta, :generated_only))
+          $(Expr(:meta, :generated, FSMIGenerator(inferfn)))
+      end
+    end
+  end
   @debug type_expr |> striplines
   # The "original" function that now is simply a wrapper around the construction of the finite state machine
   call_def = copy(func_def)
@@ -168,10 +180,9 @@ macro resumable(ex::Expr...)
     fsmi_name = :($type_name{$(params...)})
   end
   fwd_args, fwd_kwargs = forward_args(call_def)
-  isfunctional && push!(fwd_args, functional)
   call_def[:body] = quote
-    fsmi = ResumableFunctions.typed_fsmi($fsmi_name, $inferfn, $(fwd_args...), $(fwd_kwargs...))
-    $((arg !== Symbol("_") ? :(fsmi.$arg = $arg) : nothing for arg in args)...)
+    fsmi = $typed_fsmi($fsmi_name, $functional, $(fwd_args...), $(fwd_kwargs...))
+    $((arg !== :_ && arg !== :var"#self#" ? :(fsmi.$arg = $arg) : nothing for arg in args)...)
     $((:(fsmi.$arg = $arg) for arg in kwargs)...)
     fsmi
   end
@@ -211,10 +222,10 @@ macro resumable(ex::Expr...)
   func_def[:body] = postwalk(x->transform_yield(x, ui8), func_def[:body])
   func_def[:body] = postwalk(x->transform_nosave(x, Set{Symbol}()), func_def[:body])
   func_def[:body] = quote
-    _fsmi._state === 0x00 && @goto $(Symbol("_STATE_0"))
-    $((:(_fsmi._state === $i && @goto $(Symbol("_STATE_",:($i)))) for i in 0x01:ui8.n)...)
+    _fsmi._state === 0x00 && @goto _STATE_0
+    $((:(_fsmi._state === $i && @goto $(Symbol("_STATE_",i))) for i in 0x01:ui8.n)...)
     error("@resumable function has stopped!")
-    @label $(Symbol("_STATE_0"))
+    @label _STATE_0
     _fsmi._state = 0xff
     _arg isa Exception && throw(_arg)
     $(func_def[:body])
@@ -225,7 +236,7 @@ macro resumable(ex::Expr...)
 
   if inexpr(func_def[:body], call_def[:name]) || isfunctional
     @debug "recursion or self-reference is present in a resumable function definition: falling back to no inference"
-    call_expr = postwalk(x->x==:(ResumableFunctions.typed_fsmi) ? :(ResumableFunctions.typed_fsmi_fallback) : x, call_expr)
+    call_expr = postwalk(x->x===typed_fsmi ? :(ResumableFunctions.typed_fsmi_fallback) : x, call_expr)
   end
   @debug func_expr |> striplines
   # The final expression:
