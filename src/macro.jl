@@ -97,9 +97,7 @@ macro resumable(ex::Expr...)
     _name = func_def[:name]
   end
 
-  scope = ScopeTracker(0, __module__, [Dict(i =>i for i in vcat(args, kwargs, [_name], params...))])
-  func_def[:body] = scoping(copy(func_def[:body]), scope)
-  func_def[:body] = postwalk(x->transform_remove_local(x), func_def[:body])
+  func_def[:body] = apply_scope_fixes(func_def[:body], args, kwargs, _name, params, __module__)
   @debug func_def[:body] |> striplines
 
   inferfn, slots = get_slots(copy(func_def), arg_dict, __module__)

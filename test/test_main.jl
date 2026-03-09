@@ -324,6 +324,35 @@ end
   @test collect((test_quotenode((a = 3, b = 4)))) == [5^2]
 end
 
+@testset "test_scoping_backend_selection" begin
+  withenv("RESUMABLEFUNCTIONS_SCOPE_BACKEND" => "legacy") do
+    @eval begin
+      @resumable function test_scope_backend_legacy()
+        x = 41
+        @yield x + 1
+      end
+    end
+    result = Base.invokelatest(() -> collect(Base.invokelatest(test_scope_backend_legacy)))
+    @test result == [42]
+  end
+
+  withenv("RESUMABLEFUNCTIONS_SCOPE_BACKEND" => "unknown_backend") do
+    err = try
+      @eval begin
+        @resumable function test_scope_backend_invalid()
+          @yield 1
+        end
+      end
+      nothing
+    catch ex
+      ex
+    end
+    @test err isa LoadError
+    @test err.error isa ArgumentError
+    @test occursin("RESUMABLEFUNCTIONS_SCOPE_BACKEND", sprint(showerror, err.error))
+  end
+end
+
 @testset "test_named_tuple" begin
   @resumable function test_named_tuple(u, v)
     r = @NamedTuple{a::Int, b::Int}[]
