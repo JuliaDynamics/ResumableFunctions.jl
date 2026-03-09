@@ -32,8 +32,12 @@ function apply_scope_fixes_legacy(func_body, args, kwargs, name, params, mod::Mo
 end
 
 function apply_scope_fixes_julialowering(func_body, args, kwargs, name, params, mod::Module)
+  pkg_hint = isnothing(Base.find_package("JuliaLowering")) ?
+    "JuliaLowering.jl is not installed in this environment. " :
+    "JuliaLowering.jl is installed, but the integration path is not implemented on this branch yet. "
+
   throw(ArgumentError(
-    "The `julialowering` scoping backend is not implemented yet on this branch. " *
+    pkg_hint *
     "Use `RESUMABLEFUNCTIONS_SCOPE_BACKEND=legacy` (default) or continue the experimental JuliaLowering integration work."
   ))
 end

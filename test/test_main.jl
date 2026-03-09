@@ -351,6 +351,23 @@ end
     @test err.error isa ArgumentError
     @test occursin("RESUMABLEFUNCTIONS_SCOPE_BACKEND", sprint(showerror, err.error))
   end
+
+  withenv("RESUMABLEFUNCTIONS_SCOPE_BACKEND" => "julialowering") do
+    err = try
+      @eval begin
+        @resumable function test_scope_backend_julialowering()
+          @yield 1
+        end
+      end
+      nothing
+    catch ex
+      ex
+    end
+    @test err isa LoadError
+    @test err.error isa ArgumentError
+    @test occursin("JuliaLowering", sprint(showerror, err.error))
+    @test occursin("legacy", sprint(showerror, err.error))
+  end
 end
 
 @testset "test_named_tuple" begin
