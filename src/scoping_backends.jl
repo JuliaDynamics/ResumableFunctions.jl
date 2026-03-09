@@ -31,13 +31,26 @@ function apply_scope_fixes_legacy(func_body, args, kwargs, name, params, mod::Mo
   return func_body
 end
 
-function apply_scope_fixes_julialowering(func_body, args, kwargs, name, params, mod::Module)
-  pkg_hint = isnothing(Base.find_package("JuliaLowering")) ?
-    "JuliaLowering.jl is not installed in this environment. " :
-    "JuliaLowering.jl is installed, but the integration path is not implemented on this branch yet. "
+function julialowering_probe()
+  package_path = Base.find_package("JuliaLowering")
+  available = !isnothing(package_path)
+  return (
+    available = available,
+    package_path = package_path,
+    status = available ? :installed_unimplemented : :missing_dependency,
+  )
+end
 
-  throw(ArgumentError(
-    pkg_hint *
+function julialowering_error_message()
+  probe = julialowering_probe()
+  pkg_hint = probe.available ?
+    "JuliaLowering.jl is installed, but the integration path is not implemented on this branch yet. " :
+    "JuliaLowering.jl is not installed in this environment. "
+
+  return pkg_hint *
     "Use `RESUMABLEFUNCTIONS_SCOPE_BACKEND=legacy` (default) or continue the experimental JuliaLowering integration work."
-  ))
+end
+
+function apply_scope_fixes_julialowering(func_body, args, kwargs, name, params, mod::Module)
+  throw(ArgumentError(julialowering_error_message()))
 end

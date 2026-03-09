@@ -336,6 +336,17 @@ end
     @test result == [42]
   end
 
+  probe = ResumableFunctions.julialowering_probe()
+  @test haskey(pairs(probe), :available)
+  @test haskey(pairs(probe), :package_path)
+  @test haskey(pairs(probe), :status)
+  @test probe.available == !isnothing(probe.package_path)
+  @test probe.status in (:missing_dependency, :installed_unimplemented)
+
+  msg = ResumableFunctions.julialowering_error_message()
+  @test occursin("JuliaLowering", msg)
+  @test occursin("legacy", msg)
+
   withenv("RESUMABLEFUNCTIONS_SCOPE_BACKEND" => "unknown_backend") do
     err = try
       @eval begin
