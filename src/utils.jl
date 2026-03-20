@@ -312,6 +312,39 @@ function scope_function_body(expr, scope::ScopeTracker, ::JuliaLoweringScopingBa
   ))
 end
 
+"""
+Proof-only helper for experimenting with JuliaLowering-backed scope analysis.
+
+This does not affect the normal `@resumable` pipeline. It is intended for
+narrow diagnostics and feasibility checks while the JuliaLowering path remains
+experimental.
+"""
+function experimental_julialowering_scope_report(expr_src::AbstractString; mod::Module = Main)
+  if VERSION < v"1.12.0"
+    throw(ArgumentError(
+      "experimental_julialowering_scope_report requires Julia 1.12+; current VERSION=$(VERSION)"
+    ))
+  end
+
+  jl = if isdefined(Main, :JuliaLowering)
+    getfield(Main, :JuliaLowering)
+  else
+    throw(ArgumentError(
+      "JuliaLowering is not loaded in Main; start Julia 1.12+ and `using JuliaLowering` before calling experimental_julialowering_scope_report"
+    ))
+  end
+
+  js = try
+    getfield(jl, :JuliaSyntax)
+  catch
+    throw(ArgumentError("JuliaLowering loaded but JuliaSyntax is not available through it"))
+  end
+
+  ex = js.parsestmt(jl.SyntaxTree, expr_src)
+  lowered = jl.lower(mod, ex)
+  return sprint(io -> show(io, MIME("text/plain"), lowered))
+end
+
 function lookup_lhs!(s::Symbol, S::ScopeTracker; new::Bool = false)
   if !new
     for D in Iterators.reverse(S.scope_stack)

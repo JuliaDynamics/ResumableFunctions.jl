@@ -319,6 +319,17 @@ end
   end
   @test err isa ArgumentError
   @test occursin("JuliaLowering scoping backend is experimental", sprint(showerror, err))
+
+  if VERSION < v"1.12.0"
+    report_err = try
+      ResumableFunctions.experimental_julialowering_scope_report("let i = i, j = i\n  i + j\nend")
+      nothing
+    catch exc
+      exc
+    end
+    @test report_err isa ArgumentError
+    @test occursin("requires Julia 1.12+", sprint(showerror, report_err))
+  end
 end
 
 @testset "test_kw" begin
