@@ -97,8 +97,7 @@ macro resumable(ex::Expr...)
     _name = func_def[:name]
   end
 
-  scope = ScopeTracker(0, __module__, [Dict(i =>i for i in vcat(args, kwargs, [_name], params...))])
-  func_def[:body] = scoping(copy(func_def[:body]), scope)
+  func_def[:body] = scope_function_body(func_def[:body], args, kwargs, _name, params, __module__)
   func_def[:body] = postwalk(x->transform_remove_local(x), func_def[:body])
   @debug func_def[:body] |> striplines
 

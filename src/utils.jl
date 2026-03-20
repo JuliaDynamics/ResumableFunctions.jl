@@ -265,10 +265,51 @@ end
 # We exploit this when rewriting let and for constructions, see below for
 # examples with let. At the end, all `local x` are removed.
 
+abstract type AbstractScopingBackend end
+
+"""
+Default scoping backend used by `@resumable`.
+
+This preserves the current hand-rolled scope-renaming pass while allowing
+experimental backends to be introduced behind a stable seam.
+"""
+struct ManualScopingBackend <: AbstractScopingBackend end
+
+"""
+Experimental scoping backend placeholder for future JuliaLowering-backed scope
+resolution.
+
+This backend is intentionally not wired up yet; the first milestone is to make
+backend selection explicit and testable without changing current behavior.
+"""
+struct JuliaLoweringScopingBackend <: AbstractScopingBackend end
+
 mutable struct ScopeTracker
   i::Int
   mod::Module
   scope_stack::Vector
+end
+
+default_scoping_backend() = ManualScopingBackend()
+
+function init_scope_tracker(args, kwargs, name, params, mod::Module)
+  ScopeTracker(0, mod, [Dict(i => i for i in vcat(args, kwargs, [name], params...))])
+end
+
+function scope_function_body(expr, args, kwargs, name, params, mod::Module;
+                             backend::AbstractScopingBackend = default_scoping_backend())
+  scope = init_scope_tracker(args, kwargs, name, params, mod)
+  scope_function_body(expr, scope, backend)
+end
+
+function scope_function_body(expr, scope::ScopeTracker, ::ManualScopingBackend)
+  scoping(copy(expr), scope)
+end
+
+function scope_function_body(expr, scope::ScopeTracker, ::JuliaLoweringScopingBackend)
+  throw(ArgumentError(
+    "JuliaLowering scoping backend is experimental and not wired into ResumableFunctions yet"
+  ))
 end
 
 function lookup_lhs!(s::Symbol, S::ScopeTracker; new::Bool = false)

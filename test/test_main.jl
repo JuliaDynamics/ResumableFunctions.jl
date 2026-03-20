@@ -280,6 +280,47 @@ end
   @test collect(test_forward()) == [i^2 for i in 1:10]
 end
 
+@testset "test_scoping_backend_seam" begin
+  expr = quote
+    let i = i, j = i
+      i + j
+    end
+  end
+
+  manual = ResumableFunctions.scope_function_body(
+    expr,
+    [:i],
+    Symbol[],
+    :test_backend,
+    Symbol[],
+    @__MODULE__;
+    backend = ResumableFunctions.ManualScopingBackend(),
+  )
+
+  manual_str = sprint(show, manual)
+  @test ResumableFunctions.default_scoping_backend() isa ResumableFunctions.ManualScopingBackend
+  @test occursin("i_0", manual_str)
+  @test occursin("j_1", manual_str)
+  @test occursin("i_0 + j_1", manual_str)
+
+  err = try
+    ResumableFunctions.scope_function_body(
+      expr,
+      [:i],
+      Symbol[],
+      :test_backend,
+      Symbol[],
+      @__MODULE__;
+      backend = ResumableFunctions.JuliaLoweringScopingBackend(),
+    )
+    nothing
+  catch exc
+    exc
+  end
+  @test err isa ArgumentError
+  @test occursin("JuliaLowering scoping backend is experimental", sprint(showerror, err))
+end
+
 @testset "test_kw" begin
   g(x, y; z = 2) = x + y^2 + z
 
