@@ -410,6 +410,37 @@ function experimental_julialowering_binding_summary_normalized(expr_src::Abstrac
 end
 
 """
+Return a tiny comparison summary for generator/filter proof cases.
+
+This is intentionally narrow: it compares the current manual scoping proof helper
+against the normalized JuliaLowering proof helper using only stable summary
+signals that already appear close on generator/filter examples.
+"""
+function experimental_generator_binding_comparison(expr_src::AbstractString;
+                                                   outer_bindings::AbstractVector{Symbol} = Symbol[],
+                                                   mod::Module = Main)
+  manual = experimental_manual_binding_summary(expr_src; outer_bindings = outer_bindings, mod = mod)
+  jl = experimental_julialowering_binding_summary_normalized(expr_src; mod = mod)
+
+  manual_globalrefs = [String(item.name) for item in manual if item.kind === :globalref]
+  jl_globalrefs = [String(item.name) for item in jl if item.kind === :globalref]
+  manual_slot_refs = count(item -> item.kind === :localref, manual)
+  jl_slot_refs = count(item -> item.kind === :slot, jl)
+  manual_distinct_slots = length(unique(item.local_id for item in manual if item.kind === :localref))
+  jl_distinct_slots = length(unique(item.var_id for item in jl if item.kind === :slot))
+
+  (
+    manual_globalrefs = manual_globalrefs,
+    jl_globalrefs = jl_globalrefs,
+    globalrefs_match = manual_globalrefs == jl_globalrefs,
+    manual_slot_refs = manual_slot_refs,
+    jl_slot_refs = jl_slot_refs,
+    manual_distinct_slots = manual_distinct_slots,
+    jl_distinct_slots = jl_distinct_slots,
+  )
+end
+
+"""
 Collect a small structured summary of the current manual scoping pass.
 
 This mirrors the proof-only JuliaLowering binding summary helper on the same

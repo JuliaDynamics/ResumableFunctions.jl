@@ -370,6 +370,15 @@ end
     end
     @test normalized_summary_err isa ArgumentError
     @test occursin("requires Julia 1.12+", sprint(showerror, normalized_summary_err))
+
+    generator_comparison_err = try
+      ResumableFunctions.experimental_generator_binding_comparison("(i + x for i in 1:x if i < x)"; outer_bindings = [:x])
+      nothing
+    catch exc
+      exc
+    end
+    @test generator_comparison_err isa ArgumentError
+    @test occursin("requires Julia 1.12+", sprint(showerror, generator_comparison_err))
   end
 end
 
