@@ -343,6 +343,13 @@ end
     (kind = :localref, local_id = 1, name = :i_0),
   ]
 
+  @test ResumableFunctions.experimental_generator_filter_slice_supported(
+    "(i + x for i in 1:x if i < x)"
+  )
+  @test !ResumableFunctions.experimental_generator_filter_slice_supported(
+    "[x + y for x in 1:x, y in 1:y]"
+  )
+
   if VERSION < v"1.12.0"
     report_err = try
       ResumableFunctions.experimental_julialowering_scope_report("let i = i, j = i\n  i + j\nend")

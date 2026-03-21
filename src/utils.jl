@@ -445,6 +445,33 @@ function experimental_generator_binding_comparison(expr_src::AbstractString;
 end
 
 """
+Return whether an expression fits the current first adapter slice.
+
+Current scope is intentionally narrow:
+- generator expressions only
+- optional `if` filter allowed
+- exactly one binder assignment
+- symbol binder only
+"""
+function experimental_generator_filter_slice_supported(expr_src::AbstractString)
+  expr = Meta.parse(expr_src)
+  expr isa Expr || return false
+  expr.head === :generator || return false
+  length(expr.args) == 2 || return false
+
+  iter_node = expr.args[2]
+  if iter_node isa Expr && iter_node.head === :filter
+    length(iter_node.args) == 2 || return false
+    iter_node = iter_node.args[2]
+  end
+
+  iter_node isa Expr || return false
+  iter_node.head === :(=) || return false
+  iter_node.args[1] isa Symbol || return false
+  true
+end
+
+"""
 Return whether a generator/filter case satisfies the current first-slice proof contract.
 
 This stays intentionally narrow and proof-only. It uses the generator comparison
@@ -454,6 +481,7 @@ claims as acceptance criteria.
 function experimental_generator_binding_contract_met(expr_src::AbstractString;
                                                      outer_bindings::AbstractVector{Symbol} = Symbol[],
                                                      mod::Module = Main)
+  experimental_generator_filter_slice_supported(expr_src) || return false
   cmp = experimental_generator_binding_comparison(expr_src; outer_bindings = outer_bindings, mod = mod)
   cmp.globalrefs_match || return false
   cmp.semantic_slot_refs_match || return false
