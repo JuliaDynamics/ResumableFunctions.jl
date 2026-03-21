@@ -345,6 +345,55 @@ function experimental_julialowering_scope_report(expr_src::AbstractString; mod::
   return sprint(io -> show(io, MIME("text/plain"), lowered))
 end
 
+"""
+Collect a small structured summary of JuliaLowering scope-related nodes.
+
+This is a proof-only helper for the experimental JuliaLowering path. It returns
+ordered occurrences of `:slot` and `:globalref` nodes from the lowered tree so
+future mapping code can compare structure without scraping pretty-printed text.
+"""
+function experimental_julialowering_binding_summary(expr_src::AbstractString; mod::Module = Main)
+  if VERSION < v"1.12.0"
+    throw(ArgumentError(
+      "experimental_julialowering_binding_summary requires Julia 1.12+; current VERSION=$(VERSION)"
+    ))
+  end
+
+  jl = if isdefined(Main, :JuliaLowering)
+    getfield(Main, :JuliaLowering)
+  else
+    throw(ArgumentError(
+      "JuliaLowering is not loaded in Main; start Julia 1.12+ and `using JuliaLowering` before calling experimental_julialowering_binding_summary"
+    ))
+  end
+
+  js = try
+    getfield(jl, :JuliaSyntax)
+  catch
+    throw(ArgumentError("JuliaLowering loaded but JuliaSyntax is not available through it"))
+  end
+
+  ex = js.parsestmt(jl.SyntaxTree, expr_src)
+  lowered = jl.lower(mod, ex)
+  out = NamedTuple{(:kind, :var_id, :name)}[]
+
+  function walk(node)
+    k = Symbol(jl.kind(node))
+    if k === :slot
+      push!(out, (kind = k, var_id = getproperty(node, :var_id), name = nothing))
+    elseif k === :globalref
+      push!(out, (kind = k, var_id = nothing, name = getproperty(node, :name_val)))
+    end
+    for i in 1:jl.numchildren(node)
+      walk(node[i])
+    end
+    nothing
+  end
+
+  walk(lowered)
+  out
+end
+
 function lookup_lhs!(s::Symbol, S::ScopeTracker; new::Bool = false)
   if !new
     for D in Iterators.reverse(S.scope_stack)
