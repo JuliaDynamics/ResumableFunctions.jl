@@ -1,6 +1,6 @@
 # News
 
-## v1.0.5 - unreleased
+## v1.0.5 - 2026-03-20
 
 - Some general cleanup of the code
 - Adding ExplicitImports.jl tests for long term maintainability.
