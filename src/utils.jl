@@ -490,6 +490,20 @@ function experimental_generator_binding_contract_met(expr_src::AbstractString;
 end
 
 """
+Return a compact preflight status for the current first adapter slice.
+
+This is a proof-only convenience helper for future experimental adapter work.
+It centralizes the current shape gate and contract check in one call.
+"""
+function experimental_generator_filter_slice_status(expr_src::AbstractString;
+                                                    outer_bindings::AbstractVector{Symbol} = Symbol[],
+                                                    mod::Module = Main)
+  supported = experimental_generator_filter_slice_supported(expr_src)
+  contract_met = supported && VERSION >= v"1.12.0" && experimental_generator_binding_contract_met(expr_src; outer_bindings = outer_bindings, mod = mod)
+  (supported = supported, contract_met = contract_met)
+end
+
+"""
 Collect a small structured summary of the current manual scoping pass.
 
 This mirrors the proof-only JuliaLowering binding summary helper on the same

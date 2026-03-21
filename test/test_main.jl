@@ -350,6 +350,15 @@ end
     "[x + y for x in 1:x, y in 1:y]"
   )
 
+  @test ResumableFunctions.experimental_generator_filter_slice_status(
+    "(i + x for i in 1:x if i < x)";
+    outer_bindings = [:x],
+  ) == (supported = true, contract_met = false)
+  @test ResumableFunctions.experimental_generator_filter_slice_status(
+    "[x + y for x in 1:x, y in 1:y]";
+    outer_bindings = [:x, :y],
+  ) == (supported = false, contract_met = false)
+
   if VERSION < v"1.12.0"
     report_err = try
       ResumableFunctions.experimental_julialowering_scope_report("let i = i, j = i\n  i + j\nend")
