@@ -335,6 +335,14 @@ end
     (kind = :localref, local_id = 2, name = :j_1),
   ]
 
+  manual_noassign_summary = ResumableFunctions.experimental_manual_binding_summary(
+    "let i\n  1\nend";
+    mod = @__MODULE__,
+  )
+  @test manual_noassign_summary == [
+    (kind = :localref, local_id = 1, name = :i_0),
+  ]
+
   if VERSION < v"1.12.0"
     report_err = try
       ResumableFunctions.experimental_julialowering_scope_report("let i = i, j = i\n  i + j\nend")

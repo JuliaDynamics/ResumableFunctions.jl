@@ -411,6 +411,26 @@ function experimental_manual_binding_summary(expr_src::AbstractString;
   out = NamedTuple{(:kind, :local_id, :name)}[]
   local_ids = Dict{Symbol, Int}()
   next_local_id = Ref(0)
+  assigned_locals = Set{Symbol}()
+
+  function collect_assigned_locals!(node)
+    if node isa Expr
+      if node.head === :(=)
+        lhs = node.args[1]
+        if lhs isa Symbol
+          push!(assigned_locals, lhs)
+        elseif lhs isa Expr && lhs.head === :tuple
+          for arg in lhs.args
+            arg isa Symbol && push!(assigned_locals, arg)
+          end
+        end
+      end
+      for arg in node.args
+        collect_assigned_locals!(arg)
+      end
+    end
+    nothing
+  end
 
   function ensure_local!(sym::Symbol)
     get!(local_ids, sym) do
@@ -434,7 +454,10 @@ function experimental_manual_binding_summary(expr_src::AbstractString;
     elseif node isa Expr
       if node.head === :local
         for arg in node.args
-          arg isa Symbol && ensure_local!(arg)
+          if arg isa Symbol
+            ensure_local!(arg)
+            arg ∉ assigned_locals && emit_symbol(arg)
+          end
         end
       elseif node.head === :(=)
         for i in 2:length(node.args)
@@ -450,6 +473,7 @@ function experimental_manual_binding_summary(expr_src::AbstractString;
     nothing
   end
 
+  collect_assigned_locals!(scoped)
   walk(scoped)
   out
 end
