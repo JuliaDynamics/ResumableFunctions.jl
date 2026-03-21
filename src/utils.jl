@@ -428,13 +428,16 @@ function experimental_generator_binding_comparison(expr_src::AbstractString;
   jl_slot_refs = count(item -> item.kind === :slot, jl)
   manual_distinct_slots = length(unique(item.local_id for item in manual if item.kind === :localref))
   jl_distinct_slots = length(unique(item.var_id for item in jl if item.kind === :slot))
+  manual_semantic_slot_refs = manual_slot_refs - manual_distinct_slots
 
   (
     manual_globalrefs = manual_globalrefs,
     jl_globalrefs = jl_globalrefs,
     globalrefs_match = manual_globalrefs == jl_globalrefs,
     manual_slot_refs = manual_slot_refs,
+    manual_semantic_slot_refs = manual_semantic_slot_refs,
     jl_slot_refs = jl_slot_refs,
+    semantic_slot_refs_match = manual_semantic_slot_refs == jl_slot_refs,
     manual_distinct_slots = manual_distinct_slots,
     jl_distinct_slots = jl_distinct_slots,
   )
