@@ -412,6 +412,7 @@ function experimental_manual_binding_summary(expr_src::AbstractString;
   local_ids = Dict{Symbol, Int}()
   next_local_id = Ref(0)
   assigned_locals = Set{Symbol}()
+  generator_locals = Set{Symbol}()
 
   function collect_assigned_locals!(node)
     if node isa Expr
@@ -432,6 +433,26 @@ function experimental_manual_binding_summary(expr_src::AbstractString;
     nothing
   end
 
+  function collect_generator_locals!(node, in_generator::Bool = false)
+    if node isa Expr
+      next_in_generator = in_generator || node.head === :generator || node.head === :filter
+      if next_in_generator && node.head === :(=)
+        lhs = node.args[1]
+        if lhs isa Symbol
+          push!(generator_locals, lhs)
+        elseif lhs isa Expr && lhs.head === :tuple
+          for arg in lhs.args
+            arg isa Symbol && push!(generator_locals, arg)
+          end
+        end
+      end
+      for arg in node.args
+        collect_generator_locals!(arg, next_in_generator)
+      end
+    end
+    nothing
+  end
+
   function ensure_local!(sym::Symbol)
     get!(local_ids, sym) do
       next_local_id[] += 1
@@ -440,6 +461,9 @@ function experimental_manual_binding_summary(expr_src::AbstractString;
   end
 
   function emit_symbol(sym::Symbol)
+    if sym in generator_locals && !haskey(local_ids, sym)
+      ensure_local!(sym)
+    end
     if haskey(local_ids, sym)
       push!(out, (kind = :localref, local_id = local_ids[sym], name = sym))
     else
@@ -474,6 +498,7 @@ function experimental_manual_binding_summary(expr_src::AbstractString;
   end
 
   collect_assigned_locals!(scoped)
+  collect_generator_locals!(scoped)
   walk(scoped)
   out
 end
