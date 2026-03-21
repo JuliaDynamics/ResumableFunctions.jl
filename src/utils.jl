@@ -395,6 +395,21 @@ function experimental_julialowering_binding_summary(expr_src::AbstractString; mo
 end
 
 """
+Return a lightly normalized JuliaLowering binding summary.
+
+This proof helper currently strips synthetic wrapper globals introduced by
+JuliaLowering for anonymous closure/lambda scaffolding (for example `#->##0`).
+That makes narrow generator/comprehension comparisons less noisy without
+claiming full structural equivalence.
+"""
+function experimental_julialowering_binding_summary_normalized(expr_src::AbstractString; mod::Module = Main)
+  raw = experimental_julialowering_binding_summary(expr_src; mod = mod)
+  filter(raw) do item
+    !(item.kind === :globalref && item.name isa AbstractString && occursin(r"^#->##\d+$", item.name))
+  end
+end
+
+"""
 Collect a small structured summary of the current manual scoping pass.
 
 This mirrors the proof-only JuliaLowering binding summary helper on the same

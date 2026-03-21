@@ -361,6 +361,15 @@ end
     end
     @test summary_err isa ArgumentError
     @test occursin("requires Julia 1.12+", sprint(showerror, summary_err))
+
+    normalized_summary_err = try
+      ResumableFunctions.experimental_julialowering_binding_summary_normalized("let i = i, j = i\n  i + j\nend")
+      nothing
+    catch exc
+      exc
+    end
+    @test normalized_summary_err isa ArgumentError
+    @test occursin("requires Julia 1.12+", sprint(showerror, normalized_summary_err))
   end
 end
 
