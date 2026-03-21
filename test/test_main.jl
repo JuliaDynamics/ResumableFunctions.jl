@@ -379,6 +379,15 @@ end
     end
     @test generator_comparison_err isa ArgumentError
     @test occursin("requires Julia 1.12+", sprint(showerror, generator_comparison_err))
+
+    generator_contract_err = try
+      ResumableFunctions.experimental_generator_binding_contract_met("(i + x for i in 1:x if i < x)"; outer_bindings = [:x])
+      nothing
+    catch exc
+      exc
+    end
+    @test generator_contract_err isa ArgumentError
+    @test occursin("requires Julia 1.12+", sprint(showerror, generator_contract_err))
   end
 end
 

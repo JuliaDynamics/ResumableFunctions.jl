@@ -444,6 +444,23 @@ function experimental_generator_binding_comparison(expr_src::AbstractString;
 end
 
 """
+Return whether a generator/filter case satisfies the current first-slice proof contract.
+
+This stays intentionally narrow and proof-only. It uses the generator comparison
+helper and checks only the stable signals that the current first adapter target
+claims as acceptance criteria.
+"""
+function experimental_generator_binding_contract_met(expr_src::AbstractString;
+                                                     outer_bindings::AbstractVector{Symbol} = Symbol[],
+                                                     mod::Module = Main)
+  cmp = experimental_generator_binding_comparison(expr_src; outer_bindings = outer_bindings, mod = mod)
+  cmp.globalrefs_match || return false
+  cmp.semantic_slot_refs_match || return false
+  cmp.manual_distinct_slots == cmp.jl_distinct_slots || return false
+  true
+end
+
+"""
 Collect a small structured summary of the current manual scoping pass.
 
 This mirrors the proof-only JuliaLowering binding summary helper on the same
