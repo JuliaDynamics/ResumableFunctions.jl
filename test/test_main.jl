@@ -320,6 +320,21 @@ end
   @test err isa ArgumentError
   @test occursin("JuliaLowering scoping backend is experimental", sprint(showerror, err))
 
+  manual_summary = ResumableFunctions.experimental_manual_binding_summary(
+    "let i = i, j = i\n  i + j\nend";
+    outer_bindings = [:i],
+    mod = @__MODULE__,
+  )
+  @test manual_summary == [
+    (kind = :globalref, local_id = nothing, name = :i),
+    (kind = :localref, local_id = 1, name = :i_0),
+    (kind = :localref, local_id = 1, name = :i_0),
+    (kind = :localref, local_id = 2, name = :j_1),
+    (kind = :globalref, local_id = nothing, name = :+),
+    (kind = :localref, local_id = 1, name = :i_0),
+    (kind = :localref, local_id = 2, name = :j_1),
+  ]
+
   if VERSION < v"1.12.0"
     report_err = try
       ResumableFunctions.experimental_julialowering_scope_report("let i = i, j = i\n  i + j\nend")

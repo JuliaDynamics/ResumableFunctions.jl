@@ -394,6 +394,66 @@ function experimental_julialowering_binding_summary(expr_src::AbstractString; mo
   out
 end
 
+"""
+Collect a small structured summary of the current manual scoping pass.
+
+This mirrors the proof-only JuliaLowering binding summary helper on the same
+string input so narrow shadowing cases can be compared structurally. The helper
+tracks local bindings introduced by the scoped expression and emits ordered
+`:localref` / `:globalref` occurrences.
+"""
+function experimental_manual_binding_summary(expr_src::AbstractString;
+                                             outer_bindings::AbstractVector{Symbol} = Symbol[],
+                                             mod::Module = Main)
+  expr = Meta.parse(expr_src)
+  scoped = scope_function_body(expr, collect(outer_bindings), Symbol[], gensym(:manual_scope), Symbol[], mod)
+
+  out = NamedTuple{(:kind, :local_id, :name)}[]
+  local_ids = Dict{Symbol, Int}()
+  next_local_id = Ref(0)
+
+  function ensure_local!(sym::Symbol)
+    get!(local_ids, sym) do
+      next_local_id[] += 1
+      next_local_id[]
+    end
+  end
+
+  function emit_symbol(sym::Symbol)
+    if haskey(local_ids, sym)
+      push!(out, (kind = :localref, local_id = local_ids[sym], name = sym))
+    else
+      push!(out, (kind = :globalref, local_id = nothing, name = sym))
+    end
+    nothing
+  end
+
+  function walk(node)
+    if node isa Symbol
+      emit_symbol(node)
+    elseif node isa Expr
+      if node.head === :local
+        for arg in node.args
+          arg isa Symbol && ensure_local!(arg)
+        end
+      elseif node.head === :(=)
+        for i in 2:length(node.args)
+          walk(node.args[i])
+        end
+        walk(node.args[1])
+      else
+        for arg in node.args
+          walk(arg)
+        end
+      end
+    end
+    nothing
+  end
+
+  walk(scoped)
+  out
+end
+
 function lookup_lhs!(s::Symbol, S::ScopeTracker; new::Bool = false)
   if !new
     for D in Iterators.reverse(S.scope_stack)
