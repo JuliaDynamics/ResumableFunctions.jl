@@ -24,7 +24,16 @@ with outer binding `x`.
 ## Why this slice
 The current proof helpers show that this case is much closer than nested comprehensions.
 
-At commit `0d11ada`, the proof helper:
+By commit `a7fe469`, the branch has the following proof helpers available:
+
+```julia
+experimental_generator_filter_slice_supported(...)
+experimental_generator_binding_comparison(...)
+experimental_generator_binding_contract_met(...)
+experimental_generator_filter_slice_status(...)
+```
+
+For the representative proof case,
 
 ```julia
 experimental_generator_binding_comparison(
@@ -48,6 +57,18 @@ Meaning:
 - global refs line up
 - semantic slot-use counts line up
 - distinct slot counts line up
+
+The current code-level preflight is also explicit:
+
+```julia
+experimental_generator_filter_slice_status(
+    "(i + x for i in 1:x if i < x)";
+    outer_bindings=[:x],
+)
+```
+
+- on Julia `1.11`: `(supported = true, contract_met = false)`
+- on Julia `1.12+` with JuliaLowering loaded: this is expected to become the one-call preflight for the first slice
 
 This is the narrowest currently proven boundary that looks adapter-worthy.
 
