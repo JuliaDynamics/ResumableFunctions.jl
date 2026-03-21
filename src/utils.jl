@@ -279,8 +279,9 @@ struct ManualScopingBackend <: AbstractScopingBackend end
 Experimental scoping backend placeholder for future JuliaLowering-backed scope
 resolution.
 
-This backend is intentionally not wired up yet; the first milestone is to make
-backend selection explicit and testable without changing current behavior.
+This backend is intentionally not wired up yet. The current proven first slice
+is much narrower than full scope resolution: generator/filter-only proof cases
+under Julia 1.12+ with explicit normalization of lowering artifacts.
 """
 struct JuliaLoweringScopingBackend <: AbstractScopingBackend end
 
@@ -308,7 +309,7 @@ end
 
 function scope_function_body(expr, scope::ScopeTracker, ::JuliaLoweringScopingBackend)
   throw(ArgumentError(
-    "JuliaLowering scoping backend is experimental and not wired into ResumableFunctions yet"
+    "JuliaLowering scoping backend is experimental; the current proven slice is generator/filter-only proof work and is not wired into ResumableFunctions yet"
   ))
 end
 
