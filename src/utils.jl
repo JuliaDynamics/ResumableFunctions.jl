@@ -307,9 +307,32 @@ function scope_function_body(expr, scope::ScopeTracker, ::ManualScopingBackend)
   scoping(copy(expr), scope)
 end
 
+function experimental_generator_filter_slice_supported(expr::Expr)
+  expr.head === :generator || return false
+  length(expr.args) == 2 || return false
+
+  iter_node = expr.args[2]
+  if iter_node isa Expr && iter_node.head === :filter
+    length(iter_node.args) == 2 || return false
+    iter_node = iter_node.args[2]
+  end
+
+  iter_node isa Expr || return false
+  iter_node.head === :(=) || return false
+  iter_node.args[1] isa Symbol || return false
+  true
+end
+
+experimental_generator_filter_slice_supported(::Any) = false
+
 function scope_function_body(expr, scope::ScopeTracker, ::JuliaLoweringScopingBackend)
+  if experimental_generator_filter_slice_supported(expr)
+    throw(ArgumentError(
+      "JuliaLowering scoping backend is experimental; this generator/filter first slice is recognized but not wired into ResumableFunctions yet"
+    ))
+  end
   throw(ArgumentError(
-    "JuliaLowering scoping backend is experimental; the current proven slice is generator/filter-only proof work and is not wired into ResumableFunctions yet"
+    "JuliaLowering scoping backend is experimental; the current proven slice is generator/filter-only proof work and this expression is outside that slice"
   ))
 end
 
@@ -455,20 +478,7 @@ Current scope is intentionally narrow:
 """
 function experimental_generator_filter_slice_supported(expr_src::AbstractString)
   expr = Meta.parse(expr_src)
-  expr isa Expr || return false
-  expr.head === :generator || return false
-  length(expr.args) == 2 || return false
-
-  iter_node = expr.args[2]
-  if iter_node isa Expr && iter_node.head === :filter
-    length(iter_node.args) == 2 || return false
-    iter_node = iter_node.args[2]
-  end
-
-  iter_node isa Expr || return false
-  iter_node.head === :(=) || return false
-  iter_node.args[1] isa Symbol || return false
-  true
+  experimental_generator_filter_slice_supported(expr)
 end
 
 """
