@@ -1,3 +1,14 @@
+# Experimental seam smoke for the representative generator/filter slice.
+#
+# Run with the package environment, for example:
+#   julia --project=. examples/experimental_julialowering_seam_readiness.jl
+#   julia +release --project=. examples/experimental_julialowering_seam_readiness.jl
+#
+# Intended output surfaces the seam readiness state across:
+# - Julia < 1.12
+# - Julia 1.12+ without JuliaLowering installed
+# - Julia 1.12+ with JuliaLowering installed
+
 using ResumableFunctions
 
 const EXPR_SRC = "(i + x for i in 1:x if i < x)"
