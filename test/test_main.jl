@@ -326,6 +326,13 @@ end
   push!(scope.scope_stack, Dict(:x => :x_0, :i => :i_0))
   @test Set(ResumableFunctions.experimental_visible_outer_bindings(scope)) == Set([:x, :test_backend, :i])
 
+  readiness = ResumableFunctions.experimental_generator_filter_slice_readiness(generator_expr, scope)
+  @test readiness.supported
+  @test Set(readiness.outer_bindings) == Set([:x, :test_backend, :i])
+  if VERSION < v"1.12.0"
+    @test readiness.contract_met == false
+  end
+
   if VERSION < v"1.12.0"
     generator_err = try
       ResumableFunctions.scope_function_body(

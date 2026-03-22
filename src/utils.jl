@@ -343,13 +343,12 @@ function experimental_visible_outer_bindings(scope::ScopeTracker)
   outer_bindings
 end
 
-function experimental_generator_filter_slice_status(expr::Expr, scope::ScopeTracker)
+function experimental_generator_filter_slice_readiness(expr::Expr, scope::ScopeTracker)
   supported = experimental_generator_filter_slice_supported(expr)
-  supported || return (supported = false, contract_met = false)
-
   outer_bindings = experimental_visible_outer_bindings(scope)
-  expr_src = sprint(show, expr)
-  contract_met = if VERSION >= v"1.12.0"
+
+  contract_met = if supported && VERSION >= v"1.12.0"
+    expr_src = sprint(show, expr)
     try
       experimental_generator_binding_contract_met(expr_src; outer_bindings = outer_bindings, mod = scope.mod)
     catch err
@@ -363,7 +362,12 @@ function experimental_generator_filter_slice_status(expr::Expr, scope::ScopeTrac
     false
   end
 
-  (supported = true, contract_met = contract_met)
+  (supported = supported, outer_bindings = outer_bindings, contract_met = contract_met)
+end
+
+function experimental_generator_filter_slice_status(expr::Expr, scope::ScopeTracker)
+  readiness = experimental_generator_filter_slice_readiness(expr, scope)
+  (supported = readiness.supported, contract_met = readiness.contract_met)
 end
 
 experimental_generator_filter_slice_status(::Any) = (supported = false, contract_met = false)
