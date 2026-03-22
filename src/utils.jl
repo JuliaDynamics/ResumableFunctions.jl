@@ -325,8 +325,15 @@ end
 
 experimental_generator_filter_slice_supported(::Any) = false
 
+function experimental_generator_filter_slice_status(expr::Expr)
+  (supported = experimental_generator_filter_slice_supported(expr), contract_met = false)
+end
+
+experimental_generator_filter_slice_status(::Any) = (supported = false, contract_met = false)
+
 function scope_function_body(expr, scope::ScopeTracker, ::JuliaLoweringScopingBackend)
-  if experimental_generator_filter_slice_supported(expr)
+  status = experimental_generator_filter_slice_status(expr)
+  if status.supported
     throw(ArgumentError(
       "JuliaLowering scoping backend is experimental; this generator/filter first slice is recognized but not wired into ResumableFunctions yet"
     ))
@@ -508,9 +515,10 @@ It centralizes the current shape gate and contract check in one call.
 function experimental_generator_filter_slice_status(expr_src::AbstractString;
                                                     outer_bindings::AbstractVector{Symbol} = Symbol[],
                                                     mod::Module = Main)
-  supported = experimental_generator_filter_slice_supported(expr_src)
-  contract_met = supported && VERSION >= v"1.12.0" && experimental_generator_binding_contract_met(expr_src; outer_bindings = outer_bindings, mod = mod)
-  (supported = supported, contract_met = contract_met)
+  expr = Meta.parse(expr_src)
+  base = experimental_generator_filter_slice_status(expr)
+  contract_met = base.supported && VERSION >= v"1.12.0" && experimental_generator_binding_contract_met(expr_src; outer_bindings = outer_bindings, mod = mod)
+  (supported = base.supported, contract_met = contract_met)
 end
 
 """
