@@ -26,11 +26,13 @@ function main()
     println("CONTRACT_MET=$(readiness.contract_met)")
 
     if VERSION < v"1.12.0"
+        println("STATUS=pre-1.12 runtime; JuliaLowering proof path unavailable")
         println("NOTE=JuliaLowering proof path requires Julia 1.12+")
         return
     end
 
     if Base.find_package("JuliaLowering") === nothing
+        println("STATUS=Julia 1.12+ but JuliaLowering is unavailable in this environment")
         println("NOTE=JuliaLowering is not installed in this environment")
         return
     end
@@ -41,6 +43,7 @@ function main()
     println("POSTLOAD_SUPPORTED=$(readiness.supported)")
     println("POSTLOAD_OUTER_BINDINGS=$(join(string.(readiness.outer_bindings), ","))")
     println("POSTLOAD_CONTRACT_MET=$(readiness.contract_met)")
+    println("STATUS=Julia 1.12+ with JuliaLowering loaded; representative seam readiness observed")
 end
 
 main()
