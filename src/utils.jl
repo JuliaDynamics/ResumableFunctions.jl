@@ -329,11 +329,46 @@ function experimental_generator_filter_slice_status(expr::Expr)
   (supported = experimental_generator_filter_slice_supported(expr), contract_met = false)
 end
 
+function experimental_generator_filter_slice_status(expr::Expr, scope::ScopeTracker)
+  supported = experimental_generator_filter_slice_supported(expr)
+  supported || return (supported = false, contract_met = false)
+
+  outer_bindings = Symbol[]
+  seen = Set{Symbol}()
+  for frame in scope.scope_stack
+    for name in keys(frame)
+      if name ∉ seen
+        push!(outer_bindings, name)
+        push!(seen, name)
+      end
+    end
+  end
+
+  expr_src = sprint(show, expr)
+  contract_met = if VERSION >= v"1.12.0"
+    try
+      experimental_generator_binding_contract_met(expr_src; outer_bindings = outer_bindings, mod = scope.mod)
+    catch err
+      if err isa ArgumentError
+        false
+      else
+        rethrow()
+      end
+    end
+  else
+    false
+  end
+
+  (supported = true, contract_met = contract_met)
+end
+
 experimental_generator_filter_slice_status(::Any) = (supported = false, contract_met = false)
 
 function scope_function_body(expr, scope::ScopeTracker, ::JuliaLoweringScopingBackend)
-  status = experimental_generator_filter_slice_status(expr)
-  if status.supported
+  status = experimental_generator_filter_slice_status(expr, scope)
+  if status.supported && status.contract_met
+    return scope_function_body(expr, scope, ManualScopingBackend())
+  elseif status.supported
     throw(ArgumentError(
       "JuliaLowering scoping backend is experimental; this generator/filter first slice is recognized but not wired into ResumableFunctions yet"
     ))

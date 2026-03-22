@@ -322,8 +322,27 @@ end
   @test occursin("outside that slice", sprint(showerror, err))
 
   generator_expr = Meta.parse("(i + x for i in 1:x if i < x)")
-  generator_err = try
-    ResumableFunctions.scope_function_body(
+  if VERSION < v"1.12.0"
+    generator_err = try
+      ResumableFunctions.scope_function_body(
+        generator_expr,
+        [:x],
+        Symbol[],
+        :test_backend,
+        Symbol[],
+        @__MODULE__;
+        backend = ResumableFunctions.JuliaLoweringScopingBackend(),
+      )
+      nothing
+    catch exc
+      exc
+    end
+    @test generator_err isa ArgumentError
+    @test occursin("JuliaLowering scoping backend is experimental", sprint(showerror, generator_err))
+    @test occursin("recognized but not wired", sprint(showerror, generator_err))
+  elseif Base.find_package("JuliaLowering") !== nothing
+    @eval using JuliaLowering
+    jl_scoped = ResumableFunctions.scope_function_body(
       generator_expr,
       [:x],
       Symbol[],
@@ -332,13 +351,35 @@ end
       @__MODULE__;
       backend = ResumableFunctions.JuliaLoweringScopingBackend(),
     )
-    nothing
-  catch exc
-    exc
+    manual_generator_scoped = ResumableFunctions.scope_function_body(
+      generator_expr,
+      [:x],
+      Symbol[],
+      :test_backend,
+      Symbol[],
+      @__MODULE__;
+      backend = ResumableFunctions.ManualScopingBackend(),
+    )
+    @test sprint(show, jl_scoped) == sprint(show, manual_generator_scoped)
+  else
+    generator_err = try
+      ResumableFunctions.scope_function_body(
+        generator_expr,
+        [:x],
+        Symbol[],
+        :test_backend,
+        Symbol[],
+        @__MODULE__;
+        backend = ResumableFunctions.JuliaLoweringScopingBackend(),
+      )
+      nothing
+    catch exc
+      exc
+    end
+    @test generator_err isa ArgumentError
+    @test occursin("JuliaLowering scoping backend is experimental", sprint(showerror, generator_err))
+    @test occursin("recognized but not wired", sprint(showerror, generator_err))
   end
-  @test generator_err isa ArgumentError
-  @test occursin("JuliaLowering scoping backend is experimental", sprint(showerror, generator_err))
-  @test occursin("recognized but not wired", sprint(showerror, generator_err))
 
   manual_summary = ResumableFunctions.experimental_manual_binding_summary(
     "let i = i, j = i\n  i + j\nend";
