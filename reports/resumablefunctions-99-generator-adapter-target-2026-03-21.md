@@ -3,7 +3,7 @@
 Date: 2026-03-21
 Repo: `/root/.openclaw/workspace/repos/ResumableFunctions.jl`
 Branch: `bounty-99-julialowering-scout`
-Current proof commit: `0d11ada`
+Current proof commit: `cbb4a02`
 
 ## Goal
 Define the smallest explicit first adapter slice for `JuliaDynamics/ResumableFunctions.jl#99` based on proof work already completed in-repo.
@@ -24,7 +24,7 @@ with outer binding `x`.
 ## Why this slice
 The current proof helpers show that this case is much closer than nested comprehensions.
 
-By commit `a144ad8`, the branch has the following proof/preflight helpers available:
+By commit `cbb4a02`, the branch has the following proof/preflight helpers available:
 
 ```julia
 experimental_generator_filter_slice_supported(...)
@@ -34,6 +34,11 @@ experimental_generator_filter_slice_status(...)
 ```
 
 and the experimental `JuliaLoweringScopingBackend` seam now routes through the same slice-aware preflight logic.
+
+As of commit `cbb4a02`, the seam is no longer placeholder-only for the representative generator/filter slice:
+- if the slice is supported but the contract is not met, it still errors clearly
+- if the slice is supported **and** the contract is met, the experimental backend currently falls through to the same scoped Expr produced by the manual backend
+- expressions outside the proven slice still error clearly
 
 For the representative proof case,
 
@@ -70,7 +75,8 @@ experimental_generator_filter_slice_status(
 ```
 
 - on Julia `1.11`: `(supported = true, contract_met = false)`
-- on Julia `1.12+` with JuliaLowering loaded: this is expected to become the one-call preflight for the first slice
+- on Julia `1.12+` with JuliaLowering loaded: this is now the one-call readiness gate for the first slice
+- when that 1.12+ contract passes, the experimental backend may conservatively return the same scoped Expr as the manual backend instead of stopping at a placeholder error
 
 This is the narrowest currently proven boundary that looks adapter-worthy.
 
@@ -84,7 +90,8 @@ This is the narrowest currently proven boundary that looks adapter-worthy.
 4. Julia `1.11` support preserved for the package’s default path.
 5. JuliaLowering experimentation allowed behind explicit helper seams under Julia `1.12+`.
 6. The experimental backend seam should distinguish:
-   - in-slice generator/filter expressions that are recognized but not yet wired
+   - in-slice generator/filter expressions that are recognized but not yet ready
+   - in-slice generator/filter expressions whose contract is met and can conservatively reuse the manual-scoped result
    - expressions that are outside the current proven slice
 
 ## Explicitly out of scope for slice 1
@@ -141,6 +148,8 @@ Use if the goal is one more confidence-building, reviewable step.
 
 ### Option B — Experimental adapter stub for generator/filter seam
 Implement a very narrow experimental adapter behind `JuliaLoweringScopingBackend` that only handles the proven generator/filter shape and otherwise errors clearly.
+
+Status: **this option has now started in minimal form**. The current seam can already reuse the manual-scoped result for the representative generator/filter slice when the contract passes, while still rejecting not-ready or out-of-slice cases.
 
 Use only if the maintainer-facing value of a tiny executable adapter now outweighs the risk of moving too fast.
 
