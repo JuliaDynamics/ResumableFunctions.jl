@@ -3,7 +3,7 @@
 Date: 2026-03-21
 Repo: `/root/.openclaw/workspace/repos/ResumableFunctions.jl`
 Branch: `bounty-99-julialowering-scout`
-Current proof commit: `b87548e`
+Current proof commit: `b475795`
 
 ## Goal
 Define the smallest explicit first adapter slice for `JuliaDynamics/ResumableFunctions.jl#99` based on proof work already completed in-repo.
@@ -24,7 +24,7 @@ with outer binding `x`.
 ## Why this slice
 The current proof helpers show that this case is much closer than nested comprehensions.
 
-By commit `b87548e`, the branch has the following proof/preflight helpers available:
+By commit `b475795`, the branch has the following proof/preflight helpers available:
 
 ```julia
 experimental_generator_filter_slice_supported(...)
@@ -37,7 +37,7 @@ experimental_generator_filter_slice_status(...)
 
 and the experimental `JuliaLoweringScopingBackend` seam now routes through the same slice-aware preflight logic.
 
-As of commit `b87548e`, the seam is no longer placeholder-only for the representative generator/filter slice:
+As of commit `b475795`, the seam is no longer placeholder-only for the representative generator/filter slice:
 - if the slice is supported but the contract is not met, it still errors clearly
 - if the slice is supported **and** the contract is met, the experimental backend currently falls through to the same scoped Expr produced by the manual backend
 - expressions outside the proven slice still error clearly
@@ -93,6 +93,17 @@ Current meaning:
 - on Julia `1.11`, the representative generator/filter case remains `supported = true, contract_met = false`
 - on Julia `1.12+` with JuliaLowering loaded, the readiness helper is the clearest seam-level inspection surface for the first slice
 - when that 1.12+ contract passes, the experimental backend may conservatively return the same scoped Expr as the manual backend instead of stopping at a placeholder error
+
+There is now also a tiny runnable smoke example for this seam path:
+
+```julia
+examples/experimental_julialowering_seam_readiness.jl
+```
+
+Its job is not package behavior; it is branch-local diagnostics. It prints the representative readiness surface across three environments:
+- Julia < 1.12
+- Julia 1.12+ without `JuliaLowering`
+- Julia 1.12+ with `JuliaLowering`
 
 This is the narrowest currently proven boundary that looks adapter-worthy.
 
