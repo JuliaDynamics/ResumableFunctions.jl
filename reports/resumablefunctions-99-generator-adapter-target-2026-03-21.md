@@ -24,7 +24,7 @@ with outer binding `x`.
 ## Why this slice
 The current proof helpers show that this case is much closer than nested comprehensions.
 
-By commit `a7fe469`, the branch has the following proof helpers available:
+By commit `a144ad8`, the branch has the following proof/preflight helpers available:
 
 ```julia
 experimental_generator_filter_slice_supported(...)
@@ -32,6 +32,8 @@ experimental_generator_binding_comparison(...)
 experimental_generator_binding_contract_met(...)
 experimental_generator_filter_slice_status(...)
 ```
+
+and the experimental `JuliaLoweringScopingBackend` seam now routes through the same slice-aware preflight logic.
 
 For the representative proof case,
 
@@ -81,6 +83,9 @@ This is the narrowest currently proven boundary that looks adapter-worthy.
 3. Keeping the default/manual scoping backend unchanged.
 4. Julia `1.11` support preserved for the package’s default path.
 5. JuliaLowering experimentation allowed behind explicit helper seams under Julia `1.12+`.
+6. The experimental backend seam should distinguish:
+   - in-slice generator/filter expressions that are recognized but not yet wired
+   - expressions that are outside the current proven slice
 
 ## Explicitly out of scope for slice 1
 1. Nested comprehensions
