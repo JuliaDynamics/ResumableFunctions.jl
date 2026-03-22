@@ -329,10 +329,7 @@ function experimental_generator_filter_slice_status(expr::Expr)
   (supported = experimental_generator_filter_slice_supported(expr), contract_met = false)
 end
 
-function experimental_generator_filter_slice_status(expr::Expr, scope::ScopeTracker)
-  supported = experimental_generator_filter_slice_supported(expr)
-  supported || return (supported = false, contract_met = false)
-
+function experimental_visible_outer_bindings(scope::ScopeTracker)
   outer_bindings = Symbol[]
   seen = Set{Symbol}()
   for frame in scope.scope_stack
@@ -343,7 +340,14 @@ function experimental_generator_filter_slice_status(expr::Expr, scope::ScopeTrac
       end
     end
   end
+  outer_bindings
+end
 
+function experimental_generator_filter_slice_status(expr::Expr, scope::ScopeTracker)
+  supported = experimental_generator_filter_slice_supported(expr)
+  supported || return (supported = false, contract_met = false)
+
+  outer_bindings = experimental_visible_outer_bindings(scope)
   expr_src = sprint(show, expr)
   contract_met = if VERSION >= v"1.12.0"
     try

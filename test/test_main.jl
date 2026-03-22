@@ -322,6 +322,10 @@ end
   @test occursin("outside that slice", sprint(showerror, err))
 
   generator_expr = Meta.parse("(i + x for i in 1:x if i < x)")
+  scope = ResumableFunctions.init_scope_tracker([:x], Symbol[], :test_backend, Symbol[], @__MODULE__)
+  push!(scope.scope_stack, Dict(:x => :x_0, :i => :i_0))
+  @test Set(ResumableFunctions.experimental_visible_outer_bindings(scope)) == Set([:x, :test_backend, :i])
+
   if VERSION < v"1.12.0"
     generator_err = try
       ResumableFunctions.scope_function_body(
