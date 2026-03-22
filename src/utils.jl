@@ -348,7 +348,7 @@ function experimental_generator_filter_slice_readiness(expr::Expr, scope::ScopeT
   outer_bindings = experimental_visible_outer_bindings(scope)
 
   contract_met = if supported && VERSION >= v"1.12.0"
-    expr_src = sprint(show, expr)
+    expr_src = sprint(Base.show_unquoted, expr)
     try
       experimental_generator_binding_contract_met(expr_src; outer_bindings = outer_bindings, mod = scope.mod)
     catch err

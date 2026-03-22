@@ -331,6 +331,9 @@ end
   @test Set(readiness.outer_bindings) == Set([:x, :test_backend, :i])
   if VERSION < v"1.12.0"
     @test readiness.contract_met == false
+  elseif Base.find_package("JuliaLowering") !== nothing
+    @eval using JuliaLowering
+    @test readiness.contract_met == true
   end
 
   if VERSION < v"1.12.0"
