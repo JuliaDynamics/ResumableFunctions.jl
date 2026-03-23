@@ -3,7 +3,7 @@
 Date: 2026-03-21
 Repo: `/root/.openclaw/workspace/repos/ResumableFunctions.jl`
 Branch: `bounty-99-julialowering-scout`
-Current proof commit: `7a4614b`
+Current proof commit: `12cbd8a`
 
 ## Goal
 Define the smallest explicit first adapter slice for `JuliaDynamics/ResumableFunctions.jl#99` based on proof work already completed in-repo.
@@ -109,9 +109,9 @@ Its job is not package behavior; it is branch-local diagnostics. It prints the r
 That smoke path has now done useful work already: it exposed and helped fix a false-negative in `experimental_generator_filter_slice_readiness(expr, scope)`, where Expr rendering via `sprint(show, expr)` produced `:((...))` instead of plain expression source. The seam now uses `sprint(Base.show_unquoted, expr)` for this readiness path.
 
 The smoke example now also emits explicit `STATUS=` lines so maintainers can tell at a glance which runtime mode they are seeing:
-- pre-1.12 fallback mode
-- 1.12+ without `JuliaLowering`
-- 1.12+ with `JuliaLowering` loaded and representative seam readiness observed
+- `STATUS=pre-1.12 runtime; JuliaLowering proof path unavailable`
+- `STATUS=Julia 1.12+ but JuliaLowering is unavailable in this environment`
+- `STATUS=Julia 1.12+ with JuliaLowering loaded; representative seam readiness observed`
 
 This is the narrowest currently proven boundary that looks adapter-worthy.
 
