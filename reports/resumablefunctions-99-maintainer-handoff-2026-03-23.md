@@ -1,0 +1,101 @@
+# ResumableFunctions #99 — Maintainer Handoff Snapshot
+
+Date: 2026-03-23
+Repo: `/root/.openclaw/workspace/repos/ResumableFunctions.jl`
+Branch: `bounty-99-julialowering-scout`
+Current head: `b1d8ba9`
+Issue: `JuliaDynamics/ResumableFunctions.jl#99`
+
+## What this branch proves right now
+This branch packages a very narrow, maintainer-facing first slice for the JuliaLowering migration discussion:
+
+- scope remains **generator/filter only**
+- one representative proof case is tracked end-to-end:
+
+```julia
+(i + x for i in 1:x if i < x)
+```
+
+with outer binding `x`
+
+- the default/manual path remains unchanged
+- Julia `1.11` still remains the package's safe default path
+- JuliaLowering work stays experimental and explicitly gated
+
+## Current seam behavior
+For the representative generator/filter slice, the experimental `JuliaLoweringScopingBackend` seam now distinguishes:
+
+1. **out of slice**
+   - clear guarded error
+2. **in slice, contract not met**
+   - clear guarded error
+3. **in slice, contract met**
+   - conservative reuse of the manual-scoped result
+
+This keeps the branch executable without pretending the broader migration is done.
+
+## Key files
+- Contract / target note:
+  - `reports/resumablefunctions-99-generator-adapter-target-2026-03-21.md`
+- Smoke example:
+  - `examples/experimental_julialowering_seam_readiness.jl`
+
+## Most important recent commits
+- `7a4614b` — `fix: use unquoted expr source in seam readiness`
+- `a45055f` — `docs: record validated seam success path`
+- `fdf9b73` — `docs: clarify seam smoke statuses`
+- `12cbd8a` — `docs: note seam smoke status outputs`
+- `5b0e97d` — `docs: sync smoke status wording`
+
+## How to validate quickly
+### 1) Main test suite on the default path
+```bash
+~/.juliaup/bin/julia --project=. -e 'using Pkg; Pkg.test(test_args=["main"])'
+```
+
+Expected result on the current branch:
+- passes on Julia `1.11`
+
+### 2) Branch-local seam smoke
+```bash
+~/.juliaup/bin/julia --project=. examples/experimental_julialowering_seam_readiness.jl
+```
+
+Expected result on Julia `< 1.12`:
+- `SUPPORTED=true`
+- `CONTRACT_MET=false`
+- `STATUS=pre-1.12 runtime; JuliaLowering proof path unavailable`
+
+Expected result on Julia `1.12+` without `JuliaLowering` installed:
+- `SUPPORTED=true`
+- `CONTRACT_MET=false`
+- `STATUS=Julia 1.12+ but JuliaLowering is unavailable in this environment`
+
+Expected result on Julia `1.12+` with `JuliaLowering` available:
+- `SUPPORTED=true`
+- `POSTLOAD_SUPPORTED=true`
+- `POSTLOAD_CONTRACT_MET=true`
+- `STATUS=Julia 1.12+ with JuliaLowering loaded; representative seam readiness observed`
+
+## Why the smoke example matters
+Running the smoke in a real temporary Julia `1.12.5` + local-`JuliaLowering` environment already exposed one genuine bug:
+
+- readiness had been rendering Expr source with `sprint(show, expr)`
+- that produced `:((...))` wrapping and caused a false-negative contract check
+- the fix was to use `sprint(Base.show_unquoted, expr)` instead
+
+So the smoke path is not just demonstration; it has already improved correctness.
+
+## Deliberately out of scope
+- nested comprehensions
+- multi-binder comprehensions
+- broad Expr regeneration from arbitrary JuliaLowering output
+- making JuliaLowering a required dependency for normal package use
+
+## Most useful next maintainer-facing step
+If this branch is worth carrying forward, the next best small step is probably one of:
+
+1. review/approve the current narrow generator/filter boundary as the first adapter slice, or
+2. request one more equally narrow proof/adapter refinement within that same slice
+
+The branch is intentionally trying to be a crisp first seam, not a broad migration claim.

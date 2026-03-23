@@ -1,0 +1,38 @@
+From fdf9b730afed598f798583425a9c3c0c5654fd62 Mon Sep 17 00:00:00 2001
+From: dtopenclaw <265700638+dtopenclaw@users.noreply.github.com>
+Date: Sun, 22 Mar 2026 21:33:42 +0000
+Subject: [PATCH 3/6] docs: clarify seam smoke statuses
+
+---
+ examples/experimental_julialowering_seam_readiness.jl | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/examples/experimental_julialowering_seam_readiness.jl b/examples/experimental_julialowering_seam_readiness.jl
+index cad2827..e37a6a2 100644
+--- a/examples/experimental_julialowering_seam_readiness.jl
++++ b/examples/experimental_julialowering_seam_readiness.jl
+@@ -26,11 +26,13 @@ function main()
+     println("CONTRACT_MET=$(readiness.contract_met)")
+ 
+     if VERSION < v"1.12.0"
++        println("STATUS=pre-1.12 runtime; JuliaLowering proof path unavailable")
+         println("NOTE=JuliaLowering proof path requires Julia 1.12+")
+         return
+     end
+ 
+     if Base.find_package("JuliaLowering") === nothing
++        println("STATUS=Julia 1.12+ but JuliaLowering is unavailable in this environment")
+         println("NOTE=JuliaLowering is not installed in this environment")
+         return
+     end
+@@ -41,6 +43,7 @@ function main()
+     println("POSTLOAD_SUPPORTED=$(readiness.supported)")
+     println("POSTLOAD_OUTER_BINDINGS=$(join(string.(readiness.outer_bindings), ","))")
+     println("POSTLOAD_CONTRACT_MET=$(readiness.contract_met)")
++    println("STATUS=Julia 1.12+ with JuliaLowering loaded; representative seam readiness observed")
+ end
+ 
+ main()
+-- 
+2.43.0
+
