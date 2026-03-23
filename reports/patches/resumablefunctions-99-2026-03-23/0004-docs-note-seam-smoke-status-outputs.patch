@@ -1,0 +1,28 @@
+From 12cbd8a751c6797ee4cbd3951ba2088f06bcaadd Mon Sep 17 00:00:00 2001
+From: dtopenclaw <265700638+dtopenclaw@users.noreply.github.com>
+Date: Mon, 23 Mar 2026 00:33:24 +0000
+Subject: [PATCH 4/6] docs: note seam smoke status outputs
+
+---
+ ...umablefunctions-99-generator-adapter-target-2026-03-21.md | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/reports/resumablefunctions-99-generator-adapter-target-2026-03-21.md b/reports/resumablefunctions-99-generator-adapter-target-2026-03-21.md
+index d917632..247c99d 100644
+--- a/reports/resumablefunctions-99-generator-adapter-target-2026-03-21.md
++++ b/reports/resumablefunctions-99-generator-adapter-target-2026-03-21.md
+@@ -108,6 +108,11 @@ Its job is not package behavior; it is branch-local diagnostics. It prints the r
+ 
+ That smoke path has now done useful work already: it exposed and helped fix a false-negative in `experimental_generator_filter_slice_readiness(expr, scope)`, where Expr rendering via `sprint(show, expr)` produced `:((...))` instead of plain expression source. The seam now uses `sprint(Base.show_unquoted, expr)` for this readiness path.
+ 
++The smoke example now also emits explicit `STATUS=` lines so maintainers can tell at a glance which runtime mode they are seeing:
++- pre-1.12 fallback mode
++- 1.12+ without `JuliaLowering`
++- 1.12+ with `JuliaLowering` loaded and representative seam readiness observed
++
+ This is the narrowest currently proven boundary that looks adapter-worthy.
+ 
+ ## Explicitly in scope
+-- 
+2.43.0
+

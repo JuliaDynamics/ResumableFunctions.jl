@@ -3,7 +3,7 @@
 Date: 2026-03-23
 Repo: `/root/.openclaw/workspace/repos/ResumableFunctions.jl`
 Branch: `bounty-99-julialowering-scout`
-Current head: `5b0e97d`
+Current head: `b1d8ba9`
 Issue: `JuliaDynamics/ResumableFunctions.jl#99`
 
 ## What this branch proves right now
