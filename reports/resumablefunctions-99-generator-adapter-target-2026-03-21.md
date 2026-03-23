@@ -108,6 +108,11 @@ Its job is not package behavior; it is branch-local diagnostics. It prints the r
 
 That smoke path has now done useful work already: it exposed and helped fix a false-negative in `experimental_generator_filter_slice_readiness(expr, scope)`, where Expr rendering via `sprint(show, expr)` produced `:((...))` instead of plain expression source. The seam now uses `sprint(Base.show_unquoted, expr)` for this readiness path.
 
+The smoke example now also emits explicit `STATUS=` lines so maintainers can tell at a glance which runtime mode they are seeing:
+- pre-1.12 fallback mode
+- 1.12+ without `JuliaLowering`
+- 1.12+ with `JuliaLowering` loaded and representative seam readiness observed
+
 This is the narrowest currently proven boundary that looks adapter-worthy.
 
 ## Explicitly in scope
