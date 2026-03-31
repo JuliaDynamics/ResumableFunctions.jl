@@ -1,0 +1,40 @@
+From 7a4614b7be56752ab31063904f70cbc17a6074d8 Mon Sep 17 00:00:00 2001
+From: dtopenclaw <265700638+dtopenclaw@users.noreply.github.com>
+Date: Sun, 22 Mar 2026 18:32:22 +0000
+Subject: [PATCH 1/6] fix: use unquoted expr source in seam readiness
+
+---
+ src/utils.jl      | 2 +-
+ test/test_main.jl | 3 +++
+ 2 files changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/src/utils.jl b/src/utils.jl
+index 13c0d0f..a61d144 100755
+--- a/src/utils.jl
++++ b/src/utils.jl
+@@ -348,7 +348,7 @@ function experimental_generator_filter_slice_readiness(expr::Expr, scope::ScopeT
+   outer_bindings = experimental_visible_outer_bindings(scope)
+ 
+   contract_met = if supported && VERSION >= v"1.12.0"
+-    expr_src = sprint(show, expr)
++    expr_src = sprint(Base.show_unquoted, expr)
+     try
+       experimental_generator_binding_contract_met(expr_src; outer_bindings = outer_bindings, mod = scope.mod)
+     catch err
+diff --git a/test/test_main.jl b/test/test_main.jl
+index 2152d4f..0785e28 100644
+--- a/test/test_main.jl
++++ b/test/test_main.jl
+@@ -331,6 +331,9 @@ end
+   @test Set(readiness.outer_bindings) == Set([:x, :test_backend, :i])
+   if VERSION < v"1.12.0"
+     @test readiness.contract_met == false
++  elseif Base.find_package("JuliaLowering") !== nothing
++    @eval using JuliaLowering
++    @test readiness.contract_met == true
+   end
+ 
+   if VERSION < v"1.12.0"
+-- 
+2.43.0
+

@@ -280,6 +280,208 @@ end
   @test collect(test_forward()) == [i^2 for i in 1:10]
 end
 
+@testset "test_scoping_backend_seam" begin
+  expr = quote
+    let i = i, j = i
+      i + j
+    end
+  end
+
+  manual = ResumableFunctions.scope_function_body(
+    expr,
+    [:i],
+    Symbol[],
+    :test_backend,
+    Symbol[],
+    @__MODULE__;
+    backend = ResumableFunctions.ManualScopingBackend(),
+  )
+
+  manual_str = sprint(show, manual)
+  @test ResumableFunctions.default_scoping_backend() isa ResumableFunctions.ManualScopingBackend
+  @test occursin("i_0", manual_str)
+  @test occursin("j_1", manual_str)
+  @test occursin("i_0 + j_1", manual_str)
+
+  err = try
+    ResumableFunctions.scope_function_body(
+      expr,
+      [:i],
+      Symbol[],
+      :test_backend,
+      Symbol[],
+      @__MODULE__;
+      backend = ResumableFunctions.JuliaLoweringScopingBackend(),
+    )
+    nothing
+  catch exc
+    exc
+  end
+  @test err isa ArgumentError
+  @test occursin("JuliaLowering scoping backend is experimental", sprint(showerror, err))
+  @test occursin("outside that slice", sprint(showerror, err))
+
+  generator_expr = Meta.parse("(i + x for i in 1:x if i < x)")
+  scope = ResumableFunctions.init_scope_tracker([:x], Symbol[], :test_backend, Symbol[], @__MODULE__)
+  push!(scope.scope_stack, Dict(:x => :x_0, :i => :i_0))
+  @test Set(ResumableFunctions.experimental_visible_outer_bindings(scope)) == Set([:x, :test_backend, :i])
+
+  readiness = ResumableFunctions.experimental_generator_filter_slice_readiness(generator_expr, scope)
+  @test readiness.supported
+  @test Set(readiness.outer_bindings) == Set([:x, :test_backend, :i])
+  if VERSION < v"1.12.0"
+    @test readiness.contract_met == false
+  elseif Base.find_package("JuliaLowering") !== nothing
+    @eval using JuliaLowering
+    @test readiness.contract_met == true
+  end
+
+  if VERSION < v"1.12.0"
+    generator_err = try
+      ResumableFunctions.scope_function_body(
+        generator_expr,
+        [:x],
+        Symbol[],
+        :test_backend,
+        Symbol[],
+        @__MODULE__;
+        backend = ResumableFunctions.JuliaLoweringScopingBackend(),
+      )
+      nothing
+    catch exc
+      exc
+    end
+    @test generator_err isa ArgumentError
+    @test occursin("JuliaLowering scoping backend is experimental", sprint(showerror, generator_err))
+    @test occursin("recognized but not wired", sprint(showerror, generator_err))
+  elseif Base.find_package("JuliaLowering") !== nothing
+    @eval using JuliaLowering
+    jl_scoped = ResumableFunctions.scope_function_body(
+      generator_expr,
+      [:x],
+      Symbol[],
+      :test_backend,
+      Symbol[],
+      @__MODULE__;
+      backend = ResumableFunctions.JuliaLoweringScopingBackend(),
+    )
+    manual_generator_scoped = ResumableFunctions.scope_function_body(
+      generator_expr,
+      [:x],
+      Symbol[],
+      :test_backend,
+      Symbol[],
+      @__MODULE__;
+      backend = ResumableFunctions.ManualScopingBackend(),
+    )
+    @test sprint(show, jl_scoped) == sprint(show, manual_generator_scoped)
+  else
+    generator_err = try
+      ResumableFunctions.scope_function_body(
+        generator_expr,
+        [:x],
+        Symbol[],
+        :test_backend,
+        Symbol[],
+        @__MODULE__;
+        backend = ResumableFunctions.JuliaLoweringScopingBackend(),
+      )
+      nothing
+    catch exc
+      exc
+    end
+    @test generator_err isa ArgumentError
+    @test occursin("JuliaLowering scoping backend is experimental", sprint(showerror, generator_err))
+    @test occursin("recognized but not wired", sprint(showerror, generator_err))
+  end
+
+  manual_summary = ResumableFunctions.experimental_manual_binding_summary(
+    "let i = i, j = i\n  i + j\nend";
+    outer_bindings = [:i],
+    mod = @__MODULE__,
+  )
+  @test manual_summary == [
+    (kind = :globalref, local_id = nothing, name = :i),
+    (kind = :localref, local_id = 1, name = :i_0),
+    (kind = :localref, local_id = 1, name = :i_0),
+    (kind = :localref, local_id = 2, name = :j_1),
+    (kind = :globalref, local_id = nothing, name = :+),
+    (kind = :localref, local_id = 1, name = :i_0),
+    (kind = :localref, local_id = 2, name = :j_1),
+  ]
+
+  manual_noassign_summary = ResumableFunctions.experimental_manual_binding_summary(
+    "let i\n  1\nend";
+    mod = @__MODULE__,
+  )
+  @test manual_noassign_summary == [
+    (kind = :localref, local_id = 1, name = :i_0),
+  ]
+
+  @test ResumableFunctions.experimental_generator_filter_slice_supported(
+    "(i + x for i in 1:x if i < x)"
+  )
+  @test !ResumableFunctions.experimental_generator_filter_slice_supported(
+    "[x + y for x in 1:x, y in 1:y]"
+  )
+
+  @test ResumableFunctions.experimental_generator_filter_slice_status(
+    "(i + x for i in 1:x if i < x)";
+    outer_bindings = [:x],
+  ) == (supported = true, contract_met = false)
+  @test ResumableFunctions.experimental_generator_filter_slice_status(
+    "[x + y for x in 1:x, y in 1:y]";
+    outer_bindings = [:x, :y],
+  ) == (supported = false, contract_met = false)
+
+  if VERSION < v"1.12.0"
+    report_err = try
+      ResumableFunctions.experimental_julialowering_scope_report("let i = i, j = i\n  i + j\nend")
+      nothing
+    catch exc
+      exc
+    end
+    @test report_err isa ArgumentError
+    @test occursin("requires Julia 1.12+", sprint(showerror, report_err))
+
+    summary_err = try
+      ResumableFunctions.experimental_julialowering_binding_summary("let i = i, j = i\n  i + j\nend")
+      nothing
+    catch exc
+      exc
+    end
+    @test summary_err isa ArgumentError
+    @test occursin("requires Julia 1.12+", sprint(showerror, summary_err))
+
+    normalized_summary_err = try
+      ResumableFunctions.experimental_julialowering_binding_summary_normalized("let i = i, j = i\n  i + j\nend")
+      nothing
+    catch exc
+      exc
+    end
+    @test normalized_summary_err isa ArgumentError
+    @test occursin("requires Julia 1.12+", sprint(showerror, normalized_summary_err))
+
+    generator_comparison_err = try
+      ResumableFunctions.experimental_generator_binding_comparison("(i + x for i in 1:x if i < x)"; outer_bindings = [:x])
+      nothing
+    catch exc
+      exc
+    end
+    @test generator_comparison_err isa ArgumentError
+    @test occursin("requires Julia 1.12+", sprint(showerror, generator_comparison_err))
+
+    generator_contract_err = try
+      ResumableFunctions.experimental_generator_binding_contract_met("(i + x for i in 1:x if i < x)"; outer_bindings = [:x])
+      nothing
+    catch exc
+      exc
+    end
+    @test generator_contract_err isa ArgumentError
+    @test occursin("requires Julia 1.12+", sprint(showerror, generator_contract_err))
+  end
+end
+
 @testset "test_kw" begin
   g(x, y; z = 2) = x + y^2 + z
 

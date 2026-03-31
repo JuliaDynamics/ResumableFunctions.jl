@@ -267,10 +267,412 @@ end
 # We exploit this when rewriting let and for constructions, see below for
 # examples with let. At the end, all `local x` are removed.
 
+abstract type AbstractScopingBackend end
+
+"""
+Default scoping backend used by `@resumable`.
+
+This preserves the current hand-rolled scope-renaming pass while allowing
+experimental backends to be introduced behind a stable seam.
+"""
+struct ManualScopingBackend <: AbstractScopingBackend end
+
+"""
+Experimental scoping backend placeholder for future JuliaLowering-backed scope
+resolution.
+
+This backend is intentionally not wired up yet. The current proven first slice
+is much narrower than full scope resolution: generator/filter-only proof cases
+under Julia 1.12+ with explicit normalization of lowering artifacts.
+"""
+struct JuliaLoweringScopingBackend <: AbstractScopingBackend end
+
 mutable struct ScopeTracker
   i::Int
   mod::Module
   scope_stack::Vector
+end
+
+default_scoping_backend() = ManualScopingBackend()
+
+function init_scope_tracker(args, kwargs, name, params, mod::Module)
+  ScopeTracker(0, mod, [Dict(i => i for i in vcat(args, kwargs, [name], params...))])
+end
+
+function scope_function_body(expr, args, kwargs, name, params, mod::Module;
+                             backend::AbstractScopingBackend = default_scoping_backend())
+  scope = init_scope_tracker(args, kwargs, name, params, mod)
+  scope_function_body(expr, scope, backend)
+end
+
+function scope_function_body(expr, scope::ScopeTracker, ::ManualScopingBackend)
+  scoping(copy(expr), scope)
+end
+
+function experimental_generator_filter_slice_supported(expr::Expr)
+  expr.head === :generator || return false
+  length(expr.args) == 2 || return false
+
+  iter_node = expr.args[2]
+  if iter_node isa Expr && iter_node.head === :filter
+    length(iter_node.args) == 2 || return false
+    iter_node = iter_node.args[2]
+  end
+
+  iter_node isa Expr || return false
+  iter_node.head === :(=) || return false
+  iter_node.args[1] isa Symbol || return false
+  true
+end
+
+experimental_generator_filter_slice_supported(::Any) = false
+
+function experimental_generator_filter_slice_status(expr::Expr)
+  (supported = experimental_generator_filter_slice_supported(expr), contract_met = false)
+end
+
+function experimental_visible_outer_bindings(scope::ScopeTracker)
+  outer_bindings = Symbol[]
+  seen = Set{Symbol}()
+  for frame in scope.scope_stack
+    for name in keys(frame)
+      if name ∉ seen
+        push!(outer_bindings, name)
+        push!(seen, name)
+      end
+    end
+  end
+  outer_bindings
+end
+
+function experimental_generator_filter_slice_readiness(expr::Expr, scope::ScopeTracker)
+  supported = experimental_generator_filter_slice_supported(expr)
+  outer_bindings = experimental_visible_outer_bindings(scope)
+
+  contract_met = if supported && VERSION >= v"1.12.0"
+    expr_src = sprint(Base.show_unquoted, expr)
+    try
+      experimental_generator_binding_contract_met(expr_src; outer_bindings = outer_bindings, mod = scope.mod)
+    catch err
+      if err isa ArgumentError
+        false
+      else
+        rethrow()
+      end
+    end
+  else
+    false
+  end
+
+  (supported = supported, outer_bindings = outer_bindings, contract_met = contract_met)
+end
+
+function experimental_generator_filter_slice_status(expr::Expr, scope::ScopeTracker)
+  readiness = experimental_generator_filter_slice_readiness(expr, scope)
+  (supported = readiness.supported, contract_met = readiness.contract_met)
+end
+
+experimental_generator_filter_slice_status(::Any) = (supported = false, contract_met = false)
+
+function scope_function_body(expr, scope::ScopeTracker, ::JuliaLoweringScopingBackend)
+  status = experimental_generator_filter_slice_status(expr, scope)
+  if status.supported && status.contract_met
+    return scope_function_body(expr, scope, ManualScopingBackend())
+  elseif status.supported
+    throw(ArgumentError(
+      "JuliaLowering scoping backend is experimental; this generator/filter first slice is recognized but not wired into ResumableFunctions yet"
+    ))
+  end
+  throw(ArgumentError(
+    "JuliaLowering scoping backend is experimental; the current proven slice is generator/filter-only proof work and this expression is outside that slice"
+  ))
+end
+
+"""
+Proof-only helper for experimenting with JuliaLowering-backed scope analysis.
+
+This does not affect the normal `@resumable` pipeline. It is intended for
+narrow diagnostics and feasibility checks while the JuliaLowering path remains
+experimental.
+"""
+function experimental_julialowering_scope_report(expr_src::AbstractString; mod::Module = Main)
+  if VERSION < v"1.12.0"
+    throw(ArgumentError(
+      "experimental_julialowering_scope_report requires Julia 1.12+; current VERSION=$(VERSION)"
+    ))
+  end
+
+  jl = if isdefined(Main, :JuliaLowering)
+    getfield(Main, :JuliaLowering)
+  else
+    throw(ArgumentError(
+      "JuliaLowering is not loaded in Main; start Julia 1.12+ and `using JuliaLowering` before calling experimental_julialowering_scope_report"
+    ))
+  end
+
+  js = try
+    getfield(jl, :JuliaSyntax)
+  catch
+    throw(ArgumentError("JuliaLowering loaded but JuliaSyntax is not available through it"))
+  end
+
+  ex = js.parsestmt(jl.SyntaxTree, expr_src)
+  lowered = jl.lower(mod, ex)
+  return sprint(io -> show(io, MIME("text/plain"), lowered))
+end
+
+"""
+Collect a small structured summary of JuliaLowering scope-related nodes.
+
+This is a proof-only helper for the experimental JuliaLowering path. It returns
+ordered occurrences of `:slot` and `:globalref` nodes from the lowered tree so
+future mapping code can compare structure without scraping pretty-printed text.
+"""
+function experimental_julialowering_binding_summary(expr_src::AbstractString; mod::Module = Main)
+  if VERSION < v"1.12.0"
+    throw(ArgumentError(
+      "experimental_julialowering_binding_summary requires Julia 1.12+; current VERSION=$(VERSION)"
+    ))
+  end
+
+  jl = if isdefined(Main, :JuliaLowering)
+    getfield(Main, :JuliaLowering)
+  else
+    throw(ArgumentError(
+      "JuliaLowering is not loaded in Main; start Julia 1.12+ and `using JuliaLowering` before calling experimental_julialowering_binding_summary"
+    ))
+  end
+
+  js = try
+    getfield(jl, :JuliaSyntax)
+  catch
+    throw(ArgumentError("JuliaLowering loaded but JuliaSyntax is not available through it"))
+  end
+
+  ex = js.parsestmt(jl.SyntaxTree, expr_src)
+  lowered = jl.lower(mod, ex)
+  out = NamedTuple{(:kind, :var_id, :name)}[]
+
+  function walk(node)
+    k = Symbol(jl.kind(node))
+    if k === :slot
+      push!(out, (kind = k, var_id = getproperty(node, :var_id), name = nothing))
+    elseif k === :globalref
+      push!(out, (kind = k, var_id = nothing, name = getproperty(node, :name_val)))
+    end
+    for i in 1:jl.numchildren(node)
+      walk(node[i])
+    end
+    nothing
+  end
+
+  walk(lowered)
+  out
+end
+
+"""
+Return a lightly normalized JuliaLowering binding summary.
+
+This proof helper currently strips synthetic wrapper globals introduced by
+JuliaLowering for anonymous closure/lambda scaffolding (for example `#->##0`).
+That makes narrow generator/comprehension comparisons less noisy without
+claiming full structural equivalence.
+"""
+function experimental_julialowering_binding_summary_normalized(expr_src::AbstractString; mod::Module = Main)
+  raw = experimental_julialowering_binding_summary(expr_src; mod = mod)
+  filter(raw) do item
+    !(item.kind === :globalref && item.name isa AbstractString && occursin(r"^#->##\d+$", item.name))
+  end
+end
+
+"""
+Return a tiny comparison summary for generator/filter proof cases.
+
+This is intentionally narrow: it compares the current manual scoping proof helper
+against the normalized JuliaLowering proof helper using only stable summary
+signals that already appear close on generator/filter examples.
+"""
+function experimental_generator_binding_comparison(expr_src::AbstractString;
+                                                   outer_bindings::AbstractVector{Symbol} = Symbol[],
+                                                   mod::Module = Main)
+  manual = experimental_manual_binding_summary(expr_src; outer_bindings = outer_bindings, mod = mod)
+  jl = experimental_julialowering_binding_summary_normalized(expr_src; mod = mod)
+
+  manual_globalrefs = [String(item.name) for item in manual if item.kind === :globalref]
+  jl_globalrefs = [String(item.name) for item in jl if item.kind === :globalref]
+  manual_slot_refs = count(item -> item.kind === :localref, manual)
+  jl_slot_refs = count(item -> item.kind === :slot, jl)
+  manual_distinct_slots = length(unique(item.local_id for item in manual if item.kind === :localref))
+  jl_distinct_slots = length(unique(item.var_id for item in jl if item.kind === :slot))
+  manual_semantic_slot_refs = manual_slot_refs - manual_distinct_slots
+
+  (
+    manual_globalrefs = manual_globalrefs,
+    jl_globalrefs = jl_globalrefs,
+    globalrefs_match = manual_globalrefs == jl_globalrefs,
+    manual_slot_refs = manual_slot_refs,
+    manual_semantic_slot_refs = manual_semantic_slot_refs,
+    jl_slot_refs = jl_slot_refs,
+    semantic_slot_refs_match = manual_semantic_slot_refs == jl_slot_refs,
+    manual_distinct_slots = manual_distinct_slots,
+    jl_distinct_slots = jl_distinct_slots,
+  )
+end
+
+"""
+Return whether an expression fits the current first adapter slice.
+
+Current scope is intentionally narrow:
+- generator expressions only
+- optional `if` filter allowed
+- exactly one binder assignment
+- symbol binder only
+"""
+function experimental_generator_filter_slice_supported(expr_src::AbstractString)
+  expr = Meta.parse(expr_src)
+  experimental_generator_filter_slice_supported(expr)
+end
+
+"""
+Return whether a generator/filter case satisfies the current first-slice proof contract.
+
+This stays intentionally narrow and proof-only. It uses the generator comparison
+helper and checks only the stable signals that the current first adapter target
+claims as acceptance criteria.
+"""
+function experimental_generator_binding_contract_met(expr_src::AbstractString;
+                                                     outer_bindings::AbstractVector{Symbol} = Symbol[],
+                                                     mod::Module = Main)
+  experimental_generator_filter_slice_supported(expr_src) || return false
+  cmp = experimental_generator_binding_comparison(expr_src; outer_bindings = outer_bindings, mod = mod)
+  cmp.globalrefs_match || return false
+  cmp.semantic_slot_refs_match || return false
+  cmp.manual_distinct_slots == cmp.jl_distinct_slots || return false
+  true
+end
+
+"""
+Return a compact preflight status for the current first adapter slice.
+
+This is a proof-only convenience helper for future experimental adapter work.
+It centralizes the current shape gate and contract check in one call.
+"""
+function experimental_generator_filter_slice_status(expr_src::AbstractString;
+                                                    outer_bindings::AbstractVector{Symbol} = Symbol[],
+                                                    mod::Module = Main)
+  expr = Meta.parse(expr_src)
+  base = experimental_generator_filter_slice_status(expr)
+  contract_met = base.supported && VERSION >= v"1.12.0" && experimental_generator_binding_contract_met(expr_src; outer_bindings = outer_bindings, mod = mod)
+  (supported = base.supported, contract_met = contract_met)
+end
+
+"""
+Collect a small structured summary of the current manual scoping pass.
+
+This mirrors the proof-only JuliaLowering binding summary helper on the same
+string input so narrow shadowing cases can be compared structurally. The helper
+tracks local bindings introduced by the scoped expression and emits ordered
+`:localref` / `:globalref` occurrences.
+"""
+function experimental_manual_binding_summary(expr_src::AbstractString;
+                                             outer_bindings::AbstractVector{Symbol} = Symbol[],
+                                             mod::Module = Main)
+  expr = Meta.parse(expr_src)
+  scoped = scope_function_body(expr, collect(outer_bindings), Symbol[], gensym(:manual_scope), Symbol[], mod)
+
+  out = NamedTuple{(:kind, :local_id, :name)}[]
+  local_ids = Dict{Symbol, Int}()
+  next_local_id = Ref(0)
+  assigned_locals = Set{Symbol}()
+  generator_locals = Set{Symbol}()
+
+  function collect_assigned_locals!(node)
+    if node isa Expr
+      if node.head === :(=)
+        lhs = node.args[1]
+        if lhs isa Symbol
+          push!(assigned_locals, lhs)
+        elseif lhs isa Expr && lhs.head === :tuple
+          for arg in lhs.args
+            arg isa Symbol && push!(assigned_locals, arg)
+          end
+        end
+      end
+      for arg in node.args
+        collect_assigned_locals!(arg)
+      end
+    end
+    nothing
+  end
+
+  function collect_generator_locals!(node, in_generator::Bool = false)
+    if node isa Expr
+      next_in_generator = in_generator || node.head === :generator || node.head === :filter
+      if next_in_generator && node.head === :(=)
+        lhs = node.args[1]
+        if lhs isa Symbol
+          push!(generator_locals, lhs)
+        elseif lhs isa Expr && lhs.head === :tuple
+          for arg in lhs.args
+            arg isa Symbol && push!(generator_locals, arg)
+          end
+        end
+      end
+      for arg in node.args
+        collect_generator_locals!(arg, next_in_generator)
+      end
+    end
+    nothing
+  end
+
+  function ensure_local!(sym::Symbol)
+    get!(local_ids, sym) do
+      next_local_id[] += 1
+      next_local_id[]
+    end
+  end
+
+  function emit_symbol(sym::Symbol)
+    if sym in generator_locals && !haskey(local_ids, sym)
+      ensure_local!(sym)
+    end
+    if haskey(local_ids, sym)
+      push!(out, (kind = :localref, local_id = local_ids[sym], name = sym))
+    else
+      push!(out, (kind = :globalref, local_id = nothing, name = sym))
+    end
+    nothing
+  end
+
+  function walk(node)
+    if node isa Symbol
+      emit_symbol(node)
+    elseif node isa Expr
+      if node.head === :local
+        for arg in node.args
+          if arg isa Symbol
+            ensure_local!(arg)
+            arg ∉ assigned_locals && emit_symbol(arg)
+          end
+        end
+      elseif node.head === :(=)
+        for i in 2:length(node.args)
+          walk(node.args[i])
+        end
+        walk(node.args[1])
+      else
+        for arg in node.args
+          walk(arg)
+        end
+      end
+    end
+    nothing
+  end
+
+  collect_assigned_locals!(scoped)
+  collect_generator_locals!(scoped)
+  walk(scoped)
+  out
 end
 
 function lookup_lhs!(s::Symbol, S::ScopeTracker; new::Bool = false)
