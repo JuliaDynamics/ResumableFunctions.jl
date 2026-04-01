@@ -59,6 +59,14 @@ function forward_args(func_def)
 end
 
 const unused = (Symbol("#temp#"), Symbol("_"), Symbol(""), Symbol("#unused#"), Symbol("#self#"))
+const fresh_binding_counter = Base.Threads.Atomic{UInt}(0)
+
+# JET/Revise can replay macro expansion in a way that makes plain `gensym()`
+# collide for top-level bindings. Use an explicit module-global counter there.
+function fresh_binding_name(prefix=:resumable)
+  id = Base.Threads.atomic_add!(fresh_binding_counter, UInt(1)) + UInt(1)
+  return Symbol("##", prefix, "#", Base.get_world_counter(), "#", id)
+end
 
 function strip_defaults(arg_exprs::Vector{Any})
   return Any[@capture(arg_expr, arg_expr2_ = default_) ? arg_expr2 : arg_expr
@@ -70,7 +78,7 @@ Function returning the slots of a function definition
 """
 function get_slots(func_def::Dict, args::Dict{Symbol, Any}, mod::Module)
   slots = Dict{Symbol, Any}()
-  func_def[:name] = gensym()
+  func_def[:name] = fresh_binding_name(:inferfn)
   func_def[:args] = Any[strip_defaults(func_def[:args])..., strip_defaults(func_def[:kwargs])...]
   func_def[:kwargs] = []
   # replace yield with inference barrier
