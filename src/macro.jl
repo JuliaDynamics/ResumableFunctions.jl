@@ -115,7 +115,7 @@ macro resumable(ex::Expr...)
   pushfirst!(args, functional)
 
   # The finite state machine structure definition
-  type_name = gensym(Symbol(func_def[:name], :_FSMI))
+  type_name = fresh_binding_name(Symbol(func_def[:name], :_FSMI))
   constr_def = copy(func_def)
   slot_T = [gensym(s) for s in keys(slots)]
   slot_T_sub = [:($k <: $v) for (k, v) in zip(slot_T, values(slots))]
@@ -152,7 +152,7 @@ macro resumable(ex::Expr...)
     bareconst_expr = nothing
   end
   constr_expr = combinedef(constr_def) |> flatten
-  typed_fsmi = VERSION >= v"1.10.0-DEV.873" ? gensym(:typed_fsmi) : typed_fsmi_fallback
+  typed_fsmi = VERSION >= v"1.10.0-DEV.873" ? fresh_binding_name(:typed_fsmi) : typed_fsmi_fallback
   type_expr = quote
     mutable struct $struct_name
       _state :: UInt8
