@@ -1,5 +1,10 @@
 # News
 
+## v1.0.9 - 2026-09-09
+
+- Support slurping arguments next to keyword arguments, e.g., `@resumable function f(a...; k=1); end` and `@resumable function f(a...; k...); end` which previously led to `syntax: invalid "..." on non-final argument` errors.
+- Store a slurping keyword argument as the `Base.Pairs` object it collects, e.g., `@resumable function f(a; k...); end` which previously failed while converting it to a `Tuple`.
+
 ## v1.0.8 - 2026-09-12
 
 - Fix construction of `@resumable` iterators on Julia 1.14 development versions
