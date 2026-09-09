@@ -32,28 +32,22 @@ end
 Takes a function definition and returns the expressions needed to forward the arguments to an inner function.
 For example `function foo(a, ::Int, c...; x, y=1, z...)` will
 1. modify the function to `gensym()` nameless arguments
-2. return `(:a, gensym(), :(c...)), (:x, :y, :(z...)))`
+2. return `(:a, gensym(), :c), (:x, :y, :z))`
+
+Slurping arguments are forwarded as the object they collect rather than splatted again.
 """
 function forward_args(func_def)
   args = []
   map!(func_def[:args], func_def[:args]) do arg
     name, type, splat, default = splitarg(arg)
     name = something(name, gensym())
-    if splat
-      push!(args, :($name...))
-    else
-      push!(args, name)
-    end
+    push!(args, name)
     combinearg(name, type, splat, default)
   end
   kwargs = []
   for arg in func_def[:kwargs]
     name, type, splat, default = splitarg(arg)
-    if splat
-      push!(kwargs, :($name...))
-    else
-      push!(kwargs, name)
-    end
+    push!(kwargs, name)
   end
   args, kwargs
 end
@@ -68,9 +62,22 @@ function fresh_binding_name(prefix=:resumable)
   return Symbol("##", prefix, "#", Base.get_world_counter(), "#", id)
 end
 
-function strip_defaults(arg_exprs::Vector{Any})
-  return Any[@capture(arg_expr, arg_expr2_ = default_) ? arg_expr2 : arg_expr
-    for arg_expr in arg_exprs]
+"""
+Builds the argument list of the inference function used in `get_slots`: keyword arguments move to
+the back of the positional ones, defaults are dropped, and slurping arguments lose their `...`
+because `forward_args` hands them the object they collect.
+"""
+function inference_params(args::Vector{Any}, kwargs::Vector{Any})
+  params = Any[]
+  for arg in args
+    name, type, splat, default = splitarg(arg)
+    push!(params, combinearg(name, splat ? :(Tuple{Vararg{$type}}) : type, false, nothing))
+  end
+  for kwarg in kwargs
+    name, type, splat, default = splitarg(kwarg)
+    push!(params, combinearg(name, splat ? :Any : type, false, nothing))
+  end
+  params
 end
 
 """
@@ -79,7 +86,7 @@ Function returning the slots of a function definition
 function get_slots(func_def::Dict, args::Dict{Symbol, Any}, mod::Module)
   slots = Dict{Symbol, Any}()
   func_def[:name] = fresh_binding_name(:inferfn)
-  func_def[:args] = Any[strip_defaults(func_def[:args])..., strip_defaults(func_def[:kwargs])...]
+  func_def[:args] = inference_params(func_def[:args], func_def[:kwargs])
   func_def[:kwargs] = []
   # replace yield with inference barrier
   func_def[:body] = postwalk(transform_yield, func_def[:body])
