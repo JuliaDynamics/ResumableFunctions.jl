@@ -27,8 +27,10 @@ end
 function collect_bindings(ctx, ex, acc = Dict{Int,Binding}())
   if kind(ex) === K"BindingId"
     info = lookup_binding(ctx, ex.var_id)
-    acc[info.id] = Binding(info.id, Symbol(info.name), info.kind, info.n_assigned,
-                           info.is_captured, info.is_always_defined)
+    if !info.is_internal
+      acc[info.id] = Binding(info.id, Symbol(info.name), info.kind, info.n_assigned,
+                             info.is_captured, info.is_always_defined)
+    end
   end
   if !is_leaf(ex)
     for child in children(ex)
@@ -40,6 +42,17 @@ end
 
 function ResumableFunctions.bindings_named(bindings::Dict{Int,Binding}, name::Symbol)
   sort!([b for b in values(bindings) if b.name === name]; by = b -> b.id)
+end
+
+function ResumableFunctions.slot_bindings(mod::Module, ex)
+  bindings = last(ResumableFunctions.resolve_bindings(mod, ex))
+  slots = Dict{Symbol,Vector{Binding}}()
+  for b in values(bindings)
+    b.kind in (:local, :argument) || continue
+    push!(get!(slots, b.name, Binding[]), b)
+  end
+  foreach(v -> sort!(v; by = b -> b.id), values(slots))
+  slots
 end
 
 end

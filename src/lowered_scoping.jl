@@ -73,3 +73,15 @@ function substitute_markers(ex::Expr)
   end
   Expr(:call, ref, call_args...)
 end
+
+"""
+    slot_bindings(mod, ex)
+
+The bindings of `ex` that need storage on the state machine, grouped by source name.
+
+Globals need no slot, and neither do the temporaries lowering introduces. A name maps to more
+than one binding when it is bound in more than one scope, and each of those needs its own slot.
+
+Implemented by the JuliaLowering extension.
+"""
+function slot_bindings end

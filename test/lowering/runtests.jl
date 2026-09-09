@@ -103,3 +103,60 @@ end
   @test length(bindings_named(bindings, :a)) == 2
   @test length(bindings_named(bindings, :t)) == 1
 end
+
+using ResumableFunctions: slot_bindings, ScopeTracker, scoping
+
+function tracker_slot_counts(mod, body, args)
+  scope = ScopeTracker(0, mod, [Dict(a => a for a in args)])
+  renamed = scoping(deepcopy(body), scope)
+  seen = Dict{Symbol,Set{Symbol}}()
+  walk(x) =
+    if x isa Symbol && occursin(r"_\d+$", String(x))
+      push!(get!(seen, Symbol(replace(String(x), r"_\d+$" => "")), Set{Symbol}()), x)
+    elseif x isa Expr
+      foreach(walk, x.args)
+    end
+  walk(renamed)
+  foreach(a -> push!(get!(seen, a, Set{Symbol}()), a), args)
+  Dict(k => length(v) for (k, v) in seen)
+end
+
+function lowered_slot_counts(mod, body, args)
+  fn = Expr(:function, Expr(:call, :f, args...), body)
+  Dict(k => length(v) for (k, v) in slot_bindings(mod, fn))
+end
+
+@testset "slot counts agree with the current scoper" begin
+  cases = [
+    "straight line"  => (:(begin; x = 1; y = x + 1; y end), Symbol[]),
+    "shadowing let"  => (:(begin; a = 3; b = 2; let a = b, b = a; (a, b) end end), Symbol[]),
+    "nested let"     => (:(begin; a = 1; let a = 2; let a = 3; a end end end), Symbol[]),
+    "for loop"       => (:(begin; s = 0; for i in 1:3; s += i end; s end), Symbol[]),
+    "while loop"     => (:(begin; n = 0; while n < 3; n += 1 end; n end), Symbol[]),
+    "reassignment"   => (:(begin; q = 1; q = 2; q = 3; q end), Symbol[]),
+    "comprehension"  => (:(begin; c = 1; z = [i * c for i in 1:5]; z end), Symbol[]),
+    "filtered comprehension" => (:(begin; z = [i for i in 1:10 if i < 5]; z end), Symbol[]),
+    "argument shadowed by let" => (:(begin; let p = p + 1; p end end), [:p]),
+    "a = a"          => (:(begin; a = a; a = a + 1; a end), Symbol[]),
+  ]
+  for (label, (body, args)) in cases
+    @test tracker_slot_counts(@__MODULE__, body, args) ==
+          lowered_slot_counts(@__MODULE__, body, args)
+  end
+end
+
+@testset "slot counts differ only for bindings needing no slot" begin
+  body = :(begin; try; u = 1; catch e; v = 2; finally; w = 3 end end)
+  tracker = tracker_slot_counts(@__MODULE__, body, Symbol[])
+  lowered = lowered_slot_counts(@__MODULE__, body, Symbol[])
+  @test !haskey(tracker, :e)
+  @test lowered[:e] == 1
+  @test filter(p -> first(p) !== :e, lowered) == tracker
+
+  body = :(begin; k = 1; g = n -> n * k; g(2) end)
+  tracker = tracker_slot_counts(@__MODULE__, body, Symbol[])
+  lowered = lowered_slot_counts(@__MODULE__, body, Symbol[])
+  @test !haskey(tracker, :n)
+  @test lowered[:n] == 1
+  @test filter(p -> first(p) !== :n, lowered) == tracker
+end
