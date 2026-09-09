@@ -33,3 +33,43 @@ The bindings called `name`, in id order. More than one means the name is bound i
 scope, as in `a = 1; let a = 2; end`.
 """
 function bindings_named end
+
+"""
+Stand-ins for `@yield`, `@yieldfrom` and `@nosave` while a body is lowered.
+
+JuliaLowering expands macros in its first pass, and these three throw when expanded outside a
+`@resumable` function, which is what makes them useful as errors elsewhere. So they are replaced
+by calls to these functions before lowering, and looked for again afterwards. The functions are
+never called; `@resumable` rewrites them away.
+"""
+function yield_marker end, function yieldfrom_marker end, function nosave_marker end
+
+const _MARKERS = Dict(Symbol("@yield")     => :yield_marker,
+                      Symbol("@yieldfrom") => :yieldfrom_marker,
+                      Symbol("@nosave")    => :nosave_marker)
+
+"""
+    substitute_markers(ex)
+
+Replace the `@yield`, `@yieldfrom` and `@nosave` macro calls in `ex` with calls to the marker
+functions above, so that they survive macro expansion.
+
+`@nosave var = rhs` becomes `var = nosave_marker(rhs)` rather than a call wrapping the whole
+assignment, which would turn the binding into a keyword argument and lose it.
+"""
+substitute_markers(ex) = ex
+
+function substitute_markers(ex::Expr)
+  args = Any[substitute_markers(a) for a in ex.args]
+  ex.head === :macrocall || return Expr(ex.head, args...)
+  marker = get(_MARKERS, args[1], nothing)
+  marker === nothing && return Expr(ex.head, args...)
+  call_args = filter(a -> !(a isa LineNumberNode), args[2:end])
+  ref = GlobalRef(@__MODULE__, marker)
+  if marker === :nosave_marker
+    length(call_args) == 1 && Meta.isexpr(call_args[1], :(=), 2) || return Expr(ex.head, args...)
+    var, rhs = call_args[1].args
+    return Expr(:(=), var, Expr(:call, ref, rhs))
+  end
+  Expr(:call, ref, call_args...)
+end

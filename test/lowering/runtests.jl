@@ -2,7 +2,7 @@ using ResumableFunctions
 using Test
 using JuliaLowering, JuliaSyntax
 
-using ResumableFunctions: Binding, is_boxed, resolve_bindings, bindings_named
+using ResumableFunctions: Binding, is_boxed, resolve_bindings, bindings_named, substitute_markers
 
 bindings_of(ex) = last(resolve_bindings(@__MODULE__, ex))
 named(ex, name) = bindings_named(bindings_of(ex), name)
@@ -83,4 +83,23 @@ end
   b = only(named(fixed, :c))
   @test b.is_captured
   @test !is_boxed(b)
+end
+
+@testset "markers survive lowering" begin
+  ex = quote
+    function f()
+      a = 1
+      let a = a + 1
+        @yield a
+      end
+      @nosave t = g()
+      t
+    end
+  end
+  ctx, tree, bindings = resolve_bindings(@__MODULE__, substitute_markers(ex))
+  rendered = string(tree)
+  @test occursin("yield_marker", rendered)
+  @test occursin("nosave_marker", rendered)
+  @test length(bindings_named(bindings, :a)) == 2
+  @test length(bindings_named(bindings, :t)) == 1
 end
