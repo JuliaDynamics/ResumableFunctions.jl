@@ -74,6 +74,13 @@ function strip_defaults(arg_exprs::Vector{Any})
 end
 
 """
+A variable that an inner function captures and reassigns is a `Core.Box` in the body the slot
+types are inferred from. The state machine field is itself the storage, so the value is what ends
+up in it, not the box.
+"""
+unboxed(@nospecialize(type)) = type === Core.Box ? Any : type
+
+"""
 Function returning the slots of a function definition
 """
 function get_slots(func_def::Dict, args::Dict{Symbol, Any}, mod::Module)
@@ -96,7 +103,7 @@ function get_slots(func_def::Dict, args::Dict{Symbol, Any}, mod::Module)
   #@info codeinfos
   # extract slot names and types
   for (name, type) in collect(zip(codeinfo.first.slotnames, codeinfo.first.slottypes))
-    name ∉ nosaves && name ∉ unused && (slots[name] = Union{type, get(slots, name, Union{})})
+    name ∉ nosaves && name ∉ unused && (slots[name] = Union{unboxed(type), get(slots, name, Union{})})
   end
   # remove `catch exc` statements
   postwalk(x->remove_catch_exc(x, slots), func_def[:body])
@@ -191,7 +198,7 @@ function (fsmi_generator::FSMIGenerator)(world::UInt, source, typed_fsmitype, fs
     for i in eachindex(names)
       # take care to widen types that are unstable or Const
       name = names[i]
-      type = Core.Compiler.widenconst(types[i])
+      type = unboxed(Core.Compiler.widenconst(types[i]))
       cislots[name] = Union{type, get(cislots, name, Union{})}
     end
     slots = map(slot->get(cislots, slot, Any), fieldnames(T)[2:end])

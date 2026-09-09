@@ -1,5 +1,9 @@
 # News
 
+## v1.0.9 - 2026-09-09
+
+- Support variables that an inner function captures and reassigns, e.g. `@resumable function f(); c = 1; @yield [i*c for i in 1:5]; c += 1; end`, which previously failed with `MethodError: Cannot convert an object of type Int64 to an object of type Core.Box`.
+
 ## v1.0.7 - 2026-07-17
 
 - Preserve standard logging macro metadata names, including `_group`, `event`,

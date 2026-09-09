@@ -410,7 +410,7 @@ end
     c += 1
     @yield [i*c for i in 1:5]
   end
-  @test_broken collect(test_comprehension_state()) == [[1, 2, 3, 4, 5], [2, 4, 6, 8, 10]]
+  @test collect(test_comprehension_state()) == [[1, 2, 3, 4, 5], [2, 4, 6, 8, 10]]
 
   @resumable function test_comprehension_if()
     @yield [i for i in 1:10 if i < 5]
@@ -438,7 +438,17 @@ end
     c += 1
     @yield [i for i in 1:10 if i < c]
   end
-  @test_broken collect(test_comprehension_if_state()) == [Int[], [1]]
+  @test collect(test_comprehension_if_state()) == [Int[], [1]]
+end
+
+@testset "test_closure_state" begin
+  @resumable function test_closure_state(m)
+    c = 1
+    @yield (n -> n * c)(m)
+    c += 1
+    @yield c
+  end
+  @test collect(test_closure_state(5)) == [5, 2]
 end
 
 @testset "test_ref" begin
