@@ -134,10 +134,9 @@ end
     "for loop"       => (:(begin; s = 0; for i in 1:3; s += i end; s end), Symbol[]),
     "while loop"     => (:(begin; n = 0; while n < 3; n += 1 end; n end), Symbol[]),
     "reassignment"   => (:(begin; q = 1; q = 2; q = 3; q end), Symbol[]),
-    "comprehension"  => (:(begin; c = 1; z = [i * c for i in 1:5]; z end), Symbol[]),
-    "filtered comprehension" => (:(begin; z = [i for i in 1:10 if i < 5]; z end), Symbol[]),
     "argument shadowed by let" => (:(begin; let p = p + 1; p end end), [:p]),
     "a = a"          => (:(begin; a = a; a = a + 1; a end), Symbol[]),
+    "closure"        => (:(begin; k = 1; g = n -> n * k; g(2) end), Symbol[]),
   ]
   for (label, (body, args)) in cases
     @test tracker_slot_counts(@__MODULE__, body, args) ==
@@ -145,18 +144,20 @@ end
   end
 end
 
-@testset "slot counts differ only for bindings needing no slot" begin
-  body = :(begin; try; u = 1; catch e; v = 2; finally; w = 3 end end)
-  tracker = tracker_slot_counts(@__MODULE__, body, Symbol[])
-  lowered = lowered_slot_counts(@__MODULE__, body, Symbol[])
+@testset "slot counts differ only where no slot is needed" begin
+  catch_body = :(begin; try; u = 1; catch e; v = 2; finally; w = 3 end end)
+  tracker = tracker_slot_counts(@__MODULE__, catch_body, Symbol[])
+  lowered = lowered_slot_counts(@__MODULE__, catch_body, Symbol[])
   @test !haskey(tracker, :e)
   @test lowered[:e] == 1
   @test filter(p -> first(p) !== :e, lowered) == tracker
 
-  body = :(begin; k = 1; g = n -> n * k; g(2) end)
-  tracker = tracker_slot_counts(@__MODULE__, body, Symbol[])
-  lowered = lowered_slot_counts(@__MODULE__, body, Symbol[])
-  @test !haskey(tracker, :n)
-  @test lowered[:n] == 1
-  @test filter(p -> first(p) !== :n, lowered) == tracker
+  for comprehension in (:(begin; c = 1; z = [i * c for i in 1:5]; z end),
+                        :(begin; z = [i for i in 1:10 if i < 5]; z end))
+    tracker = tracker_slot_counts(@__MODULE__, comprehension, Symbol[])
+    lowered = lowered_slot_counts(@__MODULE__, comprehension, Symbol[])
+    @test tracker[:i] == 1
+    @test !haskey(lowered, :i)
+    @test filter(p -> first(p) !== :i, tracker) == lowered
+  end
 end

@@ -45,14 +45,39 @@ function ResumableFunctions.bindings_named(bindings::Dict{Int,Binding}, name::Sy
 end
 
 function ResumableFunctions.slot_bindings(mod::Module, ex)
-  bindings = last(ResumableFunctions.resolve_bindings(mod, ex))
+  _, tree, bindings = ResumableFunctions.resolve_bindings(mod, ex)
+  own = own_binding_ids(tree)
   slots = Dict{Symbol,Vector{Binding}}()
   for b in values(bindings)
     b.kind in (:local, :argument) || continue
+    b.id in own || continue
+    startswith(String(b.name), "#") && continue
     push!(get!(slots, b.name, Binding[]), b)
   end
   foreach(v -> sort!(v; by = b -> b.id), values(slots))
   slots
+end
+
+"""
+The ids bound by the lambda of the function itself, which is the outermost one that binds
+anything. Bindings of a nested lambda belong to that closure, not to the state machine, while a
+variable the closure captures is bound by the function too and so appears in both.
+"""
+function own_binding_ids(tree)
+  found = find_function_lambda(tree)
+  found === nothing ? Set{Int}() : Set{Int}(keys(found.lambda_bindings.bindings))
+end
+
+function find_function_lambda(ex)
+  if kind(ex) === K"lambda" && !isempty(ex.lambda_bindings.bindings)
+    return ex
+  end
+  is_leaf(ex) && return nothing
+  for child in children(ex)
+    found = find_function_lambda(child)
+    found === nothing || return found
+  end
+  nothing
 end
 
 end
