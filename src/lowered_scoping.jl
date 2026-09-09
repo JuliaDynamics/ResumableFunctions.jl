@@ -42,7 +42,9 @@ JuliaLowering expands macros in its first pass, and these three throw when expan
 by calls to these functions before lowering, and looked for again afterwards. The functions are
 never called; `@resumable` rewrites them away.
 """
-function yield_marker end, function yieldfrom_marker end, function nosave_marker end
+function yield_marker end
+function yieldfrom_marker end
+function nosave_marker end
 
 const _MARKERS = Dict(Symbol("@yield")     => :yield_marker,
                       Symbol("@yieldfrom") => :yieldfrom_marker,
