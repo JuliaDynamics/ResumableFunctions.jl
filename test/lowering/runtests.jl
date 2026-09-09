@@ -1,3 +1,6 @@
+using Pkg
+Pkg.instantiate()
+
 using ResumableFunctions
 using Test
 using JuliaLowering, JuliaSyntax
