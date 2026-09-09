@@ -164,3 +164,17 @@ end
     @test filter(p -> first(p) !== :i, tracker) == lowered
   end
 end
+
+using ResumableFunctions: lower_to_codeinfo
+
+@testset "lowering reaches a method CodeInfo" begin
+  ci = lower_to_codeinfo(@__MODULE__, :(function f(); a = 1; b = a + 1; b end))
+  @test ci isa Core.CodeInfo
+  @test :a in ci.slotnames
+  @test :b in ci.slotnames
+  @test !isempty(ci.code)
+
+  ci = lower_to_codeinfo(@__MODULE__, substitute_markers(:(function f(); a = 1; @yield a; a end)))
+  @test ci isa Core.CodeInfo
+  @test occursin("yield_marker", string(ci.code))
+end

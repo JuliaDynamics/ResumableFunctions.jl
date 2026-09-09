@@ -87,3 +87,16 @@ than one binding when it is bound in more than one scope, and each of those need
 Implemented by the JuliaLowering extension.
 """
 function slot_bindings end
+
+"""
+    lower_to_codeinfo(mod, ex)
+
+Lower the function definition `ex` all the way to the `Core.CodeInfo` of its method, or `nothing`
+if it defines no method.
+
+This is the form the state machine is built from: the body is already linear, with slots for the
+locals and explicit control flow, so the states can be laid out without re-deriving any of it.
+
+Implemented by the JuliaLowering extension.
+"""
+function lower_to_codeinfo end

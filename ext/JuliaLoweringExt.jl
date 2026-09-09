@@ -13,7 +13,8 @@ module JuliaLoweringExt
 
 using ResumableFunctions: ResumableFunctions, Binding
 using JuliaLowering: SyntaxTree, expr_to_syntaxtree, expand_forms_1, expand_forms_2,
-                     resolve_scopes, lookup_binding
+                     resolve_scopes, convert_closures, linearize_ir, to_lowered_expr,
+                     lookup_binding
 using JuliaSyntax: @K_str, kind, is_leaf, children
 
 function ResumableFunctions.resolve_bindings(mod::Module, ex)
@@ -76,6 +77,26 @@ function find_function_lambda(ex)
   for child in children(ex)
     found = find_function_lambda(child)
     found === nothing || return found
+  end
+  nothing
+end
+
+function ResumableFunctions.lower_to_codeinfo(mod::Module, ex)
+  tree = ex isa SyntaxTree ? ex : expr_to_syntaxtree(ex)
+  ctx1, ex1 = expand_forms_1(mod, tree, false, Base.get_world_counter())
+  ctx2, ex2 = expand_forms_2(ctx1, ex1)
+  ctx3, ex3 = resolve_scopes(ctx2, ex2)
+  ctx4, ex4 = convert_closures(ctx3, ex3)
+  _, ex5 = linearize_ir(ctx4, ex4)
+  method_codeinfo(to_lowered_expr(ex5))
+end
+
+function method_codeinfo(lowered)
+  lowered isa Expr && lowered.head === :thunk || return nothing
+  for stmt in lowered.args[1].code
+    if stmt isa Expr && stmt.head === :method && length(stmt.args) >= 3 && stmt.args[3] isa Core.CodeInfo
+      return stmt.args[3]
+    end
   end
   nothing
 end
