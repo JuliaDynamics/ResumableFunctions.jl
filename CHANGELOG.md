@@ -1,5 +1,11 @@
 # News
 
+## unreleased
+
+- (internal) Scope resolution backed by JuliaLowering.jl, behind a package extension, as the first
+  part of moving `@resumable` off its own reimplementation of Julia's scope rules (#99). Nothing
+  changes unless JuliaLowering is loaded.
+
 ## v1.0.7 - 2026-07-17
 
 - Preserve standard logging macro metadata names, including `_group`, `event`,
