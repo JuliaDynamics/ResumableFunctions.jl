@@ -1,0 +1,13 @@
+[deps]
+JuliaLowering = "f3c80556-a63f-4383-b822-37d64f81a311"
+JuliaSyntax = "70703baa-626e-46a2-a12c-08ffd08c73b4"
+ResumableFunctions = "c5292f4c-5179-55e1-98c5-05642aab7184"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[sources]
+JuliaLowering = {url = "https://github.com/c42f/JuliaLowering.jl", rev = "65ecb79"}
+JuliaSyntax = {url = "https://github.com/JuliaLang/JuliaSyntax.jl", rev = "99e975a7"}
+ResumableFunctions = {path = "../.."}
+
+[compat]
+julia = "1.12"

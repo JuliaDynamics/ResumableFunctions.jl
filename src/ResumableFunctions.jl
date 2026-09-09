@@ -13,6 +13,7 @@ include("safe_logging.jl")
 include("types.jl")
 include("transforms.jl")
 include("utils.jl")
+include("lowered_scoping.jl")
 include("macro.jl")
 
 end
