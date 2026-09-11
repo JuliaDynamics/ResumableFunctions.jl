@@ -30,6 +30,7 @@ end
 println("Starting tests with $(Threads.nthreads()) threads out of `Sys.CPU_THREADS = $(Sys.CPU_THREADS)`...")
 
 @doset "main"
+@doset "globals"
 @doset "yieldfrom"
 @doset "typeparams"
 @doset "repeated_variable"
