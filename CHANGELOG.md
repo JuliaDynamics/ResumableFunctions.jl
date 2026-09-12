@@ -1,5 +1,10 @@
 # News
 
+## v1.0.8 - 2026-09-12
+
+- Fix construction of `@resumable` iterators on Julia 1.14 development versions
+  by accepting the compiler's new wrappers for type objects.
+
 ## v1.0.7 - 2026-07-17
 
 - Preserve standard logging macro metadata names, including `_group`, `event`,
