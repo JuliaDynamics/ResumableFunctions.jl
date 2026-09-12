@@ -3,7 +3,7 @@
 ## v1.0.8 - 2026-09-12
 
 - Fix construction of `@resumable` iterators on Julia 1.14 development versions
-  by accepting the compiler's new wrappers for type objects.
+  by accepting the compiler's `TypeEgal` type wrappers.
 
 ## v1.0.7 - 2026-07-17
 
