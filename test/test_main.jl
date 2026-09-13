@@ -80,6 +80,34 @@ end
 @test collect(test_varargs(1, 2, 3)) == [1, 2, 3]
 end
 
+@resumable function test_varargs_kwargs(a...; k...)
+  @yield a
+  @yield k
+end
+
+@resumable function test_arg_kwargs(a; k...)
+  @yield a
+  @yield k
+end
+
+@resumable function test_kwargs_only(; k...)
+  @yield k
+end
+
+@resumable function test_varargs_default_kwarg(a::Int...; b::Int=0)
+  for e in a
+    @yield e + b
+  end
+end
+
+@testset "test_varargs_kwargs" begin
+@test collect(test_varargs_kwargs(1, 2; x=3)) == [(1, 2), pairs((x=3,))]
+@test collect(test_arg_kwargs(1; x=2, y=3)) == [1, pairs((x=2, y=3))]
+@test collect(test_kwargs_only(x=1, y=2)) == [pairs((x=1, y=2))]
+@test collect(test_varargs_default_kwarg(1, 2, 3)) == [1, 2, 3]
+@test collect(test_varargs_default_kwarg(1, 2, 3; b=10)) == [11, 12, 13]
+end
+
 @testset "test_let" begin
   @resumable function test_let()
     for u in [[(1,2),(3,4)], [(5,6),(7,8)]]
