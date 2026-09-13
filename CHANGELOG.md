@@ -1,5 +1,9 @@
 # News
 
+## v1.0.9 - 2026-09-09
+
+- Support variables that an inner function captures and reassigns, e.g. `@resumable function f(); c = 1; @yield [i*c for i in 1:5]; c += 1; end`, which previously failed with `MethodError: Cannot convert an object of type Int64 to an object of type Core.Box`.
+
 ## v1.0.8 - 2026-09-12
 
 - Fix construction of `@resumable` iterators on Julia 1.14 development versions
