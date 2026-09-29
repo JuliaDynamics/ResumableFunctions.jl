@@ -30,6 +30,7 @@ end
 println("Starting tests with $(Threads.nthreads()) threads out of `Sys.CPU_THREADS = $(Sys.CPU_THREADS)`...")
 
 @doset "main"
+@doset "globals"
 @doset "yieldfrom"
 @doset "typeparams"
 @doset "repeated_variable"
@@ -37,6 +38,7 @@ println("Starting tests with $(Threads.nthreads()) threads out of `Sys.CPU_THREA
 @doset "selfreferencing_functional"
 @doset "coverage_preservation"
 @doset "performance"
+@doset "logging"
 VERSION >= v"1.8" && @doset "doctests"
 VERSION >= v"1.8" && @doset "aqua"
 isempty(VERSION.prerelease) && VERSION >= v"1.12" && @doset "jet"

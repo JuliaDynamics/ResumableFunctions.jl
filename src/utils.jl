@@ -169,11 +169,20 @@ function code_typed_by_method(method::Method, @nospecialize(tt::Type), world::UI
   return frame.linfo, ci
 end
 
-function (fsmi_generator::FSMIGenerator)(world::UInt, source, typed_fsmitype, fsmitype::Type{Type{T_}}, fargtypes) where T_
+if isdefined(Core, :TypeEgal)
+    function (fsmi_generator::FSMIGenerator)(world::UInt, source, typed_fsmitype, fsmitype::Union{Core.TypeEq, Core.TypeEgal}, fargtypes)
+        _generate_fsmi(fsmi_generator, world, source, typed_fsmitype, Base.type_parameter(fsmitype), fargtypes)
+    end
+else
+    function (fsmi_generator::FSMIGenerator)(world::UInt, source, typed_fsmitype, fsmitype::Type{Type{T_}}, fargtypes) where T_
+        _generate_fsmi(fsmi_generator, world, source, typed_fsmitype, T_, fargtypes)
+    end
+end
+
+function _generate_fsmi(fsmi_generator::FSMIGenerator, world::UInt, source, typed_fsmitype, T, fargtypes)
     @nospecialize
     # get typed code of the inference function evaluated in get_slots
     # using the concrete argument types
-    T = T_
     m = fsmi_generator.m
     stub = Core.GeneratedFunctionStub(identity, Core.svec(:var"#self#", :fsmi, :fargs), Core.svec())
     fargtypes = Tuple{fargtypes...} # convert (types...) to Tuple{types...}
@@ -349,6 +358,45 @@ function scoping(s::Symbol, scope; new = false)
   return lookup_rhs!(s, scope)
 end
 
+const _logging_macros = (
+  Symbol("@debug"),
+  Symbol("@info"),
+  Symbol("@warn"),
+  Symbol("@error"),
+  Symbol("@logmsg"),
+)
+
+function _is_logging_macro(name)
+  name in _logging_macros
+end
+
+function _is_logging_macro(name::Expr)
+  name.head === :. || return false
+  macro_name = name.args[end]
+  macro_name = macro_name isa QuoteNode ? macro_name.value : macro_name
+  macro_name in _logging_macros
+end
+
+function _logging_macro_name(name)
+  return name
+end
+
+function _logging_macro_name(name::Expr)
+  macro_name = name.args[end]
+  return macro_name isa QuoteNode ? macro_name.value : macro_name
+end
+
+function scope_logging_macro_arg(expr, scope; metadata = false)
+  if expr isa Expr && expr.head === :(=)
+    expr.args[2] = scoping(expr.args[2], scope)
+    return expr
+  end
+  if metadata && expr isa Symbol
+    return Expr(:(=), expr, scoping(expr, scope))
+  end
+  scoping(expr, scope)
+end
+
 function scope_generator_inner(expr, scope)
   for i in 2:length(expr.args)
     !(expr.args[i] isa Expr && expr.args[i].head === :(=)) &&
@@ -487,6 +535,15 @@ function scoping(expr::Expr, scope)
     return expr
   end
   if expr.head === :macrocall
+    if _is_logging_macro(expr.args[1])
+      metadata_start = _logging_macro_name(expr.args[1]) === Symbol("@logmsg") ? 5 : 4
+      for i in 2:length(expr.args)
+        expr.args[i] = scope_logging_macro_arg(
+          expr.args[i], scope; metadata = i >= metadata_start
+        )
+      end
+      return expr
+    end
     for i in 2:length(expr.args)
       expr.args[i] = scoping(expr.args[i], scope)
     end

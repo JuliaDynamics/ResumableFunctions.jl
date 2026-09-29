@@ -23,7 +23,7 @@ for N in hardcoded_types # define a separate submodule for each hardcoded type
 
 using BenchmarkTools
 using ResumableFunctions
-using ..Main: S_hc, rng, V
+const S_hc = $S_hc
 
 const n = $n
 const N = $N

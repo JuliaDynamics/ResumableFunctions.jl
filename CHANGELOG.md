@@ -1,5 +1,15 @@
 # News
 
+## v1.0.8 - 2026-09-12
+
+- Fix construction of `@resumable` iterators on Julia 1.14 development versions
+  by accepting the compiler's `TypeEgal` type wrappers.
+
+## v1.0.7 - 2026-07-17
+
+- Preserve standard logging macro metadata names, including `_group`, `event`,
+  and shorthand fields, when logging from an `@resumable` function.
+
 ## v1.0.6 - 2026-04-23
 
 - (internal) switch to a reimplementation of `gensym` that is not replayable by JET.jl (see https://github.com/aviatesk/JET.jl/issues/814)
