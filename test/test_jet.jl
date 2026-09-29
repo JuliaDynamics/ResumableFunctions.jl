@@ -3,7 +3,7 @@ using JET
 using Test
 
 @testset "JET checks" begin
-    rep = report_package("ResumableFunctions";
+    rep = report_package(ResumableFunctions;
         ignored_modules=(
             Core.Compiler,
         )

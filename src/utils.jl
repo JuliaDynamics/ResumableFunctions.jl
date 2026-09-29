@@ -169,11 +169,20 @@ function code_typed_by_method(method::Method, @nospecialize(tt::Type), world::UI
   return frame.linfo, ci
 end
 
-function (fsmi_generator::FSMIGenerator)(world::UInt, source, typed_fsmitype, fsmitype::Type{Type{T_}}, fargtypes) where T_
+if isdefined(Core, :TypeEgal)
+    function (fsmi_generator::FSMIGenerator)(world::UInt, source, typed_fsmitype, fsmitype::Union{Core.TypeEq, Core.TypeEgal}, fargtypes)
+        _generate_fsmi(fsmi_generator, world, source, typed_fsmitype, Base.type_parameter(fsmitype), fargtypes)
+    end
+else
+    function (fsmi_generator::FSMIGenerator)(world::UInt, source, typed_fsmitype, fsmitype::Type{Type{T_}}, fargtypes) where T_
+        _generate_fsmi(fsmi_generator, world, source, typed_fsmitype, T_, fargtypes)
+    end
+end
+
+function _generate_fsmi(fsmi_generator::FSMIGenerator, world::UInt, source, typed_fsmitype, T, fargtypes)
     @nospecialize
     # get typed code of the inference function evaluated in get_slots
     # using the concrete argument types
-    T = T_
     m = fsmi_generator.m
     stub = Core.GeneratedFunctionStub(identity, Core.svec(:var"#self#", :fsmi, :fargs), Core.svec())
     fargtypes = Tuple{fargtypes...} # convert (types...) to Tuple{types...}
